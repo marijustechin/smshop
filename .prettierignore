@@ -1,0 +1,7 @@
+node_modules
+dist
+.next
+generated
+pnpm-lock.yaml
+docs/application-deployment-contract.md
+apps/web/next-env.d.ts

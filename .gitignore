@@ -1,0 +1,12 @@
+.DS_Store
+node_modules/
+dist/
+.next/
+generated/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+
+# diff file
+git.diff

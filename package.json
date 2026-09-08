@@ -1,0 +1,23 @@
+{
+  "name": "smshop",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@12.3.4",
+  "scripts": {
+    "dev": "pnpm --filter @smshop/db build && pnpm -r --parallel --filter @smshop/web --filter @smshop/api run dev",
+    "build": "pnpm --filter @smshop/db build && pnpm --filter @smshop/api build && pnpm --filter @smshop/web build",
+    "typecheck": "pnpm --filter @smshop/db build && pnpm --filter @smshop/api typecheck && pnpm --filter @smshop/web typecheck",
+    "lint": "pnpm --filter @smshop/db lint && pnpm --filter @smshop/api lint && pnpm --filter @smshop/web lint",
+    "test": "pnpm -r --if-present test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "prisma:generate": "pnpm --filter @smshop/db generate",
+    "prisma:migrate:dev": "pnpm --filter @smshop/db migrate:dev",
+    "prisma:migrate:deploy": "pnpm --filter @smshop/db migrate:deploy"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6"
+  }
+}
