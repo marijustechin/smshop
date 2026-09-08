@@ -78,4 +78,4 @@ pnpm dev                                # build db, then run web + api
 
 - Never commit `.env` files or secrets.
 - Local dev is separate from the infrastructure Compose/runtime contract; do not
-  reuse or modify `docs/application-deployment-contract.md`.
+  reuse or modify the deployment contract (owned by `sm-oracle-infra`).

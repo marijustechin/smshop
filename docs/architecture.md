@@ -2,7 +2,8 @@
 
 Status: **implemented (foundation).** Defines application boundaries and the
 monorepo structure. Accepted infrastructure decisions referenced here come from
-`docs/application-deployment-contract.md` and are external constraints.
+the application deployment contract (owned by `sm-oracle-infra`) and are
+external constraints.
 
 ## Ownership boundary
 

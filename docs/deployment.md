@@ -2,8 +2,8 @@
 
 Status: **application-side description only.** This document covers the
 application's responsibility in producing and delivering container images. The
-infrastructure interface is defined in
-`docs/application-deployment-contract.md` (owned by `sm-oracle-infra`).
+infrastructure interface is defined in the application deployment contract
+(owned by `sm-oracle-infra`).
 
 ## Application-owned delivery
 

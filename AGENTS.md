@@ -8,9 +8,16 @@ documentation.
 
 - This repository owns application code only. Infrastructure concerns belong to
   `sm-oracle-infra`.
-- `docs/application-deployment-contract.md` is infrastructure-owned. **Do not
-  modify it.** If a genuine contract issue is found, report it instead of
-  silently editing the file.
+- The application deployment contract is infrastructure-owned. Its single
+  authoritative copy lives in
+  `sm-oracle-infra/docs/application-deployment-contract.md`; this repository
+  keeps **no local copy**. Read it from the parent workspace's
+  `sm-oracle-infra` for cross-repository context. Do not modify it; if a
+  genuine contract issue is found, report it instead of silently editing.
+- Document ownership does not give infrastructure unilateral ownership of
+  application-side decisions: this repository supplies application-owned
+  runtime requirements/facts (the contract's C fields), and the infrastructure
+  repository records and consumes the reconciled interface.
 - Accepted infrastructure decisions in the contract are external constraints.
   Do not override them to simplify application work.
 

@@ -9,10 +9,12 @@ from the infrastructure repository `sm-oracle-infra`, which owns Oracle Cloud
 configuration, production Docker Compose, Nginx/TLS, PostgreSQL runtime,
 secret provisioning, and deployment/rollback.
 
-The boundary between the two repositories is defined in
-[`docs/application-deployment-contract.md`](docs/application-deployment-contract.md),
-which is owned by the infrastructure project. Accepted infrastructure decisions
-in it are external constraints and must not be silently changed.
+The boundary between the two repositories is defined in the application
+deployment contract, which is owned by the infrastructure project. Its single
+authoritative copy lives in
+`sm-oracle-infra/docs/application-deployment-contract.md`; this repository keeps
+no local copy. Accepted infrastructure decisions in it are external constraints
+and must not be silently changed.
 
 ## Status
 
@@ -69,8 +71,10 @@ Endpoints (development):
 - [Development](docs/development.md) — local development environment and commands
 - [Testing](docs/testing.md) — testing strategy and acceptance expectations
 - [Deployment](docs/deployment.md) — application-side image build/publish
-- [Deployment contract](docs/application-deployment-contract.md) — infrastructure interface (owned by `sm-oracle-infra`)
 - [TODO](TODO.md) — unfinished actionable work
+
+The deployment contract itself is owned by `sm-oracle-infra`; see
+`sm-oracle-infra/docs/application-deployment-contract.md`.
 
 ## Technology stack (accepted)
 
