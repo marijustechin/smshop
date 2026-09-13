@@ -21,12 +21,13 @@ This roadmap may evolve as product decisions are made.
 **Current milestone:** M2 — Authentication v1.
 
 **Current task:** none — `tasks/current/` is empty. The next application task is
-**A-007 — Google authentication and safe account linking** (not started).
+**A-008 — Frontend authentication flows** (not started).
 
-**Recently completed:** H-000–H-009; A-001–A-006 (auth domain, registration,
-email, verification, login/session lifecycle, password recovery).
+**Recently completed:** H-000–H-009; A-001–A-007 (auth domain, registration,
+email, verification, login/session lifecycle, password recovery, Google
+authentication).
 
-**Next application task:** A-007 — Google authentication and safe account linking.
+**Next application task:** A-008 — Frontend authentication flows.
 
 **Parallel workstream:** production infrastructure / Oracle (`sm-oracle-infra`),
 tracked as `OPS-*` below.
@@ -124,7 +125,7 @@ The Harness baseline is complete. Application development proceeds under M2.
 - [x] A-004 — Email verification
 - [x] A-005 — Login, access token, refresh session and logout
 - [x] A-006 — Password recovery
-- [ ] A-007 — Google authentication and safe account linking
+- [x] A-007 — Google authentication and safe account linking
 - [ ] A-008 — Frontend Auth flows
 - [ ] A-009 — Auth security hardening
 - [ ] A-010 — Auth v1 milestone verification
@@ -278,12 +279,12 @@ Goal: establish complete customer identity and authentication infrastructure.
 
 ## Google authentication
 
-- [ ] Google OAuth architecture
-- [ ] Google login
-- [ ] Google registration
-- [ ] OAuth callback handling
-- [ ] Account linking strategy
-- [ ] Existing credentials-account collision handling
+- [x] Google OAuth architecture (A-007)
+- [x] Google login (A-007)
+- [x] Google registration (A-007)
+- [x] OAuth callback handling (A-007)
+- [x] Account linking strategy (A-007 — explicit-link only; collisions return `account-link-required`)
+- [x] Existing credentials-account collision handling (A-007 — never auto-links)
 - [ ] Google authentication frontend
 
 ## Account area

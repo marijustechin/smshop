@@ -54,9 +54,9 @@ consumer (Auth v1) is implemented; it is validated only when present.
 | Email           | `SMTP_USER`            | grouped      | no     |                                                     |
 | Email           | `SMTP_PASSWORD`        | grouped      | yes    | Supports `SMTP_PASSWORD_FILE`                       |
 | Email           | `MAIL_FROM`            | grouped      | no     | Bare email or `Name <email>` sender                 |
-| Google OAuth    | `GOOGLE_CLIENT_ID`     | reserved     | no     |                                                     |
-| Google OAuth    | `GOOGLE_CLIENT_SECRET` | reserved     | yes    |                                                     |
-| Google OAuth    | `GOOGLE_CALLBACK_URL`  | reserved     | no     | Valid URL when present                              |
+| Google OAuth    | `GOOGLE_CLIENT_ID`     | grouped      | no     | Google group is all-or-none; disabled when absent   |
+| Google OAuth    | `GOOGLE_CLIENT_SECRET` | grouped      | yes    | Supports `GOOGLE_CLIENT_SECRET_FILE`                |
+| Google OAuth    | `GOOGLE_CALLBACK_URL`  | grouped      | no     | Must equal the Google Authorized redirect URI       |
 
 PostgreSQL Compose values (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`,
 `POSTGRES_PORT`) are development-only and consumed by `docker-compose.yml`, not
@@ -84,8 +84,15 @@ required at application startup. They are consumed only by the test tooling:
   and startup still succeeds — so CI and tests need no SMTP credentials. Empty
   values are treated as unset. `SMTP_SECURE` is parsed explicitly (`"true"` /
   `"false"`); security is never inferred from the port. See `docs/email.md`.
-- **Reserved:** `API_ORIGIN` and the `GOOGLE_*` variables. They are accepted and
-  format-checked today but do not block the current application.
+- **Google group (all-or-none):** if any of `GOOGLE_CLIENT_ID`,
+  `GOOGLE_CLIENT_SECRET`, `GOOGLE_CALLBACK_URL` is set, all are required and
+  startup fails fast otherwise. If none is set, Google authentication is disabled
+  and startup still succeeds (CI/tests need no Google credentials).
+  `GOOGLE_CLIENT_SECRET` supports `GOOGLE_CLIENT_SECRET_FILE`. The callback URL
+  must exactly match the Authorized redirect URI registered in Google Cloud. See
+  `docs/authentication.md`.
+- **Reserved:** `API_ORIGIN`. It is accepted and format-checked today but does not
+  block the current application.
 - **Session lifetime:** `AUTH_SESSION_TTL` controls both the server-side
   `AuthSession` lifetime and the refresh cookie `Max-Age`. Refresh tokens are
   opaque random secrets, so there is no refresh signing secret. See

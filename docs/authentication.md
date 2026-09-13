@@ -455,6 +455,95 @@ access tokens are stateless in A-005 and there is no access-token blacklist.
 After reset the user must log in again with the new password; no tokens are
 issued by the reset response and the user is not auto-logged-in.
 
+## Google authentication (A-007)
+
+Google is an identity provider only. The flow uses OAuth 2.0 / OpenID Connect
+Authorization Code with PKCE, `state`, and OIDC `nonce`, implemented with
+`openid-client` (v6, ESM). Google access/refresh/ID tokens are used transiently
+for identity verification and are **never persisted**; only the stable linkage
+`(provider=GOOGLE, providerAccountId=OIDC sub)` is stored.
+
+### Flow
+
+```text
+GET /api/auth/google
+→ set httpOnly OAuth transaction cookie (state, PKCE verifier, nonce)
+→ 302 to Google (scopes: openid email profile)
+→ user authenticates at Google
+GET /api/auth/google/callback?code&state
+→ validate transaction + state, exchange code (PKCE + nonce validated)
+→ resolve Google identity
+→ A-005 AuthSession (revoke prior, create one) + httpOnly refresh cookie
+→ 302 to ${WEB_ORIGIN}/prisijungti?oauth=success
+```
+
+No access/refresh token, authorization code, or state is placed in a redirect URL.
+The frontend later calls `POST /api/auth/refresh` (refresh cookie) to obtain an
+access token, then `GET /api/auth/me`. Google login therefore reuses the exact
+A-005 session path (`AuthSessionService.createSession`), single-active-session
+policy, refresh rotation, logout, and `/me`.
+
+### Identity resolution (security-critical)
+
+- The canonical provider identity is the OIDC `sub`; the email is **not** an
+  identifier.
+- **Existing `sub`** → log into that `User`, regardless of the current email
+  claim. A changed Google email does not rewrite `User.email` and does not create
+  a second identity.
+- **New `sub`** requires `email_verified === true` and an email; missing email or
+  unverified email is rejected safely.
+- **New `sub` + no email collision** → create `User` (`emailVerifiedAt = now`) +
+  `GOOGLE AuthAccount` atomically, then a session. No password is created and no
+  verification email is sent.
+- **New `sub` + existing `User` with the same normalized email** → **never
+  auto-linked**. The callback returns `oauth=account-link-required`; no
+  `AuthAccount` is attached and no session is created. This holds even when Google
+  reports the email as verified: matching email is evidence, not authorization to
+  change an existing account's authentication methods.
+- Uniqueness races are handled by database constraints. A `P2002` retry re-checks
+  by `sub` and, if the winner was an email collision, still fails closed (no
+  linking).
+
+### Explicit linking (future)
+
+A Google identity may be attached to an existing `User` **only** from an
+authenticated account-linking flow where the user proves control of the existing
+account (e.g. logged-in `/paskyra` linking in A-008). No automatic email-based
+linking exists or is planned.
+
+### OAuth transaction security
+
+`state`, PKCE verifier, and nonce are stored together in the short-lived
+`smshop_oauth_txn` cookie. The payload is **HMAC-SHA256 signed** with a key
+derived (HKDF, domain-separated) from the application secret, plus an explicit
+`exp`; the callback rejects any modified, forged, unsigned, or expired payload
+before using its state/verifier/nonce, so a client cannot tamper with the
+transaction. `HttpOnly`, `Secure` in production, `SameSite=Lax` (required so the
+cookie is sent on Google's top-level redirect back to the callback; `Strict`
+would break it), `Path=/api/auth/google`, `Max-Age=600`. The cookie is cleared on
+every callback, and the Google authorization code is single-use, so a callback
+cannot be replayed. Cancellation/denial (`?error=...`) and any failure redirect to
+`${WEB_ORIGIN}/prisijungti?oauth=failed` with no sensitive detail.
+
+### External outcomes
+
+| Redirect                                   | Meaning                              |
+| ------------------------------------------ | ------------------------------------ |
+| `/prisijungti?oauth=success`               | Session created; refresh cookie set  |
+| `/prisijungti?oauth=account-link-required` | Email collides with an existing User |
+| `/prisijungti?oauth=failed`                | Denied/state/code/identity failure   |
+
+Only `openid email profile` scopes are requested; no Gmail/Drive/Calendar and no
+offline access. `GET /api/auth/google` returns `503` when Google is disabled
+(none of `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`GOOGLE_CALLBACK_URL` set).
+
+### Configuration / Google Cloud
+
+Google is all-or-none (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (supports
+`GOOGLE_CLIENT_SECRET_FILE`), `GOOGLE_CALLBACK_URL`); partial configuration fails
+startup. The OAuth client is a Web application; its Authorized redirect URI must
+equal `GOOGLE_CALLBACK_URL` exactly. See `docs/configuration.md`.
+
 ## Tests
 
 Schema invariants are covered by `apps/api/test/database/auth-schema.db-spec.ts`
@@ -485,3 +574,12 @@ token rotation, mail-failure safety, reset success, old/new password login
 behaviour, replay/expired/unknown rejection, policy enforcement, and session
 revocation after reset. `password-reset-*.spec.ts` and `secure-token.spec.ts`
 cover token hashing and email content.
+
+`apps/api/test/database/auth-google.db-spec.ts` covers Google authentication
+against real PostgreSQL with the OIDC provider boundary stubbed (no Google network
+calls): start redirect + transaction-cookie attributes, new-user creation,
+existing-`sub` login without email rewrite, single-active-session revocation,
+verified-email collision → `account-link-required` (no linking/session),
+unverified/missing email rejection, invalid/missing state, provider denial,
+exchange failure, callback replay, and post-login refresh/`/me`/logout.
+`openid-client-google.provider.spec.ts` asserts the requested scope set.

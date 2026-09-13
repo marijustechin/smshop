@@ -19,13 +19,10 @@ describe('validateEnv', () => {
   });
 
   it('accepts optional future Auth variables without requiring them', () => {
-    const env = validateEnv({
-      ...validEnv,
-      API_ORIGIN: 'http://localhost:3001',
-      GOOGLE_CLIENT_ID: 'client-id',
-    });
+    const env = validateEnv({ ...validEnv, API_ORIGIN: 'http://localhost:3001' });
 
-    expect(env.GOOGLE_CLIENT_ID).toBe('client-id');
+    expect(env.API_ORIGIN).toBe('http://localhost:3001');
+    expect(env.GOOGLE_CLIENT_ID).toBeUndefined();
     expect(env.SMTP_HOST).toBeUndefined();
   });
 
@@ -128,6 +125,48 @@ describe('SMTP / mail configuration', () => {
     const env = validateEnv({ ...completeSmtp, MAIL_FROM: 'noreply@example.com' });
 
     expect(env.MAIL_FROM).toBe('noreply@example.com');
+  });
+});
+
+describe('Google OAuth configuration', () => {
+  const completeGoogle = {
+    ...validEnv,
+    GOOGLE_CLIENT_ID: 'client-id.apps.googleusercontent.com',
+    GOOGLE_CLIENT_SECRET: 'client-secret-value',
+    GOOGLE_CALLBACK_URL: 'http://localhost:3001/api/auth/google/callback',
+  };
+
+  it('accepts a complete Google configuration', () => {
+    const env = validateEnv(completeGoogle);
+
+    expect(env.GOOGLE_CLIENT_ID).toBe(completeGoogle.GOOGLE_CLIENT_ID);
+    expect(env.GOOGLE_CALLBACK_URL).toBe(completeGoogle.GOOGLE_CALLBACK_URL);
+  });
+
+  it('treats Google as disabled when none of the variables are set', () => {
+    const env = validateEnv({ ...validEnv, GOOGLE_CLIENT_ID: '', GOOGLE_CLIENT_SECRET: '' });
+
+    expect(env.GOOGLE_CLIENT_ID).toBeUndefined();
+    expect(env.GOOGLE_CLIENT_SECRET).toBeUndefined();
+  });
+
+  it('rejects partial Google configuration with the missing variable named', () => {
+    const { GOOGLE_CLIENT_SECRET, ...withoutSecret } = completeGoogle;
+
+    try {
+      validateEnv(withoutSecret);
+      throw new Error('expected validateEnv to throw');
+    } catch (error) {
+      const message = (error as Error).message;
+      expect(message).toContain('GOOGLE_CLIENT_SECRET');
+      expect(message).not.toContain(GOOGLE_CLIENT_SECRET);
+    }
+  });
+
+  it('rejects a malformed GOOGLE_CALLBACK_URL', () => {
+    expect(() => validateEnv({ ...completeGoogle, GOOGLE_CALLBACK_URL: 'not-a-url' })).toThrow(
+      /GOOGLE_CALLBACK_URL/,
+    );
   });
 });
 

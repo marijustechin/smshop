@@ -23,6 +23,12 @@ export interface RefreshResult {
   refreshToken: string;
 }
 
+export interface IssuedSession {
+  sessionId: string;
+  accessToken: string;
+  refreshToken: string;
+}
+
 function toPublicUser(user: User): PublicUser {
   return { id: user.id, email: user.email, emailVerified: user.emailVerifiedAt !== null };
 }
@@ -48,6 +54,32 @@ export class AuthSessionService {
 
   private refreshTtlMs(): number {
     return parseDurationMs(this.config.get<string>('AUTH_SESSION_TTL', '7d'));
+  }
+
+  /**
+   * Issues exactly one new session for a user, revoking all previously active
+   * sessions first (single-active-session policy) and signing an access token.
+   * Shared by credentials login and Google authentication.
+   */
+  async createSession(userId: string): Promise<IssuedSession> {
+    const now = new Date();
+    const refreshToken = generateRefreshToken();
+    const session = await this.prisma.$transaction(async (tx) => {
+      await tx.authSession.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: now },
+      });
+      return tx.authSession.create({
+        data: {
+          userId,
+          refreshTokenHash: hashRefreshToken(refreshToken),
+          expiresAt: new Date(now.getTime() + this.refreshTtlMs()),
+        },
+      });
+    });
+
+    const accessToken = await this.accessTokens.sign({ userId, sessionId: session.id });
+    return { sessionId: session.id, accessToken, refreshToken };
   }
 
   /**
@@ -78,23 +110,7 @@ export class AuthSessionService {
       });
     }
 
-    const now = new Date();
-    const refreshToken = generateRefreshToken();
-    const session = await this.prisma.$transaction(async (tx) => {
-      await tx.authSession.updateMany({
-        where: { userId: user.id, revokedAt: null },
-        data: { revokedAt: now },
-      });
-      return tx.authSession.create({
-        data: {
-          userId: user.id,
-          refreshTokenHash: hashRefreshToken(refreshToken),
-          expiresAt: new Date(now.getTime() + this.refreshTtlMs()),
-        },
-      });
-    });
-
-    const accessToken = await this.accessTokens.sign({ userId: user.id, sessionId: session.id });
+    const { accessToken, refreshToken } = await this.createSession(user.id);
     return { accessToken, refreshToken, user: toPublicUser(user) };
   }
 

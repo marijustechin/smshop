@@ -29,6 +29,17 @@ export const SMTP_KEYS = [
   'MAIL_FROM',
 ] as const;
 
+/**
+ * Google OAuth settings are all-or-none. If none is configured, Google
+ * authentication is disabled and startup still succeeds (CI/tests need no
+ * Google credentials); a partial configuration fails fast.
+ */
+export const GOOGLE_KEYS = [
+  'GOOGLE_CLIENT_ID',
+  'GOOGLE_CLIENT_SECRET',
+  'GOOGLE_CALLBACK_URL',
+] as const;
+
 export type FileReader = (path: string) => string;
 
 function hasValue(value: unknown): boolean {
@@ -110,7 +121,7 @@ export const envSchema = z
       .refine(isMailFrom, 'must be an email or "Name <email>"')
       .optional(),
 
-    // Google OAuth — reserved for Auth v1.
+    // Google OAuth — all-or-none (see GOOGLE_KEYS). Disabled when absent.
     GOOGLE_CLIENT_ID: z.string().min(1).optional(),
     GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
     GOOGLE_CALLBACK_URL: z.url().optional(),
@@ -126,6 +137,21 @@ export const envSchema = z
           code: 'custom',
           path: [key],
           message: `${key} is required when SMTP/mail is configured`,
+        });
+      }
+    }
+  })
+  .superRefine((env, ctx) => {
+    const configured = GOOGLE_KEYS.filter((key) => hasValue(env[key]));
+    if (configured.length === 0) {
+      return;
+    }
+    for (const key of GOOGLE_KEYS) {
+      if (!hasValue(env[key])) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [key],
+          message: `${key} is required when Google authentication is configured`,
         });
       }
     }
