@@ -26,6 +26,14 @@ export class GoogleAuthController {
     const query = request.query as { state?: string; code?: string; error?: string };
     const webOrigin = this.config.getOrThrow<string>('WEB_ORIGIN');
 
+    // Fail safe when Google is not configured instead of erroring: a disabled
+    // deployment must never 500 on a stray callback request.
+    if (!this.googleAuth.isEnabled()) {
+      this.googleAuth.clearTransaction(reply);
+      reply.redirect(`${webOrigin}/prisijungti?oauth=failed`, 302);
+      return;
+    }
+
     if (query.error) {
       // User denied/cancelled, or Google returned an error.
       this.googleAuth.clearTransaction(reply);
