@@ -106,6 +106,21 @@ docs/
 - `migrate` (infra-side service) — reuses the API image digest and runs
   `prisma migrate deploy`.
 
+## Domain boundaries
+
+- **Authentication identity is separate from the e-commerce customer.** `User`
+  (authentication identity) must not become the `Customer` aggregate. The
+  authentication model is owned by `packages/db` and documented in
+  `docs/authentication.md`; a future `Customer` domain may link to `User`.
+  Authorization/roles are a separate concern and are not modeled yet.
+
+## Authentication persistence
+
+- Auth models live in `packages/db/prisma/schema.prisma` (`User`, `AuthAccount`,
+  `AuthSession`, `EmailVerificationToken`, `PasswordResetToken`). Auth persistence
+  belongs to this repository; auth **behaviour** (endpoints, tokens, hashing,
+  email, OAuth) is separate, later work. See `docs/authentication.md`.
+
 ## Open fields (application-owned)
 
 - C.1 — production image references (digests): open until images are built.

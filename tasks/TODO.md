@@ -18,19 +18,19 @@ This roadmap may evolve as product decisions are made.
 
 # Current State
 
-**Current milestone:** M1 — Harness & Development Workflow is complete, including
-H-008 (backend stack aligned to Fastify / Prisma 7 / ESM-first). The next
-application milestone is M2 — Authentication v1.
+**Current milestone:** M2 — Authentication v1 (A-001 authentication domain model
+complete).
 
 **Current task:** none — `tasks/current/` is empty. The next application task is
-**A-001 — Authentication domain model** (not started).
+**A-002 — Credentials registration and password hashing** (not started).
 
 **Recently completed:** H-000 repository readiness audit, H-001 verification
 gate, H-002 runtime baseline, H-003 task workflow, H-004 CI workflow, H-005 Auth
 environment & validation baseline, H-006 test database strategy, H-007
-infrastructure workstream integration, H-008 backend stack alignment.
+infrastructure workstream integration, H-008 backend stack alignment, A-001
+authentication domain model.
 
-**Next application task:** A-001 — Authentication domain model.
+**Next application task:** A-002 — Credentials registration and password hashing.
 
 **Parallel workstream:** production infrastructure / Oracle (`sm-oracle-infra`),
 tracked as `OPS-*` below.
@@ -117,8 +117,15 @@ Goal: make the repository safe and predictable for agentic development.
 - [x] H-007 — Integrate infrastructure workstream into project roadmap
 - [x] H-008 — Align backend stack (Fastify / Prisma 7 / ESM-first)
 
-The Harness baseline is complete. The next application task is **A-001 —
-Authentication domain model**, which begins milestone M2.
+The Harness baseline is complete. Application development proceeds under M2.
+
+## Application tasks
+
+- [x] A-001 — Establish the authentication domain model
+- [ ] A-002 — Credentials registration and password hashing
+
+Milestone M2 — Authentication v1 remains the current application milestone; see
+its checklist below for the full scope.
 
 ## Task workflow
 
@@ -208,9 +215,9 @@ Goal: establish complete customer identity and authentication infrastructure.
 
 ## Authentication foundation
 
-- [ ] A-001 — Define authentication domain model
-- [ ] Separate authentication identity from e-commerce customer domain
-- [ ] Define account/provider model
+- [x] A-001 — Define authentication domain model
+- [x] Separate authentication identity from e-commerce customer domain
+- [x] Define account/provider model
 - [ ] Define access token strategy
 - [ ] Define refresh token strategy
 - [ ] Define logout / token invalidation strategy

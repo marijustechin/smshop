@@ -28,6 +28,21 @@ function run(command, args, options = {}) {
   }
 }
 
+/** Like run(), but pipes `input` to the child's stdin. */
+function runWithInput(command, args, input, options = {}) {
+  const result = spawnSync(command, args, {
+    input,
+    shell: process.platform === 'win32',
+    ...options,
+  });
+  if (result.error) {
+    throw result.error;
+  }
+  if (result.status !== 0) {
+    process.exit(result.status ?? 1);
+  }
+}
+
 function databaseIdentity(url) {
   const parsed = new URL(url);
   return {
@@ -106,21 +121,18 @@ function main() {
       const url = resolveTestDatabaseUrl();
       const { host, port, database } = databaseIdentity(url);
       console.log(`Resetting test database ${database} at ${host}:${port}...`);
-      run(
+      // Prisma 7 guards `migrate reset` behind interactive consent, so reset by
+      // dropping the public schema and re-applying migrations. The test-only
+      // guard above has already refused any non-test target.
+      runWithInput(
         'pnpm',
-        [
-          '--filter',
-          '@smshop/db',
-          'exec',
-          'prisma',
-          'migrate',
-          'reset',
-          '--force',
-          '--skip-seed',
-          '--skip-generate',
-        ],
+        ['--filter', '@smshop/db', 'exec', 'prisma', 'db', 'execute', '--stdin'],
+        'DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public;\n',
         { env: withTestDatabaseUrl(url) },
       );
+      run('pnpm', ['--filter', '@smshop/db', 'exec', 'prisma', 'migrate', 'deploy'], {
+        env: withTestDatabaseUrl(url),
+      });
       break;
     }
 

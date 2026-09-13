@@ -8,3 +8,98 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+/// Authentication provider attached to a User.
+enum AuthProvider {
+  CREDENTIALS
+  GOOGLE
+}
+
+/// Authentication identity. Deliberately NOT the e-commerce Customer aggregate:
+/// no addresses, company data, order history, loyalty, or commerce preferences.
+model User {
+  id              String    @id @default(uuid(7))
+  email           String
+  emailNormalized String    @unique
+  emailVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  accounts                AuthAccount[]
+  sessions                AuthSession[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
+
+  @@map("users")
+}
+
+/// A single login method attached to a User. One identity may have multiple
+/// providers (e.g. CREDENTIALS + GOOGLE). `providerAccountId` is the provider's
+/// stable subject identifier (for Google: the OIDC `sub`, not the email).
+model AuthAccount {
+  id                String       @id @default(uuid(7))
+  userId            String
+  provider          AuthProvider
+  providerAccountId String
+  passwordHash      String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // One provider account can belong to only one user.
+  @@unique([provider, providerAccountId])
+  // A user has at most one account per provider (one credentials, one Google).
+  @@unique([userId, provider])
+  @@map("auth_accounts")
+}
+
+/// Server-side session/refresh record. Only a hash of the refresh token is
+/// stored. Supports expiration, revocation, and user-wide invalidation.
+model AuthSession {
+  id               String    @id @default(uuid(7))
+  userId           String
+  refreshTokenHash String    @unique
+  createdAt        DateTime  @default(now())
+  expiresAt        DateTime
+  lastUsedAt       DateTime?
+  revokedAt        DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("auth_sessions")
+}
+
+/// Single-use, expiring email verification token. Stores only a token hash.
+model EmailVerificationToken {
+  id         String    @id @default(uuid(7))
+  userId     String
+  tokenHash  String    @unique
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  consumedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
+}
+
+/// Single-use, expiring password reset token. Stores only a token hash.
+/// Kept separate from email verification tokens so the two purposes are never
+/// interchangeable.
+model PasswordResetToken {
+  id         String    @id @default(uuid(7))
+  userId     String
+  tokenHash  String    @unique
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+  consumedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
