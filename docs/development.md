@@ -43,6 +43,9 @@ adapters and `prisma.config.ts`; revisit when the schema grows (see `tasks/TODO.
 - Local **PostgreSQL 18** runs in Docker/Compose (`docker-compose.yml`).
 - Root-level pnpm scripts orchestrate the workspace.
 - Per-app `.env` files are gitignored; `.env.example` files are committed.
+- API configuration is validated at startup; see `docs/configuration.md` for the
+  variable contract, secrets strategy (direct value or `<NAME>_FILE`), and
+  required-vs-reserved rules.
 
 ## Setup
 
@@ -66,6 +69,10 @@ pnpm dev                                # build db, then run web + api
 | `pnpm typecheck`                      | type-check all packages                                             |
 | `pnpm test`                           | run the test suite (Vitest; see `docs/testing.md`)                  |
 | `pnpm verify`                         | full local verification gate (format, lint, typecheck, test, build) |
+| `pnpm verify:db`                      | `verify` plus database-backed tests (starts the test DB)            |
+| `pnpm db:test:up` / `db:test:down`    | start/stop the isolated test database                               |
+| `pnpm db:test:migrate` / `:reset`     | apply / reset migrations on the test database                       |
+| `pnpm test:db`                        | run database-backed integration tests                               |
 | `pnpm db:up` / `pnpm db:down`         | start/stop the local PostgreSQL Compose                             |
 | `pnpm prisma:generate`                | generate the Prisma client                                          |
 | `pnpm prisma:migrate:dev` / `:deploy` | create/apply / deploy migrations                                    |
@@ -86,9 +93,14 @@ does not modify application source files, does not update dependencies, does not
 change the database schema, does not create migrations, and does not require
 production services. It is suitable for reuse by CI.
 
-CI (`.github/workflows/ci.yml`) runs the same gate on a clean Node.js 24
-environment (selected from `.nvmrc`) using the pinned pnpm version, so local and
-CI verification are equivalent.
+`pnpm verify` is intentionally service-free and deterministic, so it excludes
+database-backed tests. Work that changes persistence must also pass
+`pnpm verify:db`, which starts the isolated test database, applies migrations,
+runs `pnpm verify`, then runs the database-backed tests (see `docs/testing.md`).
+
+CI (`.github/workflows/ci.yml`) runs `pnpm verify:ci` on a clean Node.js 24
+environment (selected from `.nvmrc`) with an ephemeral PostgreSQL service, so
+local and CI verification cover the same gates.
 
 ## Runtime contract (accepted)
 

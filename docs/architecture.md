@@ -17,6 +17,19 @@ external constraints.
 | Tests                                      | Production deployment/rollback              |
 | Production application image builds (CI)   | Production SSH access                       |
 
+`smShop` additionally owns: application runtime/deployment contract, API ports,
+health/readiness endpoints, the environment-variable contract, Prisma
+migrations, application startup behaviour, and application-level deployment
+expectations.
+
+`sm-oracle-infra` additionally owns: Oracle VM configuration, OS-level
+networking/firewall, host packages, Docker/Compose host orchestration, reverse
+proxy, TLS/ACME, production secret delivery, production persistent volumes,
+backups, logging/monitoring, deployment/rollback runbooks, and production
+service lifecycle. Infrastructure implementation is **not** duplicated into
+`smShop`; this repository documents cross-repository contracts only. Infrastructure
+roadmap status is tracked as `OPS-*` in `tasks/TODO.md`.
+
 Additional boundary corrections (accepted):
 
 - Docker health-check **cadence** (interval, timeout, retries, start_period)
@@ -97,8 +110,11 @@ docs/
 - C.3 — environment variable names and DB connection layout: dev defaults are
   `DATABASE_URL` and `PORT`; production values open until implementation and
   `sm-oracle-infra` coordination.
-- C.4 — file-based secret names and file-reading support: open, requires
-  coordination with `sm-oracle-infra`.
+- C.4 — file-based secret names and file-reading support: the application side is
+  now defined — the API accepts either a direct environment variable or a
+  `<NAME>_FILE` path for every secret (see `docs/configuration.md`). Exact
+  production secret file names and mount locations remain coordinated with
+  `sm-oracle-infra`.
 - C.5 — writable runtime paths: the foundation requires **no** writable runtime
   paths (stateless by default); reopen only if a requirement introduces them.
 - C.6 — persistent storage beyond PostgreSQL: product-dependent, open.

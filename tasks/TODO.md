@@ -18,21 +18,30 @@ This roadmap may evolve as product decisions are made.
 
 # Current State
 
-**Current milestone:** M1 — Harness & Development Workflow (M0 foundation audit
-is complete).
+**Current milestone:** M1 — Harness & Development Workflow is complete. The
+Harness baseline (H-000–H-006) is ready, so the next application-development
+milestone is M2 — Authentication v1.
 
-**Current task:** none — `tasks/current/` is empty; start the next task from
-the list below.
+**Current task:** none — `tasks/current/` is empty. The next application task is
+**A-001 — Authentication domain model** (not started).
 
 **Recently completed:** H-000 repository readiness audit, H-001 verification
-gate, H-002 runtime baseline, H-003 task workflow, H-004 CI workflow.
+gate, H-002 runtime baseline, H-003 task workflow, H-004 CI workflow, H-005 Auth
+environment & validation baseline, H-006 test database strategy, H-007
+infrastructure workstream integration.
 
-**Next:** H-005 — Establish Auth environment & validation baseline.
+**Next application task:** A-001 — Authentication domain model.
 
-**Planned Harness tasks:** H-006 — Test database strategy.
+**Parallel workstream:** production infrastructure / Oracle (`sm-oracle-infra`),
+tracked as `OPS-*` below.
 
-**Next product milestone:** M2 — Authentication v1, after the Harness tasks
-above.
+**Commit state:** H-000–H-004 are committed at `7e4801d`. H-005, H-006, and
+H-007 changes are not yet committed (pending explicit authorization).
+
+**Infrastructure vs application:** Auth development does not depend on
+production Oracle deployment. Production infrastructure runs as a parallel
+workstream and becomes a hard dependency only at pre-launch (see the
+infrastructure workstream below).
 
 ---
 
@@ -76,7 +85,7 @@ Example:
 
 - [x] Audit current repository state (H-000)
 - [x] Audit Harness maturity (H-000)
-- [ ] Define missing Harness infrastructure (H-001–H-003 done; H-004–H-006 planned)
+- [ ] Define missing Harness infrastructure (H-001–H-006 done; H-007 planned)
 - [ ] Prepare Auth v1 implementation plan
 
 ---
@@ -102,8 +111,12 @@ Goal: make the repository safe and predictable for agentic development.
 - [x] H-002 — Pin the runtime baseline
 - [x] H-003 — Establish the persistent task workflow
 - [x] H-004 — Establish CI workflow
-- [ ] H-005 — Establish Auth environment & validation baseline
-- [ ] H-006 — Establish test database strategy
+- [x] H-005 — Establish Auth environment & validation baseline
+- [x] H-006 — Establish test database strategy
+- [x] H-007 — Integrate infrastructure workstream into project roadmap
+
+The Harness baseline is complete. The next application task is **A-001 —
+Authentication domain model**, which begins milestone M2.
 
 ## Task workflow
 
@@ -130,6 +143,61 @@ work. A task is not complete until its verification passes.
 
 ---
 
+# Infrastructure / Oracle Workstream
+
+This is an **active parallel workstream**, separate from application
+milestones. Infrastructure implementation is owned by the external repository
+`sm-oracle-infra`; this roadmap tracks only cross-repository status. Detailed
+implementation history, runbooks, and secrets remain in `sm-oracle-infra` and
+are **not** copied into `smShop`.
+
+Status legend: `DONE` (executed and verified), `PARTIAL` (prepared/partial, not
+fully executed), `PLANNED` (not started), `BLOCKED` (waiting on a decision or
+dependency). Status reflects known evidence only; do not mark work DONE merely
+because it was discussed.
+
+- `DONE` **OPS-000 — Oracle host access and identity baseline**
+  - SSH connectivity and hostname-based SSH access confirmed.
+  - ED25519 host fingerprint recorded; host identity matched to known address.
+- `PARTIAL` **OPS-001 — HTTP bootstrap readiness**
+  - Prepared: execution/rollback runbook, Compose file, Nginx configuration,
+    firewall helpers, planned TCP 80/443 network allowance.
+  - Only HTTP 80 intended initially; ACME challenge path handled directly;
+    ordinary requests return 503; Certbot excluded.
+  - Not yet executed: Nginx runtime validation remains a pre-exposure gate; no
+    live exposure/change confirmed yet.
+- `PLANNED` **OPS-002 — TLS / ACME enablement**
+  - ACME validation, certificate acquisition, HTTPS listener, HTTP → HTTPS
+    redirect, renewal validation.
+- `PARTIAL` **OPS-003 — Application deployment contract**
+  - Application side exists: Node 24 baseline, configuration contract, `*_FILE`
+    secret support, API health endpoint, container/runtime documentation.
+  - Remaining infrastructure-side contract alignment is still open.
+- `PLANNED` **OPS-004 — Production database and persistence strategy**
+  - PostgreSQL placement, volume persistence, backup, restore, migration
+    procedure.
+- `PLANNED` **OPS-005 — Deployment and rollback workflow**
+  - Release process, migration ordering, startup ordering, health verification,
+    rollback.
+- `PLANNED` **OPS-006 — Backups, logging and monitoring**
+  - DB backups, restore test, disk monitoring, service health, logs, error
+    visibility, restart strategy.
+- `PLANNED` **OPS-007 — Production readiness review**
+  - Final infrastructure gate before production launch.
+
+## Infrastructure ↔ application dependencies
+
+- Auth development (M2) **does not** require production Oracle deployment.
+- Pre-launch (M21–M22) requires `OPS-002` … `OPS-007` as applicable.
+- `OPS-003` (deployment contract) bridges the two repositories; the
+  application-side declaration lives in `docs/deployment.md`, the authoritative
+  contract remains in
+  `sm-oracle-infra/docs/application-deployment-contract.md`.
+
+External repository: `sm-oracle-infra` (cross-repository reference only).
+
+---
+
 # M2 — Authentication v1
 
 Goal: establish complete customer identity and authentication infrastructure.
@@ -138,7 +206,7 @@ Goal: establish complete customer identity and authentication infrastructure.
 
 ## Authentication foundation
 
-- [ ] Define authentication domain model
+- [ ] A-001 — Define authentication domain model
 - [ ] Separate authentication identity from e-commerce customer domain
 - [ ] Define account/provider model
 - [ ] Define access token strategy
@@ -717,6 +785,11 @@ Do not treat this roadmap as legal advice.
 # M19 — Production Infrastructure
 
 Production infrastructure decisions are intentionally separate from feature development.
+
+> Active workstream tracked as `OPS-*` in the **Infrastructure / Oracle
+> Workstream** section above. That section is the authoritative roadmap for
+> infrastructure status; the items below are the application-visible production
+> concerns and are not a duplicate of `sm-oracle-infra` history.
 
 - [ ] Production architecture
 - [ ] Hosting decision

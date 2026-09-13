@@ -62,6 +62,8 @@ Endpoints (development):
 | `pnpm format` / `pnpm format:check`   | Prettier write / check                                              |
 | `pnpm test`                           | run unit/integration tests (Vitest, API via Supertest)              |
 | `pnpm verify`                         | full local verification gate (format, lint, typecheck, test, build) |
+| `pnpm verify:db`                      | `verify` plus database-backed tests (starts the test DB)            |
+| `pnpm test:db`                        | run database-backed integration tests                               |
 | `pnpm db:up` / `pnpm db:down`         | start/stop local PostgreSQL 18                                      |
 | `pnpm prisma:generate`                | generate Prisma client                                              |
 | `pnpm prisma:migrate:dev` / `:deploy` | dev / deploy migrations                                             |
@@ -82,6 +84,7 @@ require production services.
 - [Product requirements](docs/product-requirements-organized.md) — authoritative functional requirements (working draft)
 - [Product requirements notes](docs/product-requirements-notes.md) — supporting notes
 - [Development](docs/development.md) — local development environment and commands
+- [Configuration](docs/configuration.md) — environment contract, validation, and secrets strategy
 - [Testing](docs/testing.md) — testing strategy and acceptance expectations
 - [Task workflow](docs/task-workflow.md) — task lifecycle, naming, and completion rules
 - [Deployment](docs/deployment.md) — application-side image build/publish

@@ -8,7 +8,8 @@
     "build": "nest build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:db": "vitest run --config vitest.db.config.mts"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.3",
@@ -17,7 +18,8 @@
     "@nestjs/platform-express": "^11.2.3",
     "@smshop/db": "workspace:*",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "zod": "^4.6.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

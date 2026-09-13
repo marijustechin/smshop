@@ -73,14 +73,54 @@ Health-check cadence (interval, timeout, retries, start_period) is owned by
 - Integration tests use a dedicated test database, never production data.
 - No production access or secrets in any test or CI job.
 
+## Database-backed tests
+
+Database-backed tests run against an isolated PostgreSQL database that is
+separate from development, using the real Prisma migration state.
+
+- **Boundary:** the connection comes from `TEST_DATABASE_URL`. The database name
+  must end with `_test`, and it must not match the development `DATABASE_URL`
+  target. `scripts/test-db.mjs` and `apps/api/test/database/helpers.ts` enforce
+  this and **fail closed** on any other target.
+- **Service:** a dedicated Compose service `db-test` (profile `test`, port
+  `5433`, its own volume) so the development database can never be touched. It is
+  not started by `pnpm db:up`.
+- **Migrations:** `prisma migrate deploy` is applied to the test database; tests
+  also assert the `_prisma_migrations` state exists. No `prisma db push`.
+- **Isolation:** `truncateAll` truncates every application table (excluding
+  `_prisma_migrations`) with `RESTART IDENTITY CASCADE` before each test; table
+  names are read from the catalog so new models are covered automatically.
+- **Minimal proof:** `apps/api/test/database/database.db-spec.ts` asserts the
+  connection is the test database, Prisma operates, migration state is present,
+  and truncation succeeds.
+
+Commands:
+
+| Command                | Purpose                                                   |
+| ---------------------- | --------------------------------------------------------- |
+| `pnpm db:test:up`      | start the isolated test database (Compose profile `test`) |
+| `pnpm db:test:migrate` | apply migrations to the test database                     |
+| `pnpm test:db`         | run database-backed integration tests                     |
+| `pnpm db:test:reset`   | reset the test database and re-apply migrations           |
+| `pnpm db:test:down`    | stop the test database and remove its volume              |
+| `pnpm verify:db`       | start test DB → migrate → `pnpm verify` → DB tests        |
+
+`pnpm verify` deliberately stays service-free and deterministic, so it does not
+include database-backed tests. Database-affecting work must also pass
+`pnpm verify:db` locally and the DB-backed CI gate.
+
 ## CI (implemented)
 
 - `.github/workflows/ci.yml` runs on pushes and pull requests to `main`.
 - It sets up Node.js 24 from `.nvmrc` and the pinned pnpm version from
   `package.json`, installs with `pnpm install --frozen-lockfile`, then runs
-  `pnpm verify`.
-- CI does not duplicate the gate: it calls the same root script used locally, so
-  local `pnpm verify` and CI verification are equivalent.
+  `pnpm verify:ci`.
+- `pnpm verify:ci` applies migrations to the CI PostgreSQL service, runs
+  `pnpm verify`, then runs the database-backed tests. CI provides an ephemeral
+  PostgreSQL 18 service (`smshop_test` / `smshop_test`, isolated credentials,
+  deterministic name, health check); no production secrets are used.
+- CI does not duplicate the gate internals: it calls the same root scripts used
+  locally.
 - The workflow is verification-only with `contents: read` permissions; it uses no
   services, secrets, or deployment steps.
 

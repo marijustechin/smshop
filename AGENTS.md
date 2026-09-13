@@ -79,7 +79,8 @@ documentation.
 
 - Run `pnpm verify` before finishing work; it is the authoritative local
   verification gate (format, lint, typecheck, test, build). Work is not complete
-  until it passes. Commands are documented in `docs/development.md` and
+  until it passes. Work that touches persistence must also pass `pnpm verify:db`
+  (database-backed tests). Commands are documented in `docs/development.md` and
   `docs/testing.md`.
 - No GitHub Actions implementation until it is listed in `tasks/TODO.md`.
 - Product implementation is permitted only when the relevant requirements are

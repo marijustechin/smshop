@@ -1,12 +1,12 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { Logger, RequestMethod } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
-
-const port = Number(process.env.PORT ?? 3001);
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
+  const port = app.get(ConfigService).getOrThrow<number>('PORT');
 
   app.setGlobalPrefix('api', {
     exclude: [{ path: 'health/ready', method: RequestMethod.GET }],

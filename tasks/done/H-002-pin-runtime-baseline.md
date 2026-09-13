@@ -97,4 +97,4 @@ enforced at runtime.
 ## Completion
 
 Completed date: 2026-09-13
-Commit: not committed (pending explicit request)
+Commit: 7e4801d07fe56dd4d86b0cc8ae815dd8ec7f2734 — "H-004: establish project harness baseline"
