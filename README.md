@@ -86,6 +86,7 @@ require production services.
 - [Product requirements notes](docs/product-requirements-notes.md) — supporting notes
 - [Development](docs/development.md) — local development environment and commands
 - [Configuration](docs/configuration.md) — environment contract, validation, and secrets strategy
+- [Email](docs/email.md) — provider-independent SMTP email infrastructure
 - [Testing](docs/testing.md) — testing strategy and acceptance expectations
 - [Task workflow](docs/task-workflow.md) — task lifecycle, naming, and completion rules
 - [Deployment](docs/deployment.md) — application-side image build/publish

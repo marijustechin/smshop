@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "vitest run",
-    "test:db": "vitest run --config vitest.db.config.mts"
+    "test:db": "vitest run --config vitest.db.config.mts",
+    "mail:smoke": "node scripts/mail-smoke.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.2.3",
@@ -20,6 +21,7 @@
     "@node-rs/argon2": "2.2.1",
     "@smshop/db": "workspace:*",
     "nestjs-zod": "5.5.0",
+    "nodemailer": "10.0.9",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "zod": "^4.6.2"

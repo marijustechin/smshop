@@ -38,25 +38,26 @@ scattering `process.env` access.
 means the name is part of the contract but becomes mandatory only when its
 consumer (Auth v1) is implemented; it is validated only when present.
 
-| Category        | Variable               | Required now | Secret | Notes                                          |
-| --------------- | ---------------------- | ------------ | ------ | ---------------------------------------------- |
-| Application     | `NODE_ENV`             | no (default) | no     | `development` \| `test` \| `production`        |
-| Application     | `PORT`                 | no (default) | no     | Defaults to `3001`                             |
-| Database        | `DATABASE_URL`         | **yes**      | yes    | `postgres://` or `postgresql://`; no fallback  |
-| Origins         | `WEB_ORIGIN`           | reserved     | no     | Browser origin; CORS / OAuth redirects / links |
-| Origins         | `API_ORIGIN`           | reserved     | no     | Public API origin; email links / callbacks     |
-| Access token    | `JWT_ACCESS_SECRET`    | reserved     | yes    | Min 32 chars when present                      |
-| Access token    | `JWT_ACCESS_TTL`       | reserved     | no     | e.g. `15m`                                     |
-| Refresh/session | `JWT_REFRESH_SECRET`   | reserved     | yes    | Min 32 chars when present                      |
-| Refresh/session | `JWT_REFRESH_TTL`      | reserved     | no     | e.g. `30d`                                     |
-| Email           | `SMTP_HOST`            | reserved     | no     |                                                |
-| Email           | `SMTP_PORT`            | reserved     | no     | 1–65535 when present                           |
-| Email           | `SMTP_USER`            | reserved     | no     |                                                |
-| Email           | `SMTP_PASSWORD`        | reserved     | yes    |                                                |
-| Email           | `MAIL_FROM`            | reserved     | no     | Must be a valid email when present             |
-| Google OAuth    | `GOOGLE_CLIENT_ID`     | reserved     | no     |                                                |
-| Google OAuth    | `GOOGLE_CLIENT_SECRET` | reserved     | yes    |                                                |
-| Google OAuth    | `GOOGLE_CALLBACK_URL`  | reserved     | no     | Valid URL when present                         |
+| Category        | Variable               | Required now | Secret | Notes                                             |
+| --------------- | ---------------------- | ------------ | ------ | ------------------------------------------------- |
+| Application     | `NODE_ENV`             | no (default) | no     | `development` \| `test` \| `production`           |
+| Application     | `PORT`                 | no (default) | no     | Defaults to `3001`                                |
+| Database        | `DATABASE_URL`         | **yes**      | yes    | `postgres://` or `postgresql://`; no fallback     |
+| Origins         | `WEB_ORIGIN`           | reserved     | no     | Browser origin; CORS / OAuth redirects / links    |
+| Origins         | `API_ORIGIN`           | reserved     | no     | Public API origin; email links / callbacks        |
+| Access token    | `JWT_ACCESS_SECRET`    | reserved     | yes    | Min 32 chars when present                         |
+| Access token    | `JWT_ACCESS_TTL`       | reserved     | no     | e.g. `15m`                                        |
+| Refresh/session | `JWT_REFRESH_SECRET`   | reserved     | yes    | Min 32 chars when present                         |
+| Refresh/session | `JWT_REFRESH_TTL`      | reserved     | no     | e.g. `30d`                                        |
+| Email           | `SMTP_HOST`            | grouped      | no     | SMTP group is all-or-none (see below)             |
+| Email           | `SMTP_PORT`            | grouped      | no     | 1–65535; requires the whole SMTP block            |
+| Email           | `SMTP_SECURE`          | grouped      | no     | Explicit `"true"`/`"false"`; not inferred by port |
+| Email           | `SMTP_USER`            | grouped      | no     |                                                   |
+| Email           | `SMTP_PASSWORD`        | grouped      | yes    | Supports `SMTP_PASSWORD_FILE`                     |
+| Email           | `MAIL_FROM`            | grouped      | no     | Bare email or `Name <email>` sender               |
+| Google OAuth    | `GOOGLE_CLIENT_ID`     | reserved     | no     |                                                   |
+| Google OAuth    | `GOOGLE_CLIENT_SECRET` | reserved     | yes    |                                                   |
+| Google OAuth    | `GOOGLE_CALLBACK_URL`  | reserved     | no     | Valid URL when present                            |
 
 PostgreSQL Compose values (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`,
 `POSTGRES_PORT`) are development-only and consumed by `docker-compose.yml`, not
@@ -77,10 +78,16 @@ required at application startup. They are consumed only by the test tooling:
 
 - **Required now:** `DATABASE_URL`. `NODE_ENV` and `PORT` have safe non-secret
   defaults.
-- **Reserved for Auth v1:** `WEB_ORIGIN`, `API_ORIGIN`, the `JWT_*`, `SMTP_*`,
-  `MAIL_FROM`, and `GOOGLE_*` variables. They are accepted and format-checked
-  today but do not block the current scaffold. Promoting one to required is a
-  one-line schema change.
+- **SMTP group (all-or-none):** if any of `SMTP_HOST`, `SMTP_PORT`,
+  `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` is set, all of them
+  are required and startup fails fast otherwise. If none is set, mail is disabled
+  and startup still succeeds — so CI and tests need no SMTP credentials. Empty
+  values are treated as unset. `SMTP_SECURE` is parsed explicitly (`"true"` /
+  `"false"`); security is never inferred from the port. See `docs/email.md`.
+- **Reserved for Auth v1:** `WEB_ORIGIN`, `API_ORIGIN`, the `JWT_*`, and
+  `GOOGLE_*` variables. They are accepted and format-checked today but do not
+  block the current scaffold. Promoting one to required is a one-line schema
+  change.
 
 ## Secrets strategy
 

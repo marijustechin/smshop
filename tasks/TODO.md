@@ -21,12 +21,12 @@ This roadmap may evolve as product decisions are made.
 **Current milestone:** M2 — Authentication v1.
 
 **Current task:** none — `tasks/current/` is empty. The next application task is
-**A-003 — Email infrastructure** (not started).
+**A-004 — Email verification** (not started).
 
 **Recently completed:** H-000–H-009; A-001 authentication domain model; A-002
-credentials registration and password hashing.
+credentials registration and password hashing; A-003 email infrastructure.
 
-**Next application task:** A-003 — Email infrastructure.
+**Next application task:** A-004 — Email verification.
 
 **Parallel workstream:** production infrastructure / Oracle (`sm-oracle-infra`),
 tracked as `OPS-*` below.
@@ -120,7 +120,7 @@ The Harness baseline is complete. Application development proceeds under M2.
 
 - [x] A-001 — Establish the authentication domain model
 - [x] A-002 — Credentials registration and password hashing
-- [ ] A-003 — Email infrastructure
+- [x] A-003 — Email infrastructure
 - [ ] A-004 — Email verification
 - [ ] A-005 — Login, access token, refresh session and logout
 - [ ] A-006 — Password recovery
@@ -617,7 +617,7 @@ Goal: establish reliable order lifecycle management.
 
 Goal: create consistent transactional communication.
 
-- [ ] Email infrastructure
+- [x] Email infrastructure (A-003 — provider-independent SMTP)
 - [ ] Shared email layout
 - [ ] Email branding
 - [ ] Registration verification

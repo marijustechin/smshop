@@ -21,6 +21,7 @@
     "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "verify:db": "pnpm db:test:up && pnpm verify:ci",
     "verify:ci": "pnpm db:test:migrate && pnpm verify && pnpm test:db",
+    "mail:smoke": "pnpm --filter @smshop/db build && pnpm --filter @smshop/api build && node apps/api/scripts/mail-smoke.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:up": "docker compose up -d",
