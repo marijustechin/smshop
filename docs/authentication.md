@@ -219,11 +219,19 @@ of the same normalized email result in exactly one identity.
 `201 Created`:
 
 ```json
-{ "id": "<uuid>", "email": "user@example.com", "emailVerified": false }
+{
+  "id": "<uuid>",
+  "email": "user@example.com",
+  "emailVerified": false,
+  "verificationEmailSent": true
+}
 ```
 
 The response is intentionally small. `passwordHash`, account internals, session
-data, and raw Prisma objects are never returned; no tokens are issued here.
+data, raw verification token, and raw Prisma objects are never returned; no
+tokens are issued here. `verificationEmailSent` is `false` when the verification
+email could not be delivered after the account was committed (mail failure or
+missing `WEB_ORIGIN`); the account still exists and can be verified via resend.
 
 ### Errors
 
@@ -232,6 +240,73 @@ data, and raw Prisma objects are never returned; no tokens are issued here.
 | `400`  | Request validation failure (email/password/unknown) |
 | `409`  | Email already in use                                |
 | `500`  | Unexpected server/database failure (no internals)   |
+
+## Email verification (A-004)
+
+Verification is provider-independent: Auth sends through `MailService`
+(`docs/email.md`); no SMTP/provider code exists in Auth.
+
+### Lifecycle
+
+```text
+register → transaction { User + CREDENTIALS AuthAccount + hashed token }
+         → commit
+         → send verification email (after commit)
+→ user clicks link (${WEB_ORIGIN}/patvirtinti-el-pasta?token=<raw>)
+→ POST /api/auth/verify-email { token }
+→ hash token → find → validate → transaction { set emailVerifiedAt, consume token, invalidate remaining }
+```
+
+A DB failure sends no email; an email-delivery failure leaves a committed,
+resendable account.
+
+### Token generation and storage
+
+- **Generation:** 32 random bytes from Node `crypto.randomBytes`, encoded
+  `base64url` (high-entropy public secret; not a UUID).
+- **Storage:** only the SHA-256 hex hash (`tokenHash`) is persisted. The raw
+  token exists transiently to build the email link and is never stored or
+  returned. SHA-256 (not Argon2) is used because these are random secrets, not
+  human passwords.
+- **TTL:** 24 hours (`EMAIL_VERIFICATION_TTL_HOURS`), set as
+  `expiresAt = now + TTL`; not hard-coded in the flow.
+- **Single active token:** issuing a new token consumes all previously active
+  tokens for the user; verification also consumes the used token and any
+  remaining active tokens.
+
+### API
+
+| Endpoint                             | Body        | Success                    |
+| ------------------------------------ | ----------- | -------------------------- |
+| `POST /api/auth/verify-email`        | `{ token }` | `200 { "verified": true }` |
+| `POST /api/auth/resend-verification` | `{ email }` | `202` generic message      |
+
+`verify-email` errors (distinct, sanitized):
+
+| Status | Meaning                |
+| ------ | ---------------------- |
+| `400`  | Missing/invalid token  |
+| `410`  | Expired token          |
+| `409`  | Already-consumed token |
+
+Verification is atomic (user update + token consumption + invalidation in one
+transaction). Using an already-consumed token returns `409`; verification does
+not mutate `emailVerifiedAt` repeatedly.
+
+### Resend semantics
+
+- Input email is normalized (`trim` + lower-case) with the same policy as
+  registration.
+- The response is **always** the same generic `202` for any syntactically valid
+  email — `If an eligible account exists, a verification email will be sent.` —
+  so account existence/verification state is never revealed.
+- Internally: unknown user → no send; already verified → no send; Google-only
+  account (no `CREDENTIALS`) → no send; unverified credentials account → rotate
+  tokens and send.
+- If the resend email fails, the response remains the same generic `202`
+  (enumeration protection takes precedence over signalling a transient delivery
+  failure) and the failure is logged server-side. Token rotation still occurs so
+  a later resend can succeed. See `docs/email.md` for SMTP details.
 
 ## Tests
 
@@ -242,3 +317,11 @@ and password hashing by
 API against real PostgreSQL: account creation, atomicity, normalization, email
 preservation, hash verification, validation failures, duplicate handling, and
 concurrent-registration race behaviour.
+
+`apps/api/test/database/auth-email-verification.db-spec.ts` covers the
+verification flow against real PostgreSQL: successful atomic verification,
+remaining-token invalidation, invalid/expired/consumed rejection, resend
+rotation, unknown/verified/Google-only no-send, enumeration uniformity, and
+mail-failure behaviour. Token/email unit tests live under
+`apps/api/src/modules/auth/email-verification/`. Automated tests never contact
+real SMTP (the mail transport is stubbed).

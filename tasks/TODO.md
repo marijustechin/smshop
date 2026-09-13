@@ -21,12 +21,13 @@ This roadmap may evolve as product decisions are made.
 **Current milestone:** M2 — Authentication v1.
 
 **Current task:** none — `tasks/current/` is empty. The next application task is
-**A-004 — Email verification** (not started).
+**A-005 — Login, access token, refresh session and logout** (not started).
 
 **Recently completed:** H-000–H-009; A-001 authentication domain model; A-002
-credentials registration and password hashing; A-003 email infrastructure.
+credentials registration and password hashing; A-003 email infrastructure; A-004
+email verification.
 
-**Next application task:** A-004 — Email verification.
+**Next application task:** A-005 — Login, access token, refresh session and logout.
 
 **Parallel workstream:** production infrastructure / Oracle (`sm-oracle-infra`),
 tracked as `OPS-*` below.
@@ -121,7 +122,7 @@ The Harness baseline is complete. Application development proceeds under M2.
 - [x] A-001 — Establish the authentication domain model
 - [x] A-002 — Credentials registration and password hashing
 - [x] A-003 — Email infrastructure
-- [ ] A-004 — Email verification
+- [x] A-004 — Email verification
 - [ ] A-005 — Login, access token, refresh session and logout
 - [ ] A-006 — Password recovery
 - [ ] A-007 — Google authentication and account linking
@@ -245,15 +246,15 @@ Goal: establish complete customer identity and authentication infrastructure.
 
 ## Email verification
 
-- [ ] Email verification token model
-- [ ] Token expiration
-- [ ] Verification email
-- [ ] Verification endpoint
+- [x] Email verification token model (A-001)
+- [x] Token expiration (A-004 — 24h TTL)
+- [x] Verification email (A-004 — Lithuanian, via MailService)
+- [x] Verification endpoint (A-004 — `POST /api/auth/verify-email`)
 - [ ] Verification frontend
-- [ ] Resend verification
-- [ ] Invalid token handling
-- [ ] Expired token handling
-- [ ] Already-used token handling
+- [x] Resend verification (A-004 — `POST /api/auth/resend-verification`)
+- [x] Invalid token handling (A-004)
+- [x] Expired token handling (A-004)
+- [x] Already-used token handling (A-004)
 
 ## Login
 

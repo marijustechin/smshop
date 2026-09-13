@@ -1,13 +1,12 @@
-import { INestApplication, RequestMethod } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
-import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { AppModule } from '../../src/app.module.js';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrismaService } from '../../src/modules/prisma/prisma.service.js';
 import { Argon2PasswordHasher } from '../../src/modules/auth/password/argon2-password-hasher.js';
 import { AuthService } from '../../src/modules/auth/auth.service.js';
+import { EmailVerificationService } from '../../src/modules/auth/email-verification/email-verification.service.js';
 import { createTestPrismaClient, truncateAll } from './helpers.js';
+import { createAuthTestApp } from './auth-app.js';
 
 const PASSWORD = 'correct horse battery staple';
 const EMAIL = 'customer@example.com';
@@ -15,20 +14,11 @@ const EMAIL = 'customer@example.com';
 describe('Credentials registration (real PostgreSQL)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  const sendMail = vi.fn();
 
   beforeAll(async () => {
     prisma = createTestPrismaClient() as unknown as PrismaService;
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-      .overrideProvider(PrismaService)
-      .useValue(prisma)
-      .compile();
-
-    app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
-    app.setGlobalPrefix('api', {
-      exclude: [{ path: 'health/ready', method: RequestMethod.GET }],
-    });
-    await app.init();
-    await (app.getHttpAdapter().getInstance() as { ready: () => Promise<void> }).ready();
+    ({ app } = await createAuthTestApp(prisma, sendMail));
   });
 
   afterAll(async () => {
@@ -37,6 +27,8 @@ describe('Credentials registration (real PostgreSQL)', () => {
   });
 
   beforeEach(async () => {
+    sendMail.mockReset();
+    sendMail.mockResolvedValue(undefined);
     await truncateAll(prisma);
   });
 
@@ -53,9 +45,11 @@ describe('Credentials registration (real PostgreSQL)', () => {
         id: expect.any(String),
         email: EMAIL,
         emailVerified: false,
+        verificationEmailSent: true,
       });
       expect(res.body).not.toHaveProperty('password');
       expect(res.body).not.toHaveProperty('passwordHash');
+      expect(res.body).not.toHaveProperty('token');
 
       const user = await prisma.user.findUniqueOrThrow({
         where: { emailNormalized: EMAIL },
@@ -79,6 +73,45 @@ describe('Credentials registration (real PostgreSQL)', () => {
       );
     });
 
+    it('issues one hashed verification token that expires in the future', async () => {
+      await register({ email: EMAIL, password: PASSWORD });
+
+      const user = await prisma.user.findUniqueOrThrow({ where: { emailNormalized: EMAIL } });
+      const tokens = await prisma.emailVerificationToken.findMany({ where: { userId: user.id } });
+
+      expect(tokens).toHaveLength(1);
+      const token = tokens[0];
+      expect(token.consumedAt).toBeNull();
+      expect(token.tokenHash).toMatch(/^[0-9a-f]{64}$/);
+      expect(token.expiresAt.getTime()).toBeGreaterThan(Date.now());
+    });
+
+    it('sends the verification email through MailService after commit', async () => {
+      await register({ email: EMAIL, password: PASSWORD });
+
+      expect(sendMail).toHaveBeenCalledTimes(1);
+      const message = sendMail.mock.calls[0][0] as {
+        to: string;
+        subject: string;
+        text: string;
+        html: string;
+      };
+      expect(message.to).toBe(EMAIL);
+      expect(message.subject).toBe('Patvirtinkite savo el. pašto adresą');
+      expect(message.text).toContain('/patvirtinti-el-pasta?token=');
+      expect(message.html).toContain('/patvirtinti-el-pasta?token=');
+
+      // The raw token in the email is not the persisted hash.
+      const rawToken = new URL(message.text.match(/http\S+/)![0]).searchParams.get(
+        'token',
+      ) as string;
+      const user = await prisma.user.findUniqueOrThrow({ where: { emailNormalized: EMAIL } });
+      const stored = await prisma.emailVerificationToken.findFirstOrThrow({
+        where: { userId: user.id },
+      });
+      expect(stored.tokenHash).not.toBe(rawToken);
+    });
+
     it('normalizes the stored email while preserving the original casing', async () => {
       const res = await register({ email: '  Customer@Example.COM  ', password: PASSWORD });
 
@@ -88,6 +121,16 @@ describe('Credentials registration (real PostgreSQL)', () => {
       });
       expect(user.email).toBe('Customer@Example.COM');
       expect(user.emailNormalized).toBe('customer@example.com');
+    });
+
+    it('keeps the account committed but reports non-delivery when mail fails', async () => {
+      sendMail.mockRejectedValue(new Error('smtp down'));
+
+      const res = await register({ email: EMAIL, password: PASSWORD });
+
+      expect(res.status).toBe(201);
+      expect(res.body.verificationEmailSent).toBe(false);
+      await expect(prisma.user.count({ where: { emailNormalized: EMAIL } })).resolves.toBe(1);
     });
   });
 
@@ -121,6 +164,7 @@ describe('Credentials registration (real PostgreSQL)', () => {
 
       await expect(prisma.user.count()).resolves.toBe(1);
       await expect(prisma.authAccount.count()).resolves.toBe(1);
+      await expect(prisma.emailVerificationToken.count()).resolves.toBe(1);
     });
 
     it('rejects a duplicate differing only by case and whitespace with 409', async () => {
@@ -143,6 +187,7 @@ describe('Credentials registration (real PostgreSQL)', () => {
       expect(statuses).toEqual([201, 409]);
       await expect(prisma.user.count()).resolves.toBe(1);
       await expect(prisma.authAccount.count()).resolves.toBe(1);
+      await expect(prisma.emailVerificationToken.count()).resolves.toBe(1);
     });
   });
 
@@ -164,7 +209,8 @@ describe('Credentials registration (real PostgreSQL)', () => {
           }),
       } as unknown as PrismaService;
 
-      const service = new AuthService(failingPrisma, new Argon2PasswordHasher());
+      const emailVerification = {} as EmailVerificationService;
+      const service = new AuthService(failingPrisma, new Argon2PasswordHasher(), emailVerification);
 
       await expect(service.register({ email: EMAIL, password: PASSWORD })).rejects.toThrow();
       await expect(prisma.user.count()).resolves.toBe(0);
