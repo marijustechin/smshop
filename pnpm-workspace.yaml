@@ -8,3 +8,6 @@ allowBuilds:
   '@swc/core': true
   prisma: true
   unrs-resolver: true
+
+minimumReleaseAgeExclude:
+  - zod@4.6.4

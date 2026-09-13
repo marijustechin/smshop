@@ -21,20 +21,19 @@ This roadmap may evolve as product decisions are made.
 **Current milestone:** M2 — Authentication v1.
 
 **Current task:** none — `tasks/current/` is empty. The next application task is
-**A-008 — Frontend authentication flows** (not started).
+**A-009 — Authentication security hardening** (not started).
 
-**Recently completed:** H-000–H-009; A-001–A-007 (auth domain, registration,
+**Recently completed:** H-000–H-009; A-001–A-008 (auth domain, registration,
 email, verification, login/session lifecycle, password recovery, Google
-authentication).
+authentication, frontend auth flows).
 
-**Next application task:** A-008 — Frontend authentication flows.
+**Next application task:** A-009 — Authentication security hardening.
 
 **Parallel workstream:** production infrastructure / Oracle (`sm-oracle-infra`),
 tracked as `OPS-*` below.
 
-**Commit state:** H-000–H-004 are committed at `7e4801d`. H-005–H-007 are
-committed at `1677ca9`. The technology-selection philosophy and H-008 changes are
-not yet committed (pending explicit authorization).
+**Commit state:** all work through A-007 is committed (latest `5627e47`); A-008
+frontend auth flows are not yet committed (pending explicit authorization).
 
 **Infrastructure vs application:** Auth development does not depend on
 production Oracle deployment. Production infrastructure runs as a parallel
@@ -126,7 +125,7 @@ The Harness baseline is complete. Application development proceeds under M2.
 - [x] A-005 — Login, access token, refresh session and logout
 - [x] A-006 — Password recovery
 - [x] A-007 — Google authentication and safe account linking
-- [ ] A-008 — Frontend Auth flows
+- [x] A-008 — Frontend authentication flows
 - [ ] A-009 — Auth security hardening
 - [ ] A-010 — Auth v1 milestone verification
 
@@ -241,7 +240,7 @@ Goal: establish complete customer identity and authentication infrastructure.
 - [x] A-002 — Registration API (`POST /api/auth/register`)
 - [x] A-002 — Registration validation
 - [x] A-002 — Duplicate email handling
-- [ ] Registration frontend
+- [x] Registration frontend (A-008)
 - [ ] Registration success/error states
 
 ## Email verification
@@ -250,7 +249,7 @@ Goal: establish complete customer identity and authentication infrastructure.
 - [x] Token expiration (A-004 — 24h TTL)
 - [x] Verification email (A-004 — Lithuanian, via MailService)
 - [x] Verification endpoint (A-004 — `POST /api/auth/verify-email`)
-- [ ] Verification frontend
+- [x] Verification frontend (A-008)
 - [x] Resend verification (A-004 — `POST /api/auth/resend-verification`)
 - [x] Invalid token handling (A-004)
 - [x] Expired token handling (A-004)
@@ -259,7 +258,7 @@ Goal: establish complete customer identity and authentication infrastructure.
 ## Login
 
 - [x] Credentials login API (A-005)
-- [ ] Login frontend
+- [x] Login frontend (A-008)
 - [x] Access token flow (A-005)
 - [x] Refresh token flow (A-005)
 - [x] Logout (A-005)
@@ -271,7 +270,7 @@ Goal: establish complete customer identity and authentication infrastructure.
 - [ ] Forgot-password frontend
 - [x] Reset token (A-006)
 - [x] Reset email (A-006)
-- [ ] Reset-password frontend
+- [x] Reset-password frontend (A-008)
 - [x] Password update (A-006)
 - [x] Token expiration (A-006 — 1h)
 - [x] Single-use reset tokens (A-006)
@@ -285,11 +284,11 @@ Goal: establish complete customer identity and authentication infrastructure.
 - [x] OAuth callback handling (A-007)
 - [x] Account linking strategy (A-007 — explicit-link only; collisions return `account-link-required`)
 - [x] Existing credentials-account collision handling (A-007 — never auto-links)
-- [ ] Google authentication frontend
+- [x] Google authentication frontend (A-008)
 
 ## Account area
 
-- [ ] `/paskyra`
+- [x] `/paskyra` (A-008 auth/test page)
 - [ ] Basic account information
 - [ ] Email verification state
 - [ ] Logout action

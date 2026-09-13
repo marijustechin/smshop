@@ -82,6 +82,7 @@ require production services.
 
 - [Architecture](docs/architecture.md) — application boundaries and repository structure
 - [Authentication](docs/authentication.md) — authentication persistence model and identity/customer boundary
+- [Frontend authentication](docs/frontend-authentication.md) — Lithuanian auth routes, session bootstrap, memory-only token
 - [Product requirements](docs/product-requirements-organized.md) — authoritative functional requirements (working draft)
 - [Product requirements notes](docs/product-requirements-notes.md) — supporting notes
 - [Development](docs/development.md) — local development environment and commands

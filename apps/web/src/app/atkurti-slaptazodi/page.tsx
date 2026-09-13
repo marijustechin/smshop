@@ -1,0 +1,25 @@
+import { Suspense } from 'react';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { AuthShell } from '@/components/auth-shell';
+import { ResetPasswordForm } from './reset-password-form';
+
+export const metadata: Metadata = { title: 'Atkurti slaptažodį — Šokolado meistrai' };
+
+export default function ResetPasswordPage() {
+  return (
+    <AuthShell
+      title="Atkurti slaptažodį"
+      description="Įveskite naują slaptažodį."
+      footer={
+        <Link href="/prisijungti" className="text-chocolate underline-offset-2 hover:underline">
+          Grįžti į prisijungimą
+        </Link>
+      }
+    >
+      <Suspense fallback={<p className="text-sm text-muted">Kraunama…</p>}>
+        <ResetPasswordForm />
+      </Suspense>
+    </AuthShell>
+  );
+}
