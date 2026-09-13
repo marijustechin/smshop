@@ -18,19 +18,15 @@ This roadmap may evolve as product decisions are made.
 
 # Current State
 
-**Current milestone:** M2 — Authentication v1 (A-001 authentication domain model
-complete).
+**Current milestone:** M2 — Authentication v1.
 
 **Current task:** none — `tasks/current/` is empty. The next application task is
-**A-002 — Credentials registration and password hashing** (not started).
+**A-003 — Email infrastructure** (not started).
 
-**Recently completed:** H-000 repository readiness audit, H-001 verification
-gate, H-002 runtime baseline, H-003 task workflow, H-004 CI workflow, H-005 Auth
-environment & validation baseline, H-006 test database strategy, H-007
-infrastructure workstream integration, H-008 backend stack alignment, A-001
-authentication domain model.
+**Recently completed:** H-000–H-008; A-001 authentication domain model; A-002
+credentials registration and password hashing.
 
-**Next application task:** A-002 — Credentials registration and password hashing.
+**Next application task:** A-003 — Email infrastructure.
 
 **Parallel workstream:** production infrastructure / Oracle (`sm-oracle-infra`),
 tracked as `OPS-*` below.
@@ -122,7 +118,15 @@ The Harness baseline is complete. Application development proceeds under M2.
 ## Application tasks
 
 - [x] A-001 — Establish the authentication domain model
-- [ ] A-002 — Credentials registration and password hashing
+- [x] A-002 — Credentials registration and password hashing
+- [ ] A-003 — Email infrastructure
+- [ ] A-004 — Email verification
+- [ ] A-005 — Login, access token, refresh session and logout
+- [ ] A-006 — Password recovery
+- [ ] A-007 — Google authentication and account linking
+- [ ] A-008 — Frontend Auth flows
+- [ ] A-009 — Auth security hardening
+- [ ] A-010 — Auth v1 milestone verification
 
 Milestone M2 — Authentication v1 remains the current application milestone; see
 its checklist below for the full scope.
@@ -221,13 +225,13 @@ Goal: establish complete customer identity and authentication infrastructure.
 - [ ] Define access token strategy
 - [ ] Define refresh token strategy
 - [ ] Define logout / token invalidation strategy
-- [ ] Implement secure password hashing
+- [x] Implement secure password hashing (A-002)
 
 ## Credentials registration
 
-- [ ] Registration API
-- [ ] Registration validation
-- [ ] Duplicate email handling
+- [x] A-002 — Registration API (`POST /api/auth/register`)
+- [x] A-002 — Registration validation
+- [x] A-002 — Duplicate email handling
 - [ ] Registration frontend
 - [ ] Registration success/error states
 

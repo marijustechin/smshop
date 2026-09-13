@@ -143,9 +143,102 @@ reset tokens are never interchangeable.
 authorization state. Also omitted to avoid speculative data collection:
 session `userAgent`/`ipAddress` (add only when a concrete requirement exists).
 
+## Credentials registration (A-002)
+
+`POST /api/auth/register` creates a credentials identity. Only login,
+access-token, refresh, logout, email, reset, and OAuth flows remain
+unimplemented.
+
+### Request
+
+```json
+{ "email": "user@example.com", "password": "..." }
+```
+
+Body validation uses the project's Zod pipeline (global `ZodValidationPipe`,
+`nestjs-zod`) with a `.strict()` schema: unknown fields are **rejected** (400),
+not stripped. This keeps a single schema-validation approach (the same Zod used
+for configuration).
+
+- **Email:** required string, trimmed, valid format, maximum 254 characters.
+  Original casing is preserved on `User.email`; `user@example.com`.
+- **Password:** required string, **12–128 characters**. No composition rules
+  (uppercase/digit/symbol) and no truncation — passphrases are accepted. The
+  upper bound limits hashing resource abuse.
+
+### Flow
+
+```text
+validate (DTO)
+→ normalize email (trim + lowercase)
+→ hash password (PasswordHasher / Argon2id)
+→ transaction:
+     create User (emailVerifiedAt = null)
+     create CREDENTIALS AuthAccount
+→ return safe registration response
+```
+
+`User` and `AuthAccount` are created in a single Prisma transaction, so a
+failure never leaves a partial identity.
+
+### Credentials account
+
+```text
+provider          = CREDENTIALS
+providerAccountId = emailNormalized
+passwordHash      = Argon2id digest (never plaintext)
+```
+
+`passwordHash` is only ever set for `CREDENTIALS`. The database schema cannot
+express this cross-column rule (Prisma does not model `CHECK` constraints), so
+the invariant is enforced in application code (`AuthService`) and covered by
+tests. A database `CHECK` constraint is deliberately deferred to avoid a
+schema hack not tracked by Prisma.
+
+### Duplicate email
+
+The normalized-email unique constraint is the authoritative protection — there
+is no check-then-insert race. A Prisma `P2002` unique violation maps to
+`409 Conflict` with the message `Email already in use`; no database constraint
+names, Prisma internals, or stack traces are exposed. Concurrent registrations
+of the same normalized email result in exactly one identity.
+
+### Password hashing
+
+- **Algorithm:** Argon2id (`@node-rs/argon2`).
+- **Parameters (baseline, OWASP minimum):** memory `19456` KiB (19 MiB), time
+  cost `2`, parallelism `1`.
+- Digests embed the algorithm and parameters
+  (`$argon2id$v=19$m=19456,t=2,p=1$...`), so `verify` can still check older
+  digests after parameters are raised later.
+- Hashing is behind a `PasswordHasher` interface (`PASSWORD_HASHER` token), so
+  the Auth domain never depends on the hashing library directly.
+
+### Response
+
+`201 Created`:
+
+```json
+{ "id": "<uuid>", "email": "user@example.com", "emailVerified": false }
+```
+
+The response is intentionally small. `passwordHash`, account internals, session
+data, and raw Prisma objects are never returned; no tokens are issued here.
+
+### Errors
+
+| Status | Meaning                                             |
+| ------ | --------------------------------------------------- |
+| `400`  | Request validation failure (email/password/unknown) |
+| `409`  | Email already in use                                |
+| `500`  | Unexpected server/database failure (no internals)   |
+
 ## Tests
 
 Schema invariants are covered by `apps/api/test/database/auth-schema.db-spec.ts`
-against real PostgreSQL: normalized-email uniqueness, credentials/Google account
-creation, provider uniqueness, session creation/hash uniqueness/revocation
-queries, token creation/uniqueness, and cascade deletion.
+and password hashing by
+`apps/api/src/auth/password/argon2-password-hasher.spec.ts`.
+`apps/api/test/database/auth-registration.db-spec.ts` covers the registration
+API against real PostgreSQL: account creation, atomicity, normalization, email
+preservation, hash verification, validation failures, duplicate handling, and
+concurrent-registration race behaviour.
