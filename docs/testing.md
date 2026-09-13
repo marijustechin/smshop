@@ -43,10 +43,10 @@ re-export/singleton); add Vitest there when it gains logic.
 ## Current foundation tests
 
 - `apps/web/src/app/health/ready/route.test.ts` — `GET /health/ready` returns 200.
-- `apps/api/src/health.controller.spec.ts` — readiness logic: DB query success →
-  ok; failure → `ServiceUnavailableException`.
+- `apps/api/src/modules/health/health.controller.spec.ts` — readiness logic: DB
+  query success → ok; failure → `ServiceUnavailableException`.
 - `apps/api/test/health.e2e-spec.ts` — over HTTP (Supertest): `/health/ready`
-  200/503, `/api` 200, `/api/health/ready` 404 (readiness is not under `/api`).
+  200/503, `/api/health/ready` 404 (readiness is not under `/api`).
 
 Run them with `pnpm test`. The full project verification gate, which also runs
 lint, typecheck, and the production build, is `pnpm verify` (see

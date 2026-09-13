@@ -1,5 +1,5 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma.service.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 import type { PasswordHasher } from './password/password-hasher.js';
 import { PASSWORD_HASHER } from './password/password-hasher.js';
 

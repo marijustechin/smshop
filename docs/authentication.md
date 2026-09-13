@@ -237,7 +237,7 @@ data, and raw Prisma objects are never returned; no tokens are issued here.
 
 Schema invariants are covered by `apps/api/test/database/auth-schema.db-spec.ts`
 and password hashing by
-`apps/api/src/auth/password/argon2-password-hasher.spec.ts`.
+`apps/api/src/modules/auth/password/argon2-password-hasher.spec.ts`.
 `apps/api/test/database/auth-registration.db-spec.ts` covers the registration
 API against real PostgreSQL: account creation, atomicity, normalization, email
 preservation, hash verification, validation failures, duplicate handling, and

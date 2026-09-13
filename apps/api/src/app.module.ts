@@ -2,10 +2,9 @@ import { Module } from '@nestjs/common';
 import { APP_PIPE } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { ZodValidationPipe } from 'nestjs-zod';
-import { AppController } from './app.controller.js';
-import { HealthController } from './health.controller.js';
-import { AuthModule } from './auth/auth.module.js';
-import { PrismaModule } from './prisma.module.js';
+import { HealthController } from './modules/health/health.controller.js';
+import { AuthModule } from './modules/auth/auth.module.js';
+import { PrismaModule } from './modules/prisma/prisma.module.js';
 import { validateEnv } from './config/env.validation.js';
 
 @Module({
@@ -14,7 +13,7 @@ import { validateEnv } from './config/env.validation.js';
     PrismaModule,
     AuthModule,
   ],
-  controllers: [AppController, HealthController],
+  controllers: [HealthController],
   providers: [{ provide: APP_PIPE, useClass: ZodValidationPipe }],
 })
 export class AppModule {}

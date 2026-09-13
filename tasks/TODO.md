@@ -23,7 +23,7 @@ This roadmap may evolve as product decisions are made.
 **Current task:** none — `tasks/current/` is empty. The next application task is
 **A-003 — Email infrastructure** (not started).
 
-**Recently completed:** H-000–H-008; A-001 authentication domain model; A-002
+**Recently completed:** H-000–H-009; A-001 authentication domain model; A-002
 credentials registration and password hashing.
 
 **Next application task:** A-003 — Email infrastructure.
@@ -112,6 +112,7 @@ Goal: make the repository safe and predictable for agentic development.
 - [x] H-006 — Establish test database strategy
 - [x] H-007 — Integrate infrastructure workstream into project roadmap
 - [x] H-008 — Align backend stack (Fastify / Prisma 7 / ESM-first)
+- [x] H-009 — Relocate API modules under `src/modules/`
 
 The Harness baseline is complete. Application development proceeds under M2.
 
@@ -130,6 +131,13 @@ The Harness baseline is complete. Application development proceeds under M2.
 
 Milestone M2 — Authentication v1 remains the current application milestone; see
 its checklist below for the full scope.
+
+## Structural follow-ups
+
+- [x] Relocate API modules to `apps/api/src/modules/<module-name>/` (H-009).
+      Auth, Prisma, and Health now live under `src/modules/`; `src/config`,
+      `app.module.ts`, and `main.ts` remain at their architectural level. The
+      unused scaffold `app.controller.ts` was removed.
 
 ## Task workflow
 

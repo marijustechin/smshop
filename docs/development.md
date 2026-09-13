@@ -9,6 +9,9 @@ Status: **implemented (foundation).**
   host.
 - Package manager: pnpm, with a workspace monorepo.
 - Layout: `apps/web` (Next.js), `apps/api` (NestJS), `packages/db` (Prisma).
+- API source layout: NestJS application modules live under
+  `apps/api/src/modules/<module-name>/` (see `docs/architecture.md`);
+  cross-cutting configuration may stay in `apps/api/src/config/`.
 - No `packages/contracts` until a concrete shared-contract need exists.
 - No Turborepo — pnpm workspaces/scripts are sufficient.
 - Lint: ESLint. Format: Prettier. TypeScript type-checking is part of validation.

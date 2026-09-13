@@ -4,7 +4,7 @@ import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fa
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AppModule } from '../src/app.module.js';
-import { PrismaService } from '../src/prisma.service.js';
+import { PrismaService } from '../src/modules/prisma/prisma.service.js';
 
 describe('Readiness endpoints (HTTP)', () => {
   let app: INestApplication;
@@ -41,12 +41,6 @@ describe('Readiness endpoints (HTTP)', () => {
 
     const res = await request(app.getHttpServer()).get('/health/ready');
     expect(res.status).toBe(503);
-  });
-
-  it('GET /api returns 200 (API owns /api)', async () => {
-    const res = await request(app.getHttpServer()).get('/api');
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({ service: 'api', status: 'ok' });
   });
 
   it('GET /api/health/ready returns 404 (readiness is not under /api)', async () => {

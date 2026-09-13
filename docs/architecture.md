@@ -106,6 +106,35 @@ docs/
 - `migrate` (infra-side service) — reuses the API image digest and runs
   `prisma migrate deploy`.
 
+## API source layout
+
+NestJS application modules live under `apps/api/src/modules/<module-name>/`.
+Cross-cutting bootstrap/configuration concerns may stay in dedicated top-level
+folders such as `src/config`; `app.module.ts` and `main.ts` stay at `src/` root.
+
+```
+apps/api/src/
+├── modules/
+│   ├── auth/
+│   │   ├── auth.module.ts
+│   │   ├── auth.controller.ts
+│   │   ├── auth.service.ts
+│   │   ├── dto/
+│   │   └── password/
+│   ├── prisma/
+│   │   ├── prisma.module.ts
+│   │   └── prisma.service.ts
+│   └── health/
+│       ├── health.controller.ts
+│       └── health.controller.spec.ts
+├── config/
+│   └── ...
+├── app.module.ts
+└── main.ts
+```
+
+Do not place feature modules directly under `src/`.
+
 ## Domain boundaries
 
 - **Authentication identity is separate from the e-commerce customer.** `User`

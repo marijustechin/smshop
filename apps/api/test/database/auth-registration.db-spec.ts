@@ -4,9 +4,9 @@ import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fa
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { AppModule } from '../../src/app.module.js';
-import { PrismaService } from '../../src/prisma.service.js';
-import { Argon2PasswordHasher } from '../../src/auth/password/argon2-password-hasher.js';
-import { AuthService } from '../../src/auth/auth.service.js';
+import { PrismaService } from '../../src/modules/prisma/prisma.service.js';
+import { Argon2PasswordHasher } from '../../src/modules/auth/password/argon2-password-hasher.js';
+import { AuthService } from '../../src/modules/auth/auth.service.js';
 import { createTestPrismaClient, truncateAll } from './helpers.js';
 
 const PASSWORD = 'correct horse battery staple';

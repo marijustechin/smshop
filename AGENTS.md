@@ -53,6 +53,12 @@ documentation.
   sufficient. Lint with ESLint, format with Prettier, type-check with
   TypeScript.
 - Follow the monorepo layout in `docs/architecture.md`.
+- API code layout is fixed: NestJS application modules belong under
+  `apps/api/src/modules/<module-name>/` (for example `modules/auth`,
+  `modules/prisma`, `modules/health`). Cross-cutting bootstrap/configuration
+  concerns may remain in dedicated top-level folders such as `src/config`.
+  `app.module.ts` and `main.ts` stay at `src/` root. Do not place feature
+  modules directly under `src/`.
 
 ## Technology selection philosophy
 

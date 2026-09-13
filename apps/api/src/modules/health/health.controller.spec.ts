@@ -1,7 +1,7 @@
 import { ServiceUnavailableException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import { HealthController } from './health.controller.js';
-import type { PrismaService } from './prisma.service.js';
+import type { PrismaService } from '../prisma/prisma.service.js';
 
 describe('HealthController', () => {
   const prisma = { $queryRaw: vi.fn() };
