@@ -398,6 +398,63 @@ defaults to `7d` and controls both the `AuthSession` lifetime and the refresh
 cookie `Max-Age`. Refresh tokens are opaque, so no refresh signing secret exists.
 See `docs/configuration.md`.
 
+## Password recovery (A-006)
+
+### Forgot password
+
+`POST /api/auth/forgot-password { email }` is **enumeration-safe**: for any
+syntactically valid email it returns `202` with
+`If an eligible account exists, password reset instructions will be sent.`,
+regardless of whether the account exists, is Google-only, is unverified, or
+whether delivery succeeded.
+
+A reset token is issued and a reset email sent **only** for an eligible account:
+
+- `User` exists;
+- a `CREDENTIALS` `AuthAccount` exists with a `passwordHash`;
+- `emailVerifiedAt !== null` (unverified accounts use the verification flow
+  instead — no reset is issued);
+- Google-only accounts never receive a credentials reset token.
+
+Token creation is transactional (consume prior active tokens, create one new),
+and the email is sent **after commit**. If mail fails, database state remains and
+the failure is logged internally — the public response is unchanged. A later
+request rotates and retries.
+
+### Reset token
+
+- **Generation:** shared secure-token primitive — `crypto.randomBytes(32)` →
+  base64url (not a UUID).
+- **Storage:** SHA-256 hex (`PasswordResetToken.tokenHash`, unique); the raw token
+  exists only transiently to build the email link, is never persisted, and is
+  never returned in a response.
+- **TTL:** 1 hour (`PASSWORD_RESET_TTL_HOURS`).
+- **Rotation/single-use:** issuing a new token consumes all prior active tokens;
+  successful reset consumes the token and invalidates the rest.
+
+### Reset password
+
+`POST /api/auth/reset-password { token, password }`:
+
+1. hash the incoming token; find the record;
+2. reject unknown (`400`), consumed (`409`), expired (`410`);
+3. resolve the `CREDENTIALS` account (reject if missing/no hash);
+4. hash the new password via `PasswordHasher` (same A-002 policy, min 12/max 128);
+5. atomically: update the password hash, consume the token, invalidate remaining
+   reset tokens, and **revoke all active `AuthSession` rows**.
+
+The reset email link is `${WEB_ORIGIN}/atkurti-slaptazodi?token=<raw>`; the email
+is Lithuanian (`Slaptažodžio atkūrimas`) and sent through `MailService`.
+
+### Session revocation and access-token tradeoff
+
+A successful reset is an account-security boundary: every active server-side
+session is revoked, so existing refresh tokens fail immediately. Already-issued
+short-lived access JWTs remain valid until their `JWT_ACCESS_TTL` expiry, because
+access tokens are stateless in A-005 and there is no access-token blacklist.
+After reset the user must log in again with the new password; no tokens are
+issued by the reset response and the user is not auto-logged-in.
+
 ## Tests
 
 Schema invariants are covered by `apps/api/test/database/auth-schema.db-spec.ts`
@@ -421,3 +478,10 @@ session, refresh rotation, logout, and `/api/auth/me` against real PostgreSQL,
 including cookie attribute assertions (HttpOnly, SameSite, Path, Max-Age) and
 access-token claim/expiry/signature checks. `auth-tokens.spec.ts` covers refresh
 token generation/hashing and duration parsing.
+
+`apps/api/test/database/auth-password-reset.db-spec.ts` covers password recovery
+against real PostgreSQL: forgot-password eligibility and enumeration uniformity,
+token rotation, mail-failure safety, reset success, old/new password login
+behaviour, replay/expired/unknown rejection, policy enforcement, and session
+revocation after reset. `password-reset-*.spec.ts` and `secure-token.spec.ts`
+cover token hashing and email content.

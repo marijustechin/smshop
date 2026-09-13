@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 import { EmailVerificationService } from './email-verification/email-verification.service.js';
+import { PasswordResetService } from './password-reset/password-reset.service.js';
 import { Argon2PasswordHasher } from './password/argon2-password-hasher.js';
 import { PASSWORD_HASHER } from './password/password-hasher.js';
 import { AccessTokenService } from './session/access-token.service.js';
@@ -32,6 +33,7 @@ import { MailModule } from '../mail/mail.module.js';
   providers: [
     AuthService,
     EmailVerificationService,
+    PasswordResetService,
     AuthSessionService,
     AccessTokenService,
     AccessTokenGuard,

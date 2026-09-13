@@ -1,18 +1,19 @@
-import { createHash, randomBytes } from 'node:crypto';
+import {
+  generateSecureToken,
+  hashSecureToken,
+  SECURE_TOKEN_BYTES,
+} from '../tokens/secure-token.js';
 
 /**
- * Verification tokens are random secrets, not human passwords, so a
- * deterministic cryptographic hash (SHA-256) is appropriate: incoming raw token
- * → hash → database lookup. Argon2 is intentionally not used here.
+ * Verification tokens reuse the shared secure-token primitive. Kept as a named
+ * domain module so verification callers stay decoupled from the primitive.
  */
-export const VERIFICATION_TOKEN_BYTES = 32;
+export const VERIFICATION_TOKEN_BYTES = SECURE_TOKEN_BYTES;
 
-/** Builds a URL-safe, high-entropy raw verification token. */
 export function generateVerificationToken(): string {
-  return randomBytes(VERIFICATION_TOKEN_BYTES).toString('base64url');
+  return generateSecureToken();
 }
 
-/** Deterministic hash stored in the database. Raw tokens are never persisted. */
 export function hashVerificationToken(rawToken: string): string {
-  return createHash('sha256').update(rawToken).digest('hex');
+  return hashSecureToken(rawToken);
 }

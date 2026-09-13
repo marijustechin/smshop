@@ -13,10 +13,13 @@ import {
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthService, type RegisteredUser } from './auth.service.js';
 import { EmailVerificationService } from './email-verification/email-verification.service.js';
+import { PasswordResetService } from './password-reset/password-reset.service.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { ResendVerificationDto } from './dto/resend-verification.dto.js';
 import { VerifyEmailDto } from './dto/verify-email.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
+import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import {
   AuthSessionService,
   type PublicUser,
@@ -28,12 +31,15 @@ import { CurrentIdentity } from './session/current-identity.decorator.js';
 import { REFRESH_COOKIE_NAME, RefreshCookieService } from './session/refresh-cookie.service.js';
 
 const GENERIC_RESEND_MESSAGE = 'If an eligible account exists, a verification email will be sent.';
+const GENERIC_FORGOT_MESSAGE =
+  'If an eligible account exists, password reset instructions will be sent.';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly emailVerification: EmailVerificationService,
+    private readonly passwordReset: PasswordResetService,
     private readonly sessions: AuthSessionService,
     private readonly refreshCookie: RefreshCookieService,
   ) {}
@@ -55,6 +61,19 @@ export class AuthController {
   async resendVerification(@Body() dto: ResendVerificationDto): Promise<{ message: string }> {
     await this.emailVerification.resend(dto.email);
     return { message: GENERIC_RESEND_MESSAGE };
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.ACCEPTED)
+  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<{ message: string }> {
+    await this.passwordReset.forgotPassword(dto.email);
+    return { message: GENERIC_FORGOT_MESSAGE };
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  resetPassword(@Body() dto: ResetPasswordDto): Promise<{ passwordReset: true }> {
+    return this.passwordReset.resetPassword(dto.token, dto.password);
   }
 
   @Post('login')

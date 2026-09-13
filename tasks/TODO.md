@@ -21,13 +21,12 @@ This roadmap may evolve as product decisions are made.
 **Current milestone:** M2 — Authentication v1.
 
 **Current task:** none — `tasks/current/` is empty. The next application task is
-**A-006 — Password recovery** (not started).
+**A-007 — Google authentication and safe account linking** (not started).
 
-**Recently completed:** H-000–H-009; A-001 authentication domain model; A-002
-credentials registration and password hashing; A-003 email infrastructure; A-004
-email verification; A-005 login, access tokens, refresh sessions and logout.
+**Recently completed:** H-000–H-009; A-001–A-006 (auth domain, registration,
+email, verification, login/session lifecycle, password recovery).
 
-**Next application task:** A-006 — Password recovery.
+**Next application task:** A-007 — Google authentication and safe account linking.
 
 **Parallel workstream:** production infrastructure / Oracle (`sm-oracle-infra`),
 tracked as `OPS-*` below.
@@ -124,8 +123,8 @@ The Harness baseline is complete. Application development proceeds under M2.
 - [x] A-003 — Email infrastructure
 - [x] A-004 — Email verification
 - [x] A-005 — Login, access token, refresh session and logout
-- [ ] A-006 — Password recovery
-- [ ] A-007 — Google authentication and account linking
+- [x] A-006 — Password recovery
+- [ ] A-007 — Google authentication and safe account linking
 - [ ] A-008 — Frontend Auth flows
 - [ ] A-009 — Auth security hardening
 - [ ] A-010 — Auth v1 milestone verification
@@ -267,15 +266,15 @@ Goal: establish complete customer identity and authentication infrastructure.
 
 ## Password recovery
 
-- [ ] Forgot-password API
+- [x] Forgot-password API (A-006)
 - [ ] Forgot-password frontend
-- [ ] Reset token
-- [ ] Reset email
+- [x] Reset token (A-006)
+- [x] Reset email (A-006)
 - [ ] Reset-password frontend
-- [ ] Password update
-- [ ] Token expiration
-- [ ] Single-use reset tokens
-- [ ] Existing session/token invalidation after reset
+- [x] Password update (A-006)
+- [x] Token expiration (A-006 — 1h)
+- [x] Single-use reset tokens (A-006)
+- [x] Existing session/token invalidation after reset (A-006)
 
 ## Google authentication
 
