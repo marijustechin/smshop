@@ -12,30 +12,38 @@ Status: **implemented (foundation).**
 - No `packages/contracts` until a concrete shared-contract need exists.
 - No Turborepo — pnpm workspaces/scripts are sufficient.
 - Lint: ESLint. Format: Prettier. TypeScript type-checking is part of validation.
-- Stack: Next.js / NestJS / Prisma / PostgreSQL 18.
+- Stack: Next.js / NestJS (Fastify adapter) / Prisma 7 / PostgreSQL 18.
+- Module system: **ESM-first** for the backend and shared packages (`"type":
+"module"`, `module: nodenext`, explicit `.js` relative imports). See
+  `docs/architecture.md`.
 - No builds on the Oracle host; images are built only in CI.
 - The application never publishes host ports in production (local dev is exempt
   and may expose dev ports on `localhost` only).
 
 ## Locked tooling versions (foundation)
 
-| Tool                    | Version                    |
-| ----------------------- | -------------------------- |
-| Node.js                 | 24.x LTS                   |
-| pnpm                    | 12.x                       |
-| Next.js                 | 16.x                       |
-| React                   | 19.x                       |
-| NestJS                  | 11.x                       |
-| Prisma / @prisma/client | 6.19.x (see note below)    |
-| TypeScript              | 5.9.x                      |
-| ESLint                  | 9.x                        |
-| Prettier                | 3.x                        |
-| Vitest                  | 5.x (unit + integration)   |
-| Supertest               | 7.x (API HTTP integration) |
+| Tool                    | Version                                       |
+| ----------------------- | --------------------------------------------- |
+| Node.js                 | 24.x LTS                                      |
+| pnpm                    | 12.x                                          |
+| Next.js                 | 16.x                                          |
+| React                   | 19.x                                          |
+| NestJS                  | 11.x                                          |
+| Nest HTTP adapter       | Fastify (via `@nestjs/platform-fastify` 11.x) |
+| Prisma / @prisma/client | 7.x (`@prisma/adapter-pg`)                    |
+| TypeScript              | 5.9.x                                         |
+| ESLint                  | 9.x                                           |
+| Prettier                | 3.x                                           |
+| Vitest                  | 5.x (unit + integration)                      |
+| Supertest               | 7.x (API HTTP integration)                    |
 
-Note: Prisma 6 is pinned for the classic `url = env("DATABASE_URL")` datasource
-model used by the deployment contract. Prisma 7 (current major) requires driver
-adapters and `prisma.config.ts`; revisit when the schema grows (see `tasks/TODO.md`).
+Prisma 7 uses the `prisma-client` generator, a PostgreSQL driver adapter
+(`@prisma/adapter-pg`), and `packages/db/prisma7.config.ts` for the datasource
+URL. TypeScript stays on the newest stable 5.9.x: it is the version validated
+with NestJS 11 decorator metadata (`emitDecoratorMetadata`/`experimentalDecorators`)
+and `@prisma/client` 7 (`typescript >=5.4.0`); TypeScript 6/7 are newer majors
+whose Nest decorator-metadata support is not yet established, so adopting them is
+deferred to a separately evaluated task.
 
 ## Local development topology
 

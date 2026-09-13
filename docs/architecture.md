@@ -48,16 +48,18 @@ proxy publishes 80/443.
 | --------------------- | --------------------------------------------------------------- |
 | Package manager       | pnpm (workspace monorepo)                                       |
 | Frontend              | Next.js 16 in `apps/web`                                        |
-| API                   | NestJS 11 in `apps/api`                                         |
-| Database / migrations | Prisma 6 in `packages/db`                                       |
+| API                   | NestJS 11 (Fastify adapter) in `apps/api`                       |
+| Database / migrations | Prisma 7 in `packages/db` (driver adapter, `prisma7.config.ts`) |
+| Module system         | ESM-first for backend and shared packages                       |
 | Shared contracts      | none yet — `packages/contracts` only if a concrete need appears |
 | Database runtime      | PostgreSQL 18 (owned by infrastructure)                         |
 | Images                | prebuilt `linux/arm64`, published to GHCR                       |
 | CI                    | GitHub Actions + Buildx                                         |
 
-Prisma 6 is pinned for the classic `url = env("DATABASE_URL")` datasource model
-implied by the deployment contract. Prisma 7 (current major) requires driver
-adapters and `prisma.config.ts`; revisit when the schema grows (see `tasks/TODO.md`).
+Prisma 7 uses the `prisma-client` generator, a driver adapter
+(`@prisma/adapter-pg`), and `packages/db/prisma7.config.ts` for the datasource
+URL. The API uses the Fastify platform adapter and emits ESM
+(`"type": "module"`, `module: nodenext`).
 
 Accepted runtime facts:
 

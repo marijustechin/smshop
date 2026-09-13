@@ -1,4 +1,4 @@
-import { PrismaClient } from '@smshop/db';
+import { createPrismaClient, type PrismaClient } from '@smshop/db';
 
 export interface DatabaseIdentity {
   host: string;
@@ -62,8 +62,7 @@ export function resolveTestDatabaseUrl(
 }
 
 export function createTestPrismaClient(): PrismaClient {
-  const url = resolveTestDatabaseUrl();
-  return new PrismaClient({ datasources: { db: { url } } });
+  return createPrismaClient(resolveTestDatabaseUrl());
 }
 
 /**

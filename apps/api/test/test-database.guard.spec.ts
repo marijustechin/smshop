@@ -3,7 +3,7 @@ import {
   assertTestDatabaseUrl,
   parseTestDatabaseUrl,
   resolveTestDatabaseUrl,
-} from './database/helpers';
+} from './database/helpers.js';
 
 const testUrl = 'postgresql://smshop_test:smshop_test@localhost:5433/smshop_test';
 const devUrl = 'postgresql://smshop:smshop@localhost:5432/smshop';

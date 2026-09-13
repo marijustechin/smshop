@@ -137,4 +137,4 @@ case.
 ## Completion
 
 Completed date: 2026-09-13
-Commit: not committed (pending explicit request)
+Commit: 1677ca958c761964cfa7ed58febfe369ac5e8b36 — "H-007: complete auth readiness harness"

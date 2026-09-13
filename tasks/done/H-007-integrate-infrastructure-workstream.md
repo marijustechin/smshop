@@ -127,10 +127,10 @@ created.
   deployment contract (resolve C.1, C.3–C.7).
 - The next application task is **A-001 — Authentication domain model** (not
   started).
-- H-005, H-006, and H-007 changes remain uncommitted pending explicit
-  authorization.
+- H-005, H-006, and H-007 changes are committed at `1677ca9` ("H-007: complete
+  auth readiness harness").
 
 ## Completion
 
 Completed date: 2026-09-13
-Commit: not committed (pending explicit request)
+Commit: 1677ca958c761964cfa7ed58febfe369ac5e8b36 — "H-007: complete auth readiness harness"

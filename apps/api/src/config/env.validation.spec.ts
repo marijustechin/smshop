@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { resolveSecretFiles, validateEnv } from './env.validation';
+import { resolveSecretFiles, validateEnv } from './env.validation.js';
 
 const validEnv = {
   DATABASE_URL: 'postgresql://smshop:smshop@localhost:5432/smshop',

@@ -98,12 +98,14 @@ The deployment contract itself is owned by `sm-oracle-infra`; see
 | Concern          | Choice                                                         |
 | ---------------- | -------------------------------------------------------------- |
 | Frontend         | Next.js 16                                                     |
-| API              | NestJS 11                                                      |
+| API              | NestJS 11 (Fastify adapter)                                    |
 | Database         | PostgreSQL 18 (runtime owned by infrastructure)                |
-| ORM / migrations | Prisma 6                                                       |
+| ORM / migrations | Prisma 7 (`@prisma/adapter-pg`)                                |
+| Module system    | ESM-first (backend and shared packages)                        |
 | Package manager  | pnpm (workspace monorepo)                                      |
 | Images           | prebuilt `linux/arm64`, published to GitHub Container Registry |
 | CI               | GitHub Actions with Buildx                                     |
 
 The stack is already selected; do not reopen it unless an actual incompatibility
-is found.
+is found. Version currency follows the technology-selection philosophy in
+`AGENTS.md`.

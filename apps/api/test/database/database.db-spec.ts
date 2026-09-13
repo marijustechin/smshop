@@ -5,7 +5,7 @@ import {
   parseTestDatabaseUrl,
   resolveTestDatabaseUrl,
   truncateAll,
-} from './helpers';
+} from './helpers.js';
 
 describe('Test database infrastructure (real PostgreSQL)', () => {
   let prisma: PrismaClient;

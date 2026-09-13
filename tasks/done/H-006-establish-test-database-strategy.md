@@ -139,10 +139,10 @@ verify:ci` (CI) add migrations + DB tests. Documented explicitly.
 - H-005 added `zod`; H-006 adds no new dependency. `docker/api.Dockerfile`
   (feasibility draft) may not resolve API runtime deps in the runner image;
   pre-existing, Docker architecture out of scope.
-- Commit state: H-000–H-004 are committed at `7e4801d`; H-005 and H-006 changes
-  remain uncommitted pending explicit commit authorization.
+- Commit state: H-000–H-004 are committed at `7e4801d`; H-005–H-007 are
+  committed at `1677ca9` (see `H-007`).
 
 ## Completion
 
 Completed date: 2026-09-13
-Commit: not committed (pending explicit request)
+Commit: 1677ca958c761964cfa7ed58febfe369ac5e8b36 — "H-007: complete auth readiness harness"

@@ -18,9 +18,9 @@ This roadmap may evolve as product decisions are made.
 
 # Current State
 
-**Current milestone:** M1 — Harness & Development Workflow is complete. The
-Harness baseline (H-000–H-006) is ready, so the next application-development
-milestone is M2 — Authentication v1.
+**Current milestone:** M1 — Harness & Development Workflow is complete, including
+H-008 (backend stack aligned to Fastify / Prisma 7 / ESM-first). The next
+application milestone is M2 — Authentication v1.
 
 **Current task:** none — `tasks/current/` is empty. The next application task is
 **A-001 — Authentication domain model** (not started).
@@ -28,15 +28,16 @@ milestone is M2 — Authentication v1.
 **Recently completed:** H-000 repository readiness audit, H-001 verification
 gate, H-002 runtime baseline, H-003 task workflow, H-004 CI workflow, H-005 Auth
 environment & validation baseline, H-006 test database strategy, H-007
-infrastructure workstream integration.
+infrastructure workstream integration, H-008 backend stack alignment.
 
 **Next application task:** A-001 — Authentication domain model.
 
 **Parallel workstream:** production infrastructure / Oracle (`sm-oracle-infra`),
 tracked as `OPS-*` below.
 
-**Commit state:** H-000–H-004 are committed at `7e4801d`. H-005, H-006, and
-H-007 changes are not yet committed (pending explicit authorization).
+**Commit state:** H-000–H-004 are committed at `7e4801d`. H-005–H-007 are
+committed at `1677ca9`. The technology-selection philosophy and H-008 changes are
+not yet committed (pending explicit authorization).
 
 **Infrastructure vs application:** Auth development does not depend on
 production Oracle deployment. Production infrastructure runs as a parallel
@@ -85,7 +86,7 @@ Example:
 
 - [x] Audit current repository state (H-000)
 - [x] Audit Harness maturity (H-000)
-- [ ] Define missing Harness infrastructure (H-001–H-006 done; H-007 planned)
+- [x] Define missing Harness infrastructure (H-001–H-008 done)
 - [ ] Prepare Auth v1 implementation plan
 
 ---
@@ -114,6 +115,7 @@ Goal: make the repository safe and predictable for agentic development.
 - [x] H-005 — Establish Auth environment & validation baseline
 - [x] H-006 — Establish test database strategy
 - [x] H-007 — Integrate infrastructure workstream into project roadmap
+- [x] H-008 — Align backend stack (Fastify / Prisma 7 / ESM-first)
 
 The Harness baseline is complete. The next application task is **A-001 —
 Authentication domain model**, which begins milestone M2.

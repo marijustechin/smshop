@@ -30,9 +30,15 @@ documentation.
 
 ## Code and workflow
 
-- Stack is fixed: Next.js / NestJS / Prisma / PostgreSQL 18 on Node.js 24 LTS,
-  managed with pnpm in a workspace monorepo. Do not reopen stack selection
-  unless an actual incompatibility is found.
+- Stack is fixed: Next.js / NestJS (Fastify adapter) / Prisma 7 / PostgreSQL 18
+  on Node.js 24 LTS, managed with pnpm in a workspace monorepo, ESM-first for
+  the backend and shared packages. Framework/product choices are fixed unless an
+  actual incompatibility is found. **Version currency is not "reopening stack
+  selection":** moving a dependency from an older major to the intended current
+  stable major follows the technology-selection philosophy below. NestJS remains
+  NestJS, Prisma remains Prisma, PostgreSQL remains PostgreSQL, and Fastify
+  remains the selected HTTP adapter — do not swap these out without a documented
+  incompatibility.
 - Layout is fixed: `apps/web` (Next.js), `apps/api` (NestJS), `packages/db`
   (Prisma). Do not create `packages/contracts` until a concrete shared-contract
   need exists.
@@ -47,6 +53,40 @@ documentation.
   sufficient. Lint with ESLint, format with Prettier, type-check with
   TypeScript.
 - Follow the monorepo layout in `docs/architecture.md`.
+
+## Technology selection philosophy
+
+- Use current stable, production-ready versions by default. Avoid unnecessary
+  legacy choices. Do not pick an older major merely because it is familiar,
+  older tutorials use it, it avoids ESM, CommonJS feels simpler, migration work
+  can be avoided, or an older API is easier to copy from existing examples.
+- Default rule: prefer the latest stable major version that is production-ready,
+  compatible with the project architecture, and sufficiently supported by the
+  surrounding ecosystem.
+- Do not blindly adopt every new release. Before adopting a new major, verify:
+  compatibility with the supported Node.js baseline; compatibility with required
+  frameworks and integrations; ecosystem maturity; production readiness;
+  migration impact; and support in critical dependencies.
+- Avoid beta, alpha, RC, experimental, and newly released technology whose
+  ecosystem support is still materially incomplete, unless there is a specific
+  documented reason.
+- If the latest stable major cannot reasonably be used, select the newest
+  suitable stable version and document the concrete compatibility reason.
+- **ESM-first:** new JavaScript/TypeScript code and dependencies should be
+  ESM-compatible by default. Do not introduce CommonJS-only patterns or
+  dependencies merely for convenience. CommonJS is acceptable only when a
+  required dependency or platform constraint provides no reasonable modern
+  alternative; do not downgrade libraries or tooling solely to preserve
+  CommonJS compatibility.
+- Practical principle: stay current without chasing instability. Prefer modern,
+  supported, production-ready technology over legacy defaults, while avoiding
+  premature adoption of immature releases.
+- Such choices are intentional, for example: modern NestJS versions; Fastify
+  rather than Express where the architecture specifies Fastify; Prisma 7 rather
+  than starting new greenfield work on Prisma 6; the current stable TypeScript
+  compatible with the stack; ESM-first configuration. This is a decision rule,
+  not a version catalogue — specific versions belong in package manifests and
+  architecture/development documentation.
 
 ## Tasks and change discipline
 
