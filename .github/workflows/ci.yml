@@ -15,6 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TEST_DATABASE_URL: postgresql://smshop_test:smshop_test@localhost:5432/smshop_test
+      WEB_ORIGIN: http://localhost:3000
+      JWT_ACCESS_SECRET: ci-only-jwt-access-secret-value-32-characters
     services:
       postgres:
         image: postgres:18

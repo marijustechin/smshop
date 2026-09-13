@@ -9,7 +9,6 @@ import { z } from 'zod';
 export const SECRET_KEYS = [
   'DATABASE_URL',
   'JWT_ACCESS_SECRET',
-  'JWT_REFRESH_SECRET',
   'SMTP_PASSWORD',
   'GOOGLE_CLIENT_SECRET',
 ] as const;
@@ -64,6 +63,12 @@ const booleanString = z
   })
   .transform((value) => value === 'true');
 
+/** Durations accepted by the token/session TTLs, e.g. "15m", "7d". */
+const duration = z
+  .string()
+  .trim()
+  .regex(/^\d+(s|m|h|d)$/, 'must be a duration like "15m" or "7d"');
+
 /**
  * Configuration contract. Variables required today are mandatory; variables
  * reserved for Auth v1 are optional and validated only when present, so
@@ -81,17 +86,17 @@ export const envSchema = z
       .min(1, 'DATABASE_URL is required')
       .refine(isPostgresUrl, 'must be a PostgreSQL URL (postgres:// or postgresql://)'),
 
-    // Origins — reserved; required when CORS / OAuth redirects / email links land.
-    WEB_ORIGIN: z.url().optional(),
+    // Origins. WEB_ORIGIN is required: it is used for CORS with credentials and
+    // for building email links.
+    WEB_ORIGIN: z.url(),
     API_ORIGIN: z.url().optional(),
 
-    // Access token — reserved for Auth v1.
-    JWT_ACCESS_SECRET: z.string().min(32).optional(),
-    JWT_ACCESS_TTL: z.string().min(1).optional(),
+    // Access token — required now that login is implemented.
+    JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be at least 32 characters'),
+    JWT_ACCESS_TTL: duration.default('15m'),
 
-    // Refresh / session — reserved for Auth v1.
-    JWT_REFRESH_SECRET: z.string().min(32).optional(),
-    JWT_REFRESH_TTL: z.string().min(1).optional(),
+    // Refresh session — refresh tokens are opaque, so no refresh secret exists.
+    AUTH_SESSION_TTL: duration.default('7d'),
 
     // Email — the SMTP group is all-or-none (see SMTP_KEYS).
     SMTP_HOST: z.string().min(1).optional(),

@@ -124,8 +124,8 @@ case.
 ## Follow-ups
 
 - H-006 — Test database strategy.
-- When Auth v1 lands, promote `JWT_ACCESS_SECRET`/`JWT_REFRESH_SECRET` (and other
-  consumed secrets) from reserved to required.
+- When Auth v1 lands, promote `JWT_ACCESS_SECRET` (and other consumed secrets)
+  from reserved to required.
 - `H-001`–`H-003` task records still show `Commit: not committed`; left untouched
   because this task authorizes correcting only H-004 metadata.
 - Docker: `docker/api.Dockerfile` (feasibility draft) copies root `node_modules`

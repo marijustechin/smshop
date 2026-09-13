@@ -3,6 +3,8 @@ import { resolveSecretFiles, validateEnv } from './env.validation.js';
 
 const validEnv = {
   DATABASE_URL: 'postgresql://smshop:smshop@localhost:5432/smshop',
+  WEB_ORIGIN: 'http://localhost:3000',
+  JWT_ACCESS_SECRET: 'a'.repeat(32),
 };
 
 describe('validateEnv', () => {
@@ -12,18 +14,18 @@ describe('validateEnv', () => {
     expect(env.DATABASE_URL).toBe(validEnv.DATABASE_URL);
     expect(env.NODE_ENV).toBe('development');
     expect(env.PORT).toBe(3001);
+    expect(env.JWT_ACCESS_TTL).toBe('15m');
+    expect(env.AUTH_SESSION_TTL).toBe('7d');
   });
 
-  it('accepts declared future Auth variables without requiring them', () => {
+  it('accepts optional future Auth variables without requiring them', () => {
     const env = validateEnv({
       ...validEnv,
-      WEB_ORIGIN: 'http://localhost:3000',
       API_ORIGIN: 'http://localhost:3001',
-      JWT_ACCESS_SECRET: 'a'.repeat(32),
       GOOGLE_CLIENT_ID: 'client-id',
     });
 
-    expect(env.JWT_ACCESS_SECRET).toBe('a'.repeat(32));
+    expect(env.GOOGLE_CLIENT_ID).toBe('client-id');
     expect(env.SMTP_HOST).toBeUndefined();
   });
 

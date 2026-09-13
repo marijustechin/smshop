@@ -308,6 +308,96 @@ not mutate `emailVerifiedAt` repeatedly.
   failure) and the failure is logged server-side. Token rotation still occurs so
   a later resend can succeed. See `docs/email.md` for SMTP details.
 
+## Login and sessions (A-005)
+
+### Login lifecycle
+
+`POST /api/auth/login { email, password }`:
+
+1. normalize email (`trim` + lower-case);
+2. load the user and their `CREDENTIALS` account;
+3. verify the password through `PasswordHasher` (Argon2id);
+4. require `emailVerifiedAt !== null`;
+5. revoke all active sessions and create exactly one new `AuthSession`;
+6. sign an access JWT and set the refresh cookie.
+
+Unknown email and wrong password return the **same** generic `401`
+(`Invalid email or password`), and a password verify runs even for unknown
+accounts (against a cached dummy hash) to reduce obvious timing differences.
+A valid password on an **unverified** account returns a distinct `403` with
+`code: "EMAIL_NOT_VERIFIED"` — this is not an enumeration leak because the caller
+already proved knowledge of the password. Google-only accounts cannot log in
+with credentials (generic `401`).
+
+### Access token (JWT)
+
+- Signed with `JWT_ACCESS_SECRET`; lifetime `JWT_ACCESS_TTL` (default `15m`).
+- Claims are minimal: `sub` (user id), `sid` (session id), plus `iat`/`exp`.
+  No email, roles, or profile data.
+- Verified by `AccessTokenGuard` on protected routes; the identity is exposed via
+  the `@CurrentIdentity()` decorator.
+- **Stateless during its lifetime:** protected requests do **not** hit the
+  database to check session state. Session revocation (logout, single-session
+  login) affects refresh immediately; the current access token remains valid
+  until its short expiry. This tradeoff avoids a DB lookup per request.
+
+### Refresh token (opaque)
+
+- Generated with `crypto.randomBytes(32)` (base64url). Never a JWT.
+- Only `SHA-256` hash is stored (`AuthSession.refreshTokenHash`, unique).
+- Delivered **only** in the `smshop_refresh_token` httpOnly cookie; never in a
+  response body.
+- Rotated on every successful refresh; the old token no longer matches and is
+  rejected. Rotation is atomic via a conditional update, so concurrent refreshes
+  cannot both win.
+- Replay of an old token is rejected (no reuse). Enhanced replay-triggered
+  revocation (revoking the whole session on reuse) is deferred — the single-hash
+  model cannot distinguish replay from an expired lookup; documented risk.
+
+### Single active session
+
+Product policy is one active session per user. Each successful login revokes all
+previously active sessions (`revokedAt`) before creating the new one. Logging in
+on a second device invalidates the first device's refresh token.
+
+### Session refresh & revocation
+
+`POST /api/auth/refresh` reads the cookie, hashes it, requires an active
+(`revokedAt IS NULL`) non-expired session, rotates the token, updates
+`lastUsedAt`, and issues a new access token. Expired or revoked sessions return
+`401`. `POST /api/auth/logout` revokes the session and clears the cookie
+(idempotent and safe without a cookie).
+
+### `/api/auth/me`
+
+Protected by `AccessTokenGuard`; returns `{ id, email, emailVerified }` for the
+access token's user. This will support the future `/paskyra`.
+
+### Cookies, CORS, CSRF
+
+- Cookie: `smshop_refresh_token`, `HttpOnly`, `SameSite=Lax`,
+  `Path=/api/auth`, `Max-Age` = refresh TTL, `Secure=false` in development and
+  `Secure=true` in production (`NODE_ENV`). The path scopes it to the auth
+  endpoints that consume it.
+- CORS: explicit `WEB_ORIGIN` with `credentials: true` (never `origin: *` with
+  credentials). The frontend and API are same-site behind the infrastructure
+  proxy, so `SameSite=Lax` is appropriate.
+- CSRF: an httpOnly `SameSite=Lax` cookie is not sent on cross-site subrequests,
+  and mutation endpoints require the cookie plus an explicit allowed origin, so a
+  dedicated CSRF token is **not** added now. Threat model: cross-site form posts
+  can send `Lax` cookies only on top-level navigation to safe methods; the
+  refresh/logout endpoints are POST and the allowed-origin CORS policy blocks
+  cross-origin credentialed reads. Revisit if a cross-site frontend deployment
+  is introduced (then `SameSite=None` + CSRF token would be required).
+
+### Configuration
+
+`JWT_ACCESS_SECRET` (required, min 32 chars) and `WEB_ORIGIN` (required) joined
+the required contract; `JWT_ACCESS_TTL` defaults to `15m`; `AUTH_SESSION_TTL`
+defaults to `7d` and controls both the `AuthSession` lifetime and the refresh
+cookie `Max-Age`. Refresh tokens are opaque, so no refresh signing secret exists.
+See `docs/configuration.md`.
+
 ## Tests
 
 Schema invariants are covered by `apps/api/test/database/auth-schema.db-spec.ts`
@@ -325,3 +415,9 @@ rotation, unknown/verified/Google-only no-send, enumeration uniformity, and
 mail-failure behaviour. Token/email unit tests live under
 `apps/api/src/modules/auth/email-verification/`. Automated tests never contact
 real SMTP (the mail transport is stubbed).
+
+`apps/api/test/database/auth-session.db-spec.ts` covers login, single active
+session, refresh rotation, logout, and `/api/auth/me` against real PostgreSQL,
+including cookie attribute assertions (HttpOnly, SameSite, Path, Max-Age) and
+access-token claim/expiry/signature checks. `auth-tokens.spec.ts` covers refresh
+token generation/hashing and duration parsing.

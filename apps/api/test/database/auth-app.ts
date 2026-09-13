@@ -1,7 +1,8 @@
-import { INestApplication, RequestMethod } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { AppModule } from '../../src/app.module.js';
+import { configureFastifyApp } from '../../src/app.setup.js';
 import { PrismaService } from '../../src/modules/prisma/prisma.service.js';
 import { MAIL_TRANSPORT, type MailTransport } from '../../src/modules/mail/mail.transport.js';
 
@@ -13,7 +14,8 @@ export interface AuthTestApp {
 
 /**
  * Builds the real AppModule over the test Prisma client with the mail transport
- * replaced by a controllable stub, so no test ever contacts real SMTP.
+ * replaced by a controllable stub, so no test ever contacts real SMTP. Runs the
+ * same cookie/CORS/prefix setup as production.
  */
 export async function createAuthTestApp(
   prisma: PrismaService,
@@ -31,9 +33,7 @@ export async function createAuthTestApp(
     .compile();
 
   const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
-  app.setGlobalPrefix('api', {
-    exclude: [{ path: 'health/ready', method: RequestMethod.GET }],
-  });
+  await configureFastifyApp(app, process.env.WEB_ORIGIN ?? 'http://localhost:3000');
   await app.init();
   await (app.getHttpAdapter().getInstance() as unknown as { ready: () => Promise<void> }).ready();
 

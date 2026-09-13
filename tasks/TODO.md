@@ -21,13 +21,13 @@ This roadmap may evolve as product decisions are made.
 **Current milestone:** M2 — Authentication v1.
 
 **Current task:** none — `tasks/current/` is empty. The next application task is
-**A-005 — Login, access token, refresh session and logout** (not started).
+**A-006 — Password recovery** (not started).
 
 **Recently completed:** H-000–H-009; A-001 authentication domain model; A-002
 credentials registration and password hashing; A-003 email infrastructure; A-004
-email verification.
+email verification; A-005 login, access tokens, refresh sessions and logout.
 
-**Next application task:** A-005 — Login, access token, refresh session and logout.
+**Next application task:** A-006 — Password recovery.
 
 **Parallel workstream:** production infrastructure / Oracle (`sm-oracle-infra`),
 tracked as `OPS-*` below.
@@ -123,7 +123,7 @@ The Harness baseline is complete. Application development proceeds under M2.
 - [x] A-002 — Credentials registration and password hashing
 - [x] A-003 — Email infrastructure
 - [x] A-004 — Email verification
-- [ ] A-005 — Login, access token, refresh session and logout
+- [x] A-005 — Login, access token, refresh session and logout
 - [ ] A-006 — Password recovery
 - [ ] A-007 — Google authentication and account linking
 - [ ] A-008 — Frontend Auth flows
@@ -231,9 +231,9 @@ Goal: establish complete customer identity and authentication infrastructure.
 - [x] A-001 — Define authentication domain model
 - [x] Separate authentication identity from e-commerce customer domain
 - [x] Define account/provider model
-- [ ] Define access token strategy
-- [ ] Define refresh token strategy
-- [ ] Define logout / token invalidation strategy
+- [x] Define access token strategy (A-005)
+- [x] Define refresh token strategy (A-005)
+- [x] Define logout / token invalidation strategy (A-005)
 - [x] Implement secure password hashing (A-002)
 
 ## Credentials registration
@@ -258,12 +258,12 @@ Goal: establish complete customer identity and authentication infrastructure.
 
 ## Login
 
-- [ ] Credentials login API
+- [x] Credentials login API (A-005)
 - [ ] Login frontend
-- [ ] Access token flow
-- [ ] Refresh token flow
-- [ ] Logout
-- [ ] Authentication state restoration
+- [x] Access token flow (A-005)
+- [x] Refresh token flow (A-005)
+- [x] Logout (A-005)
+- [x] Authentication state restoration (A-005 — `GET /api/auth/me`)
 
 ## Password recovery
 
