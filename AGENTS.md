@@ -46,22 +46,45 @@ documentation.
   PostgreSQL runs in Docker/Compose. No Turborepo; pnpm workspace scripts are
   sufficient. Lint with ESLint, format with Prettier, type-check with
   TypeScript.
-- Do not commit or push unless explicitly asked.
 - Follow the monorepo layout in `docs/architecture.md`.
+
+## Tasks and change discipline
+
+- Follow the task workflow in `docs/task-workflow.md`: `tasks/TODO.md` is the
+  roadmap/state document; one task lives in `tasks/current/<task>.md`; completed
+  tasks move to `tasks/done/`.
+- Work only within the current task's documented scope.
+- Do not make unrelated changes, silently expand scope, perform speculative
+  refactors, or create abstractions for hypothetical future use.
+- Do not add dependencies without concrete justification.
+- Preserve existing architecture boundaries.
+- Newly discovered work is recorded as a follow-up (task file / `tasks/TODO.md`),
+  not silently included in the current task.
+- Stop and report when repository facts materially contradict the task
+  assumptions.
+- Do not commit or push unless explicitly asked. Completing a task does **not**
+  authorize a commit.
 
 ## Documentation discipline
 
-- `TODO.md` contains only unfinished, actionable work. Completed work goes to
-  Git history / CHANGELOG, not closed TODO sections.
+- `tasks/TODO.md` is the high-level roadmap and current-state navigation
+  document, not a duplicate of completed work: detailed completed work lives in
+  `tasks/done/` and Git history.
+- Detailed requirements live in task files, not in `tasks/TODO.md`.
 - Proposed defaults from the deployment contract (section B) are not accepted
   application facts until explicitly reviewed and confirmed. Accepted B defaults
   are recorded in `docs/architecture.md`; keep the remainder marked as open.
 
 ## Verification
 
-- Run lint, typecheck, and tests before finishing work (commands in
-  `docs/development.md` and `docs/testing.md`).
-- No GitHub Actions implementation until it is listed in `TODO.md`.
-- No product features until product requirements exist in
-  `docs/product-requirements.md` (catalog, auth, cart, checkout, admin,
-  payments, shipping, email, uploads/media).
+- Run `pnpm verify` before finishing work; it is the authoritative local
+  verification gate (format, lint, typecheck, test, build). Work is not complete
+  until it passes. Commands are documented in `docs/development.md` and
+  `docs/testing.md`.
+- No GitHub Actions implementation until it is listed in `tasks/TODO.md`.
+- Product implementation is permitted only when the relevant requirements are
+  documented in the authoritative sources. The organized requirements
+  (`docs/product-requirements-organized.md`) are authoritative, with
+  `docs/product-requirements-notes.md` as supporting notes, plus the roadmap in
+  `tasks/TODO.md` and the active task file. Do not start product work on
+  undocumented or invented requirements.

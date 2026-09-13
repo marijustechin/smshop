@@ -3,12 +3,16 @@
   "version": "0.0.0",
   "private": true,
   "packageManager": "pnpm@12.3.4",
+  "engines": {
+    "node": ">=24 <25"
+  },
   "scripts": {
     "dev": "pnpm --filter @smshop/db build && pnpm -r --parallel --filter @smshop/web --filter @smshop/api run dev",
     "build": "pnpm --filter @smshop/db build && pnpm --filter @smshop/api build && pnpm --filter @smshop/web build",
     "typecheck": "pnpm --filter @smshop/db build && pnpm --filter @smshop/api typecheck && pnpm --filter @smshop/web typecheck",
     "lint": "pnpm --filter @smshop/db lint && pnpm --filter @smshop/api lint && pnpm --filter @smshop/web lint",
     "test": "pnpm -r --if-present test",
+    "verify": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:up": "docker compose up -d",

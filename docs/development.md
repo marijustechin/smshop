@@ -4,7 +4,9 @@ Status: **implemented (foundation).**
 
 ## Accepted decisions
 
-- Node.js baseline: **Node.js 24.x LTS**.
+- Node.js baseline: **Node.js 24.x LTS**. Pinned by root `.nvmrc` (`24`) and
+  `engines.node` (`>=24 <25`); do not widen to a newer major to match a local
+  host.
 - Package manager: pnpm, with a workspace monorepo.
 - Layout: `apps/web` (Next.js), `apps/api` (NestJS), `packages/db` (Prisma).
 - No `packages/contracts` until a concrete shared-contract need exists.
@@ -33,7 +35,7 @@ Status: **implemented (foundation).**
 
 Note: Prisma 6 is pinned for the classic `url = env("DATABASE_URL")` datasource
 model used by the deployment contract. Prisma 7 (current major) requires driver
-adapters and `prisma.config.ts`; revisit when the schema grows (see `TODO.md`).
+adapters and `prisma.config.ts`; revisit when the schema grows (see `tasks/TODO.md`).
 
 ## Local development topology
 
@@ -55,17 +57,38 @@ pnpm dev                                # build db, then run web + api
 
 ## Commands (implemented)
 
-| Command                               | Purpose                                            |
-| ------------------------------------- | -------------------------------------------------- |
-| `pnpm dev`                            | build `@smshop/db`, then run web + api on the host |
-| `pnpm build`                          | production builds (db → api → web)                 |
-| `pnpm lint`                           | ESLint across packages                             |
-| `pnpm format` / `pnpm format:check`   | Prettier write / check                             |
-| `pnpm typecheck`                      | type-check all packages                            |
-| `pnpm test`                           | run the test suite (Vitest; see `docs/testing.md`) |
-| `pnpm db:up` / `pnpm db:down`         | start/stop the local PostgreSQL Compose            |
-| `pnpm prisma:generate`                | generate the Prisma client                         |
-| `pnpm prisma:migrate:dev` / `:deploy` | create/apply / deploy migrations                   |
+| Command                               | Purpose                                                             |
+| ------------------------------------- | ------------------------------------------------------------------- |
+| `pnpm dev`                            | build `@smshop/db`, then run web + api on the host                  |
+| `pnpm build`                          | production builds (db → api → web)                                  |
+| `pnpm lint`                           | ESLint across packages                                              |
+| `pnpm format` / `pnpm format:check`   | Prettier write / check                                              |
+| `pnpm typecheck`                      | type-check all packages                                             |
+| `pnpm test`                           | run the test suite (Vitest; see `docs/testing.md`)                  |
+| `pnpm verify`                         | full local verification gate (format, lint, typecheck, test, build) |
+| `pnpm db:up` / `pnpm db:down`         | start/stop the local PostgreSQL Compose                             |
+| `pnpm prisma:generate`                | generate the Prisma client                                          |
+| `pnpm prisma:migrate:dev` / `:deploy` | create/apply / deploy migrations                                    |
+
+## Verification gate
+
+`pnpm verify` is the authoritative local verification command and defines the
+minimum technical gate for completing implementation tasks. It runs the existing
+checks in a deterministic order and fails fast on the first failure:
+
+```text
+format:check → lint → typecheck → test → build
+```
+
+The command exits `0` only when every stage passes. Implementation tasks are not
+technically complete until `pnpm verify` passes. It is safe to run repeatedly,
+does not modify application source files, does not update dependencies, does not
+change the database schema, does not create migrations, and does not require
+production services. It is suitable for reuse by CI.
+
+CI (`.github/workflows/ci.yml`) runs the same gate on a clean Node.js 24
+environment (selected from `.nvmrc`) using the pinned pnpm version, so local and
+CI verification are equivalent.
 
 ## Runtime contract (accepted)
 

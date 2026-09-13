@@ -44,7 +44,7 @@ proxy publishes 80/443.
 
 Prisma 6 is pinned for the classic `url = env("DATABASE_URL")` datasource model
 implied by the deployment contract. Prisma 7 (current major) requires driver
-adapters and `prisma.config.ts`; revisit when the schema grows (see `TODO.md`).
+adapters and `prisma.config.ts`; revisit when the schema grows (see `tasks/TODO.md`).
 
 Accepted runtime facts:
 

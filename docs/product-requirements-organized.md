@@ -136,6 +136,7 @@ finished weight may vary within an acceptable production tolerance.
 The ordering flow must clearly communicate that the selected weight is approximate.
 
 **OPEN:**
+
 - minimum lead time;
 - acceptable weight tolerance;
 - supported delivery area;
@@ -199,6 +200,7 @@ languages are included in the first release.
 Omniva is currently used for standard product delivery.
 
 **OPEN:**
+
 - parcel terminal rules;
 - courier delivery, if applicable;
 - supported countries;
@@ -314,30 +316,39 @@ The following areas still require discovery before detailed product requirements
 be finalised:
 
 ### Cart
+
 **OPEN:** persistence, guest/account behaviour, cart rules.
 
 ### Checkout and orders
+
 **OPEN:** checkout fields, guest checkout, order states, order history.
 
 ### Payments
+
 **OPEN:** payment provider(s), supported payment methods, currency.
 
 ### Accounts / authentication
+
 **OPEN:** whether customer accounts are required, optional or post-purchase.
 
 ### Admin / backoffice
+
 **OPEN:** product, order, content and customer management workflows.
 
 ### Search and navigation
+
 **OPEN:** filtering dimensions, category structure, search behaviour.
 
 ### Localization and compliance
+
 **OPEN:** VAT/tax rules, GDPR/cookies, legal texts, invoice requirements.
 
 ### Media / uploads
+
 **OPEN:** product media workflow, storage rules, occasion-cake upload requirements.
 
 ### Marketing and analytics
+
 **OPEN:** analytics, SEO, email marketing, abandoned carts, remarketing, loyalty.
 
 ---

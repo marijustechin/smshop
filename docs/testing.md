@@ -22,6 +22,24 @@ re-export/singleton); add Vitest there when it gains logic.
 | Web E2E         | catalog, cart, checkout flows               | Playwright (later) |
 | Contract        | `/api` route ownership; health endpoints    | Vitest / Supertest |
 
+## Testing requirements
+
+- New business logic (services, domain rules, validation, calculations)
+  requires unit tests covering its meaningful branches.
+- New or changed API behaviour requires an HTTP-level integration/e2e test
+  (Supertest) exercising the route, its success path, and its documented error
+  paths.
+- Bug fixes should normally include a regression test that fails before the fix
+  and passes after it, unless the task file records why a test is impractical.
+- Web route handlers and components with logic require Vitest tests.
+- Browser E2E (Playwright) is required only once real user flows exist; it is not
+  installed merely to satisfy an empty layer.
+- No arbitrary coverage percentage is enforced. Tests are judged by whether they
+  protect required behaviour.
+- `pnpm verify` is the final project-wide gate; a task is not complete until it
+  passes. A task may skip the full gate only if the task file documents a
+  legitimate reason and reports it.
+
 ## Current foundation tests
 
 - `apps/web/src/app/health/ready/route.test.ts` — `GET /health/ready` returns 200.
@@ -30,7 +48,9 @@ re-export/singleton); add Vitest there when it gains logic.
 - `apps/api/test/health.e2e-spec.ts` — over HTTP (Supertest): `/health/ready`
   200/503, `/api` 200, `/api/health/ready` 404 (readiness is not under `/api`).
 
-Run them with `pnpm test`.
+Run them with `pnpm test`. The full project verification gate, which also runs
+lint, typecheck, and the production build, is `pnpm verify` (see
+`docs/development.md`).
 
 ## Acceptance expectations
 
@@ -53,10 +73,16 @@ Health-check cadence (interval, timeout, retries, start_period) is owned by
 - Integration tests use a dedicated test database, never production data.
 - No production access or secrets in any test or CI job.
 
-## CI (later — not implemented)
+## CI (implemented)
 
-- Lint, typecheck, and the test suite run in GitHub Actions before the image
-  build. No GitHub Actions implementation during the scaffolding stage.
+- `.github/workflows/ci.yml` runs on pushes and pull requests to `main`.
+- It sets up Node.js 24 from `.nvmrc` and the pinned pnpm version from
+  `package.json`, installs with `pnpm install --frozen-lockfile`, then runs
+  `pnpm verify`.
+- CI does not duplicate the gate: it calls the same root script used locally, so
+  local `pnpm verify` and CI verification are equivalent.
+- The workflow is verification-only with `contents: read` permissions; it uses no
+  services, secrets, or deployment steps.
 
 ## Environment note
 

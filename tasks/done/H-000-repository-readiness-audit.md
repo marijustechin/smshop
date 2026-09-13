@@ -1,3 +1,17 @@
+# H-000 — Repository Readiness Audit
+
+## Status
+
+DONE
+
+## Note
+
+Completed before the task lifecycle existed. The body below is the original
+audit task specification, preserved for context. Its findings drove H-001
+(verification gate), H-002 (runtime baseline), and H-003 (task workflow).
+
+---
+
 # smShop — Current State and Harness Readiness Audit
 
 ## Objective

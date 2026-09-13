@@ -16,6 +16,26 @@ This roadmap may evolve as product decisions are made.
 
 ---
 
+# Current State
+
+**Current milestone:** M1 — Harness & Development Workflow (M0 foundation audit
+is complete).
+
+**Current task:** none — `tasks/current/` is empty; start the next task from
+the list below.
+
+**Recently completed:** H-000 repository readiness audit, H-001 verification
+gate, H-002 runtime baseline, H-003 task workflow, H-004 CI workflow.
+
+**Next:** H-005 — Establish Auth environment & validation baseline.
+
+**Planned Harness tasks:** H-006 — Test database strategy.
+
+**Next product milestone:** M2 — Authentication v1, after the Harness tasks
+above.
+
+---
+
 # Project Goal
 
 Build a modern Lithuanian e-commerce store focused on presenting and selling premium chocolate products.
@@ -54,11 +74,9 @@ Example:
 
 ## M0 — Project Foundation & Auth Readiness
 
-Current work:
-
-- [ ] Audit current repository state
-- [ ] Audit Harness maturity
-- [ ] Define missing Harness infrastructure
+- [x] Audit current repository state (H-000)
+- [x] Audit Harness maturity (H-000)
+- [ ] Define missing Harness infrastructure (H-001–H-003 done; H-004–H-006 planned)
 - [ ] Prepare Auth v1 implementation plan
 
 ---
@@ -69,20 +87,31 @@ Goal: make the repository safe and predictable for agentic development.
 
 ## Harness
 
-- [ ] Establish `AGENTS.md`
-- [ ] Establish architecture rules
-- [ ] Establish testing rules
-- [ ] Establish coding conventions where needed
-- [ ] Establish verification workflow
-- [ ] Establish task lifecycle
-- [ ] Establish commit / completion rules
+- [x] Establish `AGENTS.md`
+- [x] Establish architecture rules
+- [x] Establish testing rules
+- [x] Establish coding conventions where needed
+- [x] Establish verification workflow (H-001)
+- [x] Establish task lifecycle (H-003)
+- [x] Establish commit / completion rules (H-003)
+
+## Harness tasks
+
+- [x] H-000 — Repository readiness audit
+- [x] H-001 — Establish the project verification gate
+- [x] H-002 — Pin the runtime baseline
+- [x] H-003 — Establish the persistent task workflow
+- [x] H-004 — Establish CI workflow
+- [ ] H-005 — Establish Auth environment & validation baseline
+- [ ] H-006 — Establish test database strategy
 
 ## Task workflow
 
-Expected task lifecycle:
+Task lifecycle, naming conventions, and completion rules are defined in
+`docs/task-workflow.md`. Summary:
 
 ```text
-TODO.md
+tasks/TODO.md
     ↓
 tasks/current/<task>.md
     ↓
@@ -92,20 +121,12 @@ verification
     ↓
 tasks/done/<completed-task>.md
     ↓
-TODO.md updated
+tasks/TODO.md updated
 ```
 
-Each implementation task should define:
-
-- objective;
-- scope;
-- out-of-scope items;
-- acceptance criteria;
-- verification;
-- dependencies;
-- follow-up work.
-
-A task is not complete until its verification passes.
+Each implementation task defines objective, context, dependencies, scope,
+out-of-scope items, acceptance criteria, required verification, and follow-up
+work. A task is not complete until its verification passes.
 
 ---
 
@@ -828,7 +849,7 @@ These features are **not part of the initial launch unless explicitly promoted i
 1. Do not implement speculative complexity.
 2. Build in small, independently verifiable tasks.
 3. Repository state is the source of truth.
-4. `TODO.md` describes the roadmap; task files describe implementation work.
+4. `tasks/TODO.md` describes the roadmap; task files describe implementation work.
 5. Completed tasks must preserve useful implementation history.
 6. Product requirements may evolve; update this roadmap when they do.
 7. Security and testing are part of implementation, not cleanup work.

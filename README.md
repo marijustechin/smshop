@@ -19,7 +19,7 @@ and must not be silently changed.
 ## Status
 
 **Monorepo scaffolded (foundation only).** No product features. See
-[`TODO.md`](TODO.md) for what remains.
+[`tasks/TODO.md`](tasks/TODO.md) for the roadmap and current state.
 
 ## Repository structure
 
@@ -34,7 +34,8 @@ docs/            architecture, product, development, testing, deployment docs
 
 ## Getting started
 
-Prerequisites: Node.js 24 LTS, pnpm, Docker (for the local PostgreSQL).
+Prerequisites: Node.js 24 LTS (`nvm use` reads the root `.nvmrc`), pnpm, Docker
+(for the local PostgreSQL).
 
 ```sh
 pnpm install
@@ -52,26 +53,39 @@ Endpoints (development):
 
 ## Scripts
 
-| Command                               | Purpose                                                |
-| ------------------------------------- | ------------------------------------------------------ |
-| `pnpm dev`                            | build `@smshop/db`, then run web + api on the host     |
-| `pnpm build`                          | production builds (db → api → web)                     |
-| `pnpm typecheck`                      | type-check all packages                                |
-| `pnpm lint`                           | ESLint across packages                                 |
-| `pnpm format` / `pnpm format:check`   | Prettier write / check                                 |
-| `pnpm test`                           | run unit/integration tests (Vitest, API via Supertest) |
-| `pnpm db:up` / `pnpm db:down`         | start/stop local PostgreSQL 18                         |
-| `pnpm prisma:generate`                | generate Prisma client                                 |
-| `pnpm prisma:migrate:dev` / `:deploy` | dev / deploy migrations                                |
+| Command                               | Purpose                                                             |
+| ------------------------------------- | ------------------------------------------------------------------- |
+| `pnpm dev`                            | build `@smshop/db`, then run web + api on the host                  |
+| `pnpm build`                          | production builds (db → api → web)                                  |
+| `pnpm typecheck`                      | type-check all packages                                             |
+| `pnpm lint`                           | ESLint across packages                                              |
+| `pnpm format` / `pnpm format:check`   | Prettier write / check                                              |
+| `pnpm test`                           | run unit/integration tests (Vitest, API via Supertest)              |
+| `pnpm verify`                         | full local verification gate (format, lint, typecheck, test, build) |
+| `pnpm db:up` / `pnpm db:down`         | start/stop local PostgreSQL 18                                      |
+| `pnpm prisma:generate`                | generate Prisma client                                              |
+| `pnpm prisma:migrate:dev` / `:deploy` | dev / deploy migrations                                             |
+
+## Verification gate
+
+`pnpm verify` is the single authoritative local verification gate. It runs, in
+order: formatting check, lint, typecheck, tests, and production build. It exits
+`0` only when every stage succeeds.
+
+Implementation work is not technically complete until `pnpm verify` passes. The
+gate is safe to run repeatedly, does not modify source files, and does not
+require production services.
 
 ## Documentation
 
 - [Architecture](docs/architecture.md) — application boundaries and repository structure
-- [Product requirements](docs/product-requirements.md) — functional specification framework (open)
+- [Product requirements](docs/product-requirements-organized.md) — authoritative functional requirements (working draft)
+- [Product requirements notes](docs/product-requirements-notes.md) — supporting notes
 - [Development](docs/development.md) — local development environment and commands
 - [Testing](docs/testing.md) — testing strategy and acceptance expectations
+- [Task workflow](docs/task-workflow.md) — task lifecycle, naming, and completion rules
 - [Deployment](docs/deployment.md) — application-side image build/publish
-- [TODO](TODO.md) — unfinished actionable work
+- [TODO](tasks/TODO.md) — roadmap and current project state
 
 The deployment contract itself is owned by `sm-oracle-infra`; see
 `sm-oracle-infra/docs/application-deployment-contract.md`.
