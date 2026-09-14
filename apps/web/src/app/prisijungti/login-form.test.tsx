@@ -63,7 +63,9 @@ describe('LoginForm', () => {
 
     await submitLogin();
 
-    await waitFor(() => expect(authState.login).toHaveBeenCalledWith('a@example.com', 'password'));
+    await waitFor(() =>
+      expect(authState.login).toHaveBeenCalledWith('a@example.com', 'password', null),
+    );
     expect(replace).toHaveBeenCalledWith('/paskyra');
   });
 
@@ -88,7 +90,7 @@ describe('LoginForm', () => {
 
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: 'Siųsti patvirtinimo laišką dar kartą' }));
-    await waitFor(() => expect(resend).toHaveBeenCalledWith('a@example.com'));
+    await waitFor(() => expect(resend).toHaveBeenCalledWith('a@example.com', null));
   });
 
   it('honors a safe returnTo', async () => {
@@ -139,5 +141,27 @@ describe('LoginForm', () => {
     render(<LoginForm />);
 
     expect(screen.getByText(/Prisijungti su Google nepavyko/i)).toBeInTheDocument();
+  });
+
+  it('maps rate limiting (429) to a Lithuanian message', async () => {
+    authState.login.mockRejectedValue(new ApiError(429, 'Too many requests', 'RATE_LIMITED'));
+    render(<LoginForm />);
+
+    await submitLogin();
+
+    expect(
+      await screen.findByText('Per daug bandymų. Prašome šiek tiek palaukti ir bandyti dar kartą.'),
+    ).toBeInTheDocument();
+  });
+
+  it('maps a Turnstile challenge failure to a Lithuanian message', async () => {
+    authState.login.mockRejectedValue(new ApiError(403, 'failed', 'TURNSTILE_FAILED'));
+    render(<LoginForm />);
+
+    await submitLogin();
+
+    expect(
+      await screen.findByText('Nepavyko patvirtinti, kad nesate robotas. Bandykite dar kartą.'),
+    ).toBeInTheDocument();
   });
 });

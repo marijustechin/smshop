@@ -11,6 +11,7 @@ export const loginSchema = z
   .object({
     email: z.string().trim().max(254).pipe(z.email()),
     password: z.string().min(1).max(PASSWORD_MAX_LENGTH),
+    turnstileToken: z.string().min(1).max(4096).optional(),
   })
   .strict();
 

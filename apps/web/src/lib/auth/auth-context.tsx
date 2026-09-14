@@ -8,7 +8,7 @@ import type { AuthStatus, AuthUser } from './types';
 interface AuthContextValue {
   status: AuthStatus;
   user: AuthUser | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, turnstileToken?: string | null) => Promise<void>;
   logout: () => Promise<void>;
   /** Establishes in-memory auth state from the httpOnly refresh cookie. */
   bootstrap: () => Promise<void>;
@@ -107,12 +107,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void bootstrap();
   }, [bootstrap]);
 
-  const login = React.useCallback(async (email: string, password: string) => {
-    const result = await authApi.login(email, password);
-    tokenRef.current = result.accessToken;
-    setUser(result.user);
-    setStatus('authenticated');
-  }, []);
+  const login = React.useCallback(
+    async (email: string, password: string, turnstileToken?: string | null) => {
+      const result = await authApi.login(email, password, turnstileToken);
+      tokenRef.current = result.accessToken;
+      setUser(result.user);
+      setStatus('authenticated');
+    },
+    [],
+  );
 
   const logout = React.useCallback(async () => {
     try {

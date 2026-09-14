@@ -13,6 +13,7 @@ import { useAuth } from '@/lib/auth/auth-context';
 import { mapAuthError, isEmailNotVerified, AUTH_MESSAGES } from '@/lib/auth/messages';
 import { safeReturnTo } from '@/lib/auth/return-to';
 import { googleStartUrl, resendVerification } from '@/lib/auth/api';
+import { TurnstileWidget, useTurnstileGate } from '@/components/turnstile';
 
 const loginSchema = z.object({
   email: z
@@ -37,6 +38,7 @@ export function LoginForm() {
   const oauth = searchParams.get('oauth');
   const returnTo = safeReturnTo(searchParams.get('returnTo'));
   const handledOAuth = React.useRef(false);
+  const turnstile = useTurnstileGate();
 
   const {
     register,
@@ -64,7 +66,7 @@ export function LoginForm() {
     setFormError(null);
     setUnverifiedEmail(null);
     try {
-      await login(values.email.trim(), values.password);
+      await login(values.email.trim(), values.password, turnstile.token);
       router.replace(returnTo);
     } catch (error) {
       if (isEmailNotVerified(error)) {
@@ -73,6 +75,8 @@ export function LoginForm() {
         return;
       }
       setFormError(mapAuthError(error));
+    } finally {
+      turnstile.reset();
     }
   });
 
@@ -80,12 +84,18 @@ export function LoginForm() {
     if (!unverifiedEmail) {
       return;
     }
+    if (!turnstile.canSubmit) {
+      turnstile.reset();
+      return;
+    }
     setResendState('sending');
     try {
-      await resendVerification(unverifiedEmail);
+      await resendVerification(unverifiedEmail, turnstile.token);
       setResendState('sent');
     } catch {
       setResendState('error');
+    } finally {
+      turnstile.reset();
     }
   };
 
@@ -132,7 +142,7 @@ export function LoginForm() {
               variant="outline"
               size="sm"
               onClick={onResend}
-              disabled={resendState === 'sending'}
+              disabled={resendState === 'sending' || !turnstile.canSubmit}
             >
               {resendState === 'sending' ? 'Siunčiama…' : 'Siųsti patvirtinimo laišką dar kartą'}
             </Button>
@@ -148,7 +158,13 @@ export function LoginForm() {
         </Alert>
       ) : null}
 
-      <Button type="submit" className="w-full" disabled={isSubmitting || status === 'unknown'}>
+      <TurnstileWidget key={turnstile.nonce} onTokenChange={turnstile.setToken} />
+
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isSubmitting || status === 'unknown' || !turnstile.canSubmit}
+      >
         {isSubmitting ? 'Jungiamasi…' : 'Prisijungti'}
       </Button>
 

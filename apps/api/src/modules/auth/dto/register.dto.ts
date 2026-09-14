@@ -12,6 +12,8 @@ export const registerSchema = z
   .object({
     email: z.string().trim().max(254).pipe(z.email()),
     password: z.string().min(PASSWORD_MIN_LENGTH).max(PASSWORD_MAX_LENGTH),
+    // Cloudflare Turnstile challenge token; required only when Turnstile is enabled.
+    turnstileToken: z.string().min(1).max(4096).optional(),
   })
   .strict();
 

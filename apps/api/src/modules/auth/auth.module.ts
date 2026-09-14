@@ -6,10 +6,11 @@ import { PasswordResetService } from './password-reset/password-reset.service.js
 import { PasswordModule } from './password/password.module.js';
 import { AuthSessionModule } from './session/auth-session.module.js';
 import { GoogleModule } from './google/google.module.js';
+import { SecurityModule } from './security/security.module.js';
 import { MailModule } from '../mail/mail.module.js';
 
 @Module({
-  imports: [MailModule, PasswordModule, AuthSessionModule, GoogleModule],
+  imports: [MailModule, PasswordModule, AuthSessionModule, GoogleModule, SecurityModule],
   controllers: [AuthController],
   providers: [AuthService, EmailVerificationService, PasswordResetService],
 })

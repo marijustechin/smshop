@@ -11,6 +11,7 @@ import { FormField } from '@/components/form-field';
 import { register as registerAccount, resendVerification } from '@/lib/auth/api';
 import { ApiError } from '@/lib/api/client';
 import { AUTH_MESSAGES, mapAuthError } from '@/lib/auth/messages';
+import { TurnstileWidget, useTurnstileGate } from '@/components/turnstile';
 
 const registerSchema = z
   .object({
@@ -45,12 +46,13 @@ export function RegisterForm() {
   const [resendState, setResendState] = React.useState<'idle' | 'sending' | 'sent' | 'error'>(
     'idle',
   );
+  const turnstile = useTurnstileGate();
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
     setDuplicate(false);
     try {
-      const response = await registerAccount(values.email.trim(), values.password);
+      const response = await registerAccount(values.email.trim(), values.password, turnstile.token);
       setResult({ email: values.email.trim(), emailSent: response.verificationEmailSent });
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
@@ -58,6 +60,8 @@ export function RegisterForm() {
         return;
       }
       setFormError(mapAuthError(error));
+    } finally {
+      turnstile.reset();
     }
   });
 
@@ -65,12 +69,18 @@ export function RegisterForm() {
     if (!result) {
       return;
     }
+    if (!turnstile.canSubmit) {
+      turnstile.reset();
+      return;
+    }
     setResendState('sending');
     try {
-      await resendVerification(result.email);
+      await resendVerification(result.email, turnstile.token);
       setResendState('sent');
     } catch {
       setResendState('error');
+    } finally {
+      turnstile.reset();
     }
   };
 
@@ -88,12 +98,13 @@ export function RegisterForm() {
               jį dar kartą.
             </p>
             <div className="mt-2">
+              <TurnstileWidget key={turnstile.nonce} onTokenChange={turnstile.setToken} />
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={onResend}
-                disabled={resendState === 'sending'}
+                disabled={resendState === 'sending' || !turnstile.canSubmit}
               >
                 {resendState === 'sending' ? 'Siunčiama…' : 'Siųsti patvirtinimo laišką'}
               </Button>
@@ -155,7 +166,8 @@ export function RegisterForm() {
         {...register('confirm')}
       />
       {formError ? <Alert variant="error">{formError}</Alert> : null}
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      <TurnstileWidget key={turnstile.nonce} onTokenChange={turnstile.setToken} />
+      <Button type="submit" className="w-full" disabled={isSubmitting || !turnstile.canSubmit}>
         {isSubmitting ? 'Registruojamasi…' : 'Registruotis'}
       </Button>
     </form>

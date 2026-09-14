@@ -38,25 +38,27 @@ scattering `process.env` access.
 means the name is part of the contract but becomes mandatory only when its
 consumer (Auth v1) is implemented; it is validated only when present.
 
-| Category        | Variable               | Required now | Secret | Notes                                               |
-| --------------- | ---------------------- | ------------ | ------ | --------------------------------------------------- |
-| Application     | `NODE_ENV`             | no (default) | no     | `development` \| `test` \| `production`             |
-| Application     | `PORT`                 | no (default) | no     | Defaults to `3001`                                  |
-| Database        | `DATABASE_URL`         | **yes**      | yes    | `postgres://` or `postgresql://`; no fallback       |
-| Origins         | `WEB_ORIGIN`           | **yes**      | no     | Browser origin; CORS with credentials + email links |
-| Origins         | `API_ORIGIN`           | reserved     | no     | Public API origin; email links / callbacks          |
-| Access token    | `JWT_ACCESS_SECRET`    | **yes**      | yes    | Min 32 chars; signs access JWTs                     |
-| Access token    | `JWT_ACCESS_TTL`       | no (default) | no     | Access-token lifetime; default `15m`                |
-| Refresh/session | `AUTH_SESSION_TTL`     | no (default) | no     | Refresh-session lifetime; default `7d`              |
-| Email           | `SMTP_HOST`            | grouped      | no     | SMTP group is all-or-none (see below)               |
-| Email           | `SMTP_PORT`            | grouped      | no     | 1–65535; requires the whole SMTP block              |
-| Email           | `SMTP_SECURE`          | grouped      | no     | Explicit `"true"`/`"false"`; not inferred by port   |
-| Email           | `SMTP_USER`            | grouped      | no     |                                                     |
-| Email           | `SMTP_PASSWORD`        | grouped      | yes    | Supports `SMTP_PASSWORD_FILE`                       |
-| Email           | `MAIL_FROM`            | grouped      | no     | Bare email or `Name <email>` sender                 |
-| Google OAuth    | `GOOGLE_CLIENT_ID`     | grouped      | no     | Google group is all-or-none; disabled when absent   |
-| Google OAuth    | `GOOGLE_CLIENT_SECRET` | grouped      | yes    | Supports `GOOGLE_CLIENT_SECRET_FILE`                |
-| Google OAuth    | `GOOGLE_CALLBACK_URL`  | grouped      | no     | Must equal the Google Authorized redirect URI       |
+| Category        | Variable                         | Required now | Secret | Notes                                               |
+| --------------- | -------------------------------- | ------------ | ------ | --------------------------------------------------- |
+| Application     | `NODE_ENV`                       | no (default) | no     | `development` \| `test` \| `production`             |
+| Application     | `PORT`                           | no (default) | no     | Defaults to `3001`                                  |
+| Database        | `DATABASE_URL`                   | **yes**      | yes    | `postgres://` or `postgresql://`; no fallback       |
+| Origins         | `WEB_ORIGIN`                     | **yes**      | no     | Browser origin; CORS with credentials + email links |
+| Origins         | `API_ORIGIN`                     | reserved     | no     | Public API origin; email links / callbacks          |
+| Access token    | `JWT_ACCESS_SECRET`              | **yes**      | yes    | Min 32 chars; signs access JWTs                     |
+| Access token    | `JWT_ACCESS_TTL`                 | no (default) | no     | Access-token lifetime; default `15m`                |
+| Refresh/session | `AUTH_SESSION_TTL`               | no (default) | no     | Refresh-session lifetime; default `7d`              |
+| Email           | `SMTP_HOST`                      | grouped      | no     | SMTP group is all-or-none (see below)               |
+| Email           | `SMTP_PORT`                      | grouped      | no     | 1–65535; requires the whole SMTP block              |
+| Email           | `SMTP_SECURE`                    | grouped      | no     | Explicit `"true"`/`"false"`; not inferred by port   |
+| Email           | `SMTP_USER`                      | grouped      | no     |                                                     |
+| Email           | `SMTP_PASSWORD`                  | grouped      | yes    | Supports `SMTP_PASSWORD_FILE`                       |
+| Email           | `MAIL_FROM`                      | grouped      | no     | Bare email or `Name <email>` sender                 |
+| Google OAuth    | `GOOGLE_CLIENT_ID`               | grouped      | no     | Google group is all-or-none; disabled when absent   |
+| Google OAuth    | `GOOGLE_CLIENT_SECRET`           | grouped      | yes    | Supports `GOOGLE_CLIENT_SECRET_FILE`                |
+| Google OAuth    | `GOOGLE_CALLBACK_URL`            | grouped      | no     | Must equal the Google Authorized redirect URI       |
+| Turnstile       | `TURNSTILE_SECRET_KEY`           | optional     | yes    | Backend secret; absent disables Turnstile. `_FILE`  |
+| Turnstile       | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | optional     | no     | Frontend (public) site key; absent hides the widget |
 
 PostgreSQL Compose values (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`,
 `POSTGRES_PORT`) are development-only and consumed by `docker-compose.yml`, not
@@ -93,6 +95,13 @@ required at application startup. They are consumed only by the test tooling:
   `docs/authentication.md`.
 - **Reserved:** `API_ORIGIN`. It is accepted and format-checked today but does not
   block the current application.
+- **Turnstile (optional, backend secret):** `TURNSTILE_SECRET_KEY` (supports
+  `TURNSTILE_SECRET_KEY_FILE`). When absent, Turnstile is disabled and the public
+  auth endpoints accept requests without a challenge (local dev / CI need no
+  secret). When present, `register`, `login`, `forgot-password`, and
+  `resend-verification` require a valid challenge and fail closed. The site key
+  `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is public and belongs to the frontend; it must
+  never be confused with the secret.
 - **Session lifetime:** `AUTH_SESSION_TTL` controls both the server-side
   `AuthSession` lifetime and the refresh cookie `Max-Age`. Refresh tokens are
   opaque random secrets, so there is no refresh signing secret. See

@@ -4,10 +4,19 @@ import type { AuthUser, LoginResponse, RefreshResponse, RegisterResponse } from 
 
 /** Typed wrappers around the backend auth endpoints. */
 
-export function login(email: string, password: string): Promise<LoginResponse> {
+/** Adds the optional Turnstile token to a protected request body. */
+function withTurnstile<T extends object>(body: T, turnstileToken?: string | null): T {
+  return turnstileToken ? { ...body, turnstileToken } : body;
+}
+
+export function login(
+  email: string,
+  password: string,
+  turnstileToken?: string | null,
+): Promise<LoginResponse> {
   return apiRequest<LoginResponse>('/api/auth/login', {
     method: 'POST',
-    body: { email, password },
+    body: withTurnstile({ email, password }, turnstileToken),
   });
 }
 
@@ -23,10 +32,14 @@ export function fetchMe(accessToken: string): Promise<AuthUser> {
   return apiRequest<AuthUser>('/api/auth/me', { accessToken });
 }
 
-export function register(email: string, password: string): Promise<RegisterResponse> {
+export function register(
+  email: string,
+  password: string,
+  turnstileToken?: string | null,
+): Promise<RegisterResponse> {
   return apiRequest<RegisterResponse>('/api/auth/register', {
     method: 'POST',
-    body: { email, password },
+    body: withTurnstile({ email, password }, turnstileToken),
   });
 }
 
@@ -37,17 +50,23 @@ export function verifyEmail(token: string): Promise<{ verified: true }> {
   });
 }
 
-export function resendVerification(email: string): Promise<{ message: string }> {
+export function resendVerification(
+  email: string,
+  turnstileToken?: string | null,
+): Promise<{ message: string }> {
   return apiRequest<{ message: string }>('/api/auth/resend-verification', {
     method: 'POST',
-    body: { email },
+    body: withTurnstile({ email }, turnstileToken),
   });
 }
 
-export function forgotPassword(email: string): Promise<{ message: string }> {
+export function forgotPassword(
+  email: string,
+  turnstileToken?: string | null,
+): Promise<{ message: string }> {
   return apiRequest<{ message: string }>('/api/auth/forgot-password', {
     method: 'POST',
-    body: { email },
+    body: withTurnstile({ email }, turnstileToken),
   });
 }
 

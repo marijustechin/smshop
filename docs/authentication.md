@@ -544,6 +544,60 @@ Google is all-or-none (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (supports
 startup. The OAuth client is a Web application; its Authorized redirect URI must
 equal `GOOGLE_CALLBACK_URL` exactly. See `docs/configuration.md`.
 
+## Abuse hardening (A-009)
+
+Two provider-neutral boundaries protect the public auth endpoints. Neither
+changes identity/session design, and both are stubbed in tests so no automated
+test contacts Cloudflare.
+
+### Cloudflare Turnstile
+
+- **Protected endpoints:** `POST /api/auth/register`, `POST /api/auth/login`,
+  `POST /api/auth/forgot-password`, `POST /api/auth/resend-verification`. All
+  other auth routes (verify-email, reset-password, refresh, logout, me, Google
+  OAuth) are **not** gated.
+- **Boundary:** `TurnstileVerifier` (token `TURNSTILE_VERIFIER`) with a
+  `CloudflareTurnstileVerifier` implementation calling Siteverify server-side.
+  Auth services never call Cloudflare directly. The frontend widget result is
+  never trusted on its own.
+- **Request contract:** protected bodies may include `turnstileToken` (optional
+  in the DTO; required only when Turnstile is enabled). Tokens are never
+  persisted.
+- **Ordering:** enforcement is a guard, so it runs before request validation and
+  long before Argon2 hashing, token generation, DB writes, or mail. A failed
+  challenge cannot trigger expensive or stateful work.
+- **Fail-closed:** once `TURNSTILE_SECRET_KEY` is configured, a missing token →
+  `403 TURNSTILE_REQUIRED`; an invalid token or a provider outage/timeout/
+  malformed response → `403 TURNSTILE_FAILED`. When no secret is configured the
+  feature is disabled (local dev / CI). The secret and tokens are never logged.
+- **Enumeration-safe:** Turnstile errors are identical regardless of account, so
+  login/forgot/resend privacy is preserved.
+
+### Rate limiting
+
+- **Implementation:** an injectable, in-memory fixed-window limiter
+  (`RateLimiter` / `InMemoryRateLimiter`) enforced by `RateLimitGuard` via
+  `@RateLimit(...)` metadata on specific routes. No Express middleware, no
+  Redis (single-instance deployment; horizontal scaling would need a shared
+  store — documented follow-up).
+- **Policies (initial):** login `5/min`; register `5/10min`; forgot-password
+  `3/10min`; resend-verification `3/10min`; verify-email and reset-password
+  `20/10min`. Refresh/logout/me are not rate-limited.
+- **Response:** `429` with `code: "RATE_LIMITED"` and a `Retry-After` header; no
+  counters or internal state are exposed.
+- **Ordering:** rate limiting runs before the Turnstile guard.
+- **Client identity / proxy trust:** the limiter keys on Fastify's `request.ip`.
+  `trustProxy` is left at its default (`false`), so client-supplied
+  `X-Forwarded-For` headers are **not** trusted and cannot be used to bypass
+  limits. Because production runs behind the infrastructure reverse proxy, all
+  client requests will appear to originate from the proxy until proxy trust is
+  configured. **Infrastructure follow-up:** set the correct `trustProxy` value
+  (options `{ trustProxy }` on the Fastify adapter) for the known proxy hops in
+  `sm-oracle-infra` deployment, so limits apply per real client IP.
+- **Test control:** the limiter has an injectable clock and is overridden in the
+  API test harness (permissive by default; the hardening suite uses a real
+  instance), so there are no wall-clock waits.
+
 ## Tests
 
 Schema invariants are covered by `apps/api/test/database/auth-schema.db-spec.ts`
@@ -583,3 +637,13 @@ verified-email collision → `account-link-required` (no linking/session),
 unverified/missing email rejection, invalid/missing state, provider denial,
 exchange failure, callback replay, and post-login refresh/`/me`/logout.
 `openid-client-google.provider.spec.ts` asserts the requested scope set.
+
+`apps/api/test/database/auth-hardening.db-spec.ts` covers abuse hardening against
+real PostgreSQL with the Turnstile verifier and rate limiter stubbed/controlled
+(no Cloudflare calls): enforcement and no-op-when-disabled across the four
+protected endpoints, short-circuit before password verification, fail-closed
+provider outage, preserved enumeration semantics, and 429 rate-limit behaviour
+(threshold, `Retry-After`, separate per-endpoint policies, limiter-before-
+Turnstile ordering). `cloudflare-turnstile-verifier.spec.ts`,
+`turnstile.guard.spec.ts`, and `rate-limiter.spec.ts` cover the boundaries with
+no network.

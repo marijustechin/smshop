@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import { FormField } from '@/components/form-field';
 import { forgotPassword } from '@/lib/auth/api';
-import { AUTH_MESSAGES } from '@/lib/auth/messages';
+import { mapAuthError } from '@/lib/auth/messages';
+import { TurnstileWidget, useTurnstileGate } from '@/components/turnstile';
 
 const schema = z.object({
   email: z
@@ -28,14 +29,17 @@ export function ForgotPasswordForm() {
   } = useForm<Values>({ resolver: zodResolver(schema) });
   const [sent, setSent] = React.useState(false);
   const [formError, setFormError] = React.useState<string | null>(null);
+  const turnstile = useTurnstileGate();
 
   const submit = handleSubmit(async (values) => {
     setFormError(null);
     try {
-      await forgotPassword(values.email.trim());
+      await forgotPassword(values.email.trim(), turnstile.token);
       setSent(true);
-    } catch {
-      setFormError(AUTH_MESSAGES.network);
+    } catch (error) {
+      setFormError(mapAuthError(error));
+    } finally {
+      turnstile.reset();
     }
   });
 
@@ -60,7 +64,8 @@ export function ForgotPasswordForm() {
         {...register('email')}
       />
       {formError ? <Alert variant="error">{formError}</Alert> : null}
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      <TurnstileWidget key={turnstile.nonce} onTokenChange={turnstile.setToken} />
+      <Button type="submit" className="w-full" disabled={isSubmitting || !turnstile.canSubmit}>
         {isSubmitting ? 'Siunčiama…' : 'Siųsti atkūrimo instrukcijas'}
       </Button>
     </form>

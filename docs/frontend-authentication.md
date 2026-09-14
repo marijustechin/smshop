@@ -92,16 +92,34 @@ when set, otherwise empty string in production (same-origin under `/api`) and
 `http://localhost:3001` in development. Components never hard-code origins. The
 client always sends `credentials: 'include'` for cookie-bearing calls.
 
+## Turnstile and rate-limit UX (A-009)
+
+- `TurnstileWidget` (`src/components/turnstile.tsx`) loads Cloudflare's explicit
+  widget when `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set, and renders nothing when it
+  is not (so local dev without keys works). It emits the challenge token via a
+  callback; `useTurnstileGate()` exposes `token`, `reset()`, `needsChallenge`, and
+  `canSubmit`.
+- Forms on `/prisijungti`, `/registracija`, `/pamirsau-slaptazodi`, and the login
+  resend action include `turnstileToken` in the request and disable submission
+  until a valid token is available (when a site key is configured). After every
+  attempt the widget is remounted, acquiring a fresh single-use token.
+- Error mapping (Lithuanian): `403 TURNSTILE_REQUIRED`/`TURNSTILE_FAILED` →
+  "Nepavyko patvirtinti, kad nesate robotas…"; `429` →
+  "Per daug bandymų…". Raw Cloudflare/backend detail is never shown.
+- The secret key is backend-only; only the public site key reaches the frontend,
+  and it is never used in `NEXT_PUBLIC_*` for the secret.
+
 ## Not implemented (intentionally)
 
-No roles/RBAC, no Customer/addresses/orders/checkout, no catalog, no Turnstile
-(A-009), no rate limiting, no account-linking UI, no multi-session/device
-management. `/paskyra` is an auth/test page, not the final customer dashboard.
+No roles/RBAC, no Customer/addresses/orders/checkout, no catalog, no account-
+linking UI, no multi-session/device management. `/paskyra` is an auth/test page,
+not the final customer dashboard.
 
 ## Tests
 
 `apps/web` uses Vitest + Testing Library (jsdom). Coverage: auth state
 (bootstrap success/failure, login, logout, coordinated refresh), `returnTo`
-safety, error mapping, login/registration/verification/password-recovery forms,
-OAuth query outcomes, and the protected `/paskyra` behaviour. All backend HTTP is
-mocked; no test calls the live API.
+safety, error mapping (including `429` and Turnstile codes), login/registration/
+verification/password-recovery forms, Turnstile gating and widget rendering,
+OAuth query outcomes, and the protected `/paskyra` behaviour. All backend HTTP and
+Cloudflare are mocked; no test calls the live API or Cloudflare.

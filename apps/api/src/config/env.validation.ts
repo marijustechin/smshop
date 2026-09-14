@@ -11,6 +11,7 @@ export const SECRET_KEYS = [
   'JWT_ACCESS_SECRET',
   'SMTP_PASSWORD',
   'GOOGLE_CLIENT_SECRET',
+  'TURNSTILE_SECRET_KEY',
 ] as const;
 
 type SecretKey = (typeof SECRET_KEYS)[number];
@@ -125,6 +126,12 @@ export const envSchema = z
     GOOGLE_CLIENT_ID: z.string().min(1).optional(),
     GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
     GOOGLE_CALLBACK_URL: z.url().optional(),
+
+    // Cloudflare Turnstile for public abuse-sensitive auth actions. When the
+    // secret is absent, Turnstile is disabled (local dev / CI need no secret);
+    // when present, the four protected endpoints fail closed on a failed or
+    // unavailable challenge. Supports TURNSTILE_SECRET_KEY_FILE.
+    TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
   })
   .superRefine((env, ctx) => {
     const configured = SMTP_KEYS.filter((key) => hasValue(env[key]));

@@ -29,10 +29,16 @@ import { AccessTokenGuard } from './session/access-token.guard.js';
 import type { AuthenticatedIdentity } from './session/access-token.service.js';
 import { CurrentIdentity } from './session/current-identity.decorator.js';
 import { REFRESH_COOKIE_NAME, RefreshCookieService } from './session/refresh-cookie.service.js';
+import { TurnstileGuard } from './security/turnstile/turnstile.guard.js';
+import { RateLimitGuard } from './security/rate-limit/rate-limit.guard.js';
+import { RateLimit } from './security/rate-limit/rate-limit.decorator.js';
 
 const GENERIC_RESEND_MESSAGE = 'If an eligible account exists, a verification email will be sent.';
 const GENERIC_FORGOT_MESSAGE =
   'If an eligible account exists, password reset instructions will be sent.';
+
+const MINUTE = 60_000;
+const TEN_MINUTES = 600_000;
 
 @Controller('auth')
 export class AuthController {
@@ -46,18 +52,24 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @RateLimit({ name: 'register', limit: 5, windowMs: TEN_MINUTES })
+  @UseGuards(RateLimitGuard, TurnstileGuard)
   register(@Body() dto: RegisterDto): Promise<RegisteredUser> {
     return this.authService.register(dto);
   }
 
   @Post('verify-email')
   @HttpCode(HttpStatus.OK)
+  @RateLimit({ name: 'verify-email', limit: 20, windowMs: TEN_MINUTES })
+  @UseGuards(RateLimitGuard)
   verifyEmail(@Body() dto: VerifyEmailDto): Promise<{ verified: true }> {
     return this.emailVerification.verify(dto.token);
   }
 
   @Post('resend-verification')
   @HttpCode(HttpStatus.ACCEPTED)
+  @RateLimit({ name: 'resend-verification', limit: 3, windowMs: TEN_MINUTES })
+  @UseGuards(RateLimitGuard, TurnstileGuard)
   async resendVerification(@Body() dto: ResendVerificationDto): Promise<{ message: string }> {
     await this.emailVerification.resend(dto.email);
     return { message: GENERIC_RESEND_MESSAGE };
@@ -65,6 +77,8 @@ export class AuthController {
 
   @Post('forgot-password')
   @HttpCode(HttpStatus.ACCEPTED)
+  @RateLimit({ name: 'forgot-password', limit: 3, windowMs: TEN_MINUTES })
+  @UseGuards(RateLimitGuard, TurnstileGuard)
   async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<{ message: string }> {
     await this.passwordReset.forgotPassword(dto.email);
     return { message: GENERIC_FORGOT_MESSAGE };
@@ -72,12 +86,16 @@ export class AuthController {
 
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
+  @RateLimit({ name: 'reset-password', limit: 20, windowMs: TEN_MINUTES })
+  @UseGuards(RateLimitGuard)
   resetPassword(@Body() dto: ResetPasswordDto): Promise<{ passwordReset: true }> {
     return this.passwordReset.resetPassword(dto.token, dto.password);
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @RateLimit({ name: 'login', limit: 5, windowMs: MINUTE })
+  @UseGuards(RateLimitGuard, TurnstileGuard)
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) reply: FastifyReply,

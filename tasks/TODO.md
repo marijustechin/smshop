@@ -21,13 +21,13 @@ This roadmap may evolve as product decisions are made.
 **Current milestone:** M2 — Authentication v1.
 
 **Current task:** none — `tasks/current/` is empty. The next application task is
-**A-009 — Authentication security hardening** (not started).
+**A-010 — Authentication v1 milestone verification** (not started).
 
-**Recently completed:** H-000–H-009; A-001–A-008 (auth domain, registration,
+**Recently completed:** H-000–H-009; A-001–A-009 (auth domain, registration,
 email, verification, login/session lifecycle, password recovery, Google
-authentication, frontend auth flows).
+authentication, frontend auth flows, security hardening).
 
-**Next application task:** A-009 — Authentication security hardening.
+**Next application task:** A-010 — Authentication v1 milestone verification.
 
 **Parallel workstream:** production infrastructure / Oracle (`sm-oracle-infra`),
 tracked as `OPS-*` below.
@@ -126,7 +126,7 @@ The Harness baseline is complete. Application development proceeds under M2.
 - [x] A-006 — Password recovery
 - [x] A-007 — Google authentication and safe account linking
 - [x] A-008 — Frontend authentication flows
-- [ ] A-009 — Auth security hardening
+- [x] A-009 — Authentication security hardening
 - [ ] A-010 — Auth v1 milestone verification
 
 Milestone M2 — Authentication v1 remains the current application milestone; see
@@ -296,15 +296,15 @@ Goal: establish complete customer identity and authentication infrastructure.
 
 ## Security
 
-- [ ] Rate limiting
-- [ ] Login brute-force protection
-- [ ] Password-reset abuse protection
-- [ ] User enumeration protection
-- [ ] Secure cookies
-- [ ] CORS review
-- [ ] CSRF review
-- [ ] Secret validation
-- [ ] Auth security tests
+- [x] Rate limiting (A-009 — endpoint-specific, 429)
+- [x] Login brute-force protection (A-009 — rate limit + Turnstile)
+- [x] Password-reset abuse protection (A-009 — rate limit + Turnstile)
+- [x] User enumeration protection (A-004/A-006/A-009)
+- [x] Secure cookies (A-005)
+- [x] CORS review (A-005 — explicit origin + credentials)
+- [x] CSRF review (A-005 — documented SameSite=Lax + origin decision)
+- [x] Secret validation (H-005 / A-002)
+- [x] Auth security tests (A-009)
 
 ## Auth verification
 

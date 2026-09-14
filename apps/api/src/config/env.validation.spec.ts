@@ -202,3 +202,26 @@ describe('resolveSecretFiles', () => {
     );
   });
 });
+
+describe('Turnstile configuration', () => {
+  it('accepts an optional TURNSTILE_SECRET_KEY and treats empty as unset', () => {
+    const withSecret = validateEnv({ ...validEnv, TURNSTILE_SECRET_KEY: 'turnstile-secret' });
+    expect(withSecret.TURNSTILE_SECRET_KEY).toBe('turnstile-secret');
+
+    const withoutSecret = validateEnv({ ...validEnv, TURNSTILE_SECRET_KEY: '' });
+    expect(withoutSecret.TURNSTILE_SECRET_KEY).toBeUndefined();
+  });
+
+  it('does not expose the Turnstile secret in validation errors', () => {
+    const secret = 'turnstile-secret-value-that-must-not-leak';
+
+    try {
+      validateEnv({ ...validEnv, TURNSTILE_SECRET_KEY: secret, PORT: 'not-a-number' });
+      throw new Error('expected validateEnv to throw');
+    } catch (error) {
+      const message = (error as Error).message;
+      expect(message).not.toContain(secret);
+      expect(message).toContain('PORT');
+    }
+  });
+});

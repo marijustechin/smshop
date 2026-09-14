@@ -8,6 +8,7 @@ import { z } from 'zod';
 export const forgotPasswordSchema = z
   .object({
     email: z.string().trim().max(254).pipe(z.email()),
+    turnstileToken: z.string().min(1).max(4096).optional(),
   })
   .strict();
 

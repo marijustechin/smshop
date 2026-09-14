@@ -10,6 +10,8 @@ vi.mock('@/lib/auth/api', () => ({
   resendVerification: vi.fn(),
 }));
 
+vi.mock('next/script', () => ({ default: () => null }));
+
 const mocked = vi.mocked(api);
 
 beforeEach(() => {
@@ -56,7 +58,9 @@ describe('RegisterForm', () => {
 
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: 'Siųsti patvirtinimo laišką' }));
-    await waitFor(() => expect(mocked.resendVerification).toHaveBeenCalledWith('new@example.com'));
+    await waitFor(() =>
+      expect(mocked.resendVerification).toHaveBeenCalledWith('new@example.com', null),
+    );
   });
 
   it('handles a duplicate email conflict', async () => {
@@ -81,5 +85,46 @@ describe('RegisterForm', () => {
 
     expect(await screen.findByText('Slaptažodžiai nesutampa')).toBeInTheDocument();
     expect(mocked.register).not.toHaveBeenCalled();
+  });
+
+  it('includes the Turnstile token when a challenge is configured', async () => {
+    vi.stubEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY', '1x00000000000000000000AA');
+    (window as { turnstile?: unknown }).turnstile = {
+      render: (_el: HTMLElement, options: { callback?: (t: string) => void }) => {
+        options.callback?.('tok-123');
+        return 'w1';
+      },
+      reset: vi.fn(),
+    };
+    mocked.register.mockResolvedValue({
+      id: 'u1',
+      email: 'new@example.com',
+      emailVerified: false,
+      verificationEmailSent: true,
+    });
+    render(<RegisterForm />);
+
+    await fill();
+
+    await waitFor(() =>
+      expect(mocked.register).toHaveBeenCalledWith(
+        'new@example.com',
+        'a-very-strong-passphrase',
+        'tok-123',
+      ),
+    );
+    vi.unstubAllEnvs();
+    delete (window as { turnstile?: unknown }).turnstile;
+  });
+
+  it('maps a failed Turnstile challenge to a Lithuanian message', async () => {
+    mocked.register.mockRejectedValue(new ApiError(403, 'failed', 'TURNSTILE_FAILED'));
+    render(<RegisterForm />);
+
+    await fill();
+
+    expect(
+      await screen.findByText('Nepavyko patvirtinti, kad nesate robotas. Bandykite dar kartą.'),
+    ).toBeInTheDocument();
   });
 });
