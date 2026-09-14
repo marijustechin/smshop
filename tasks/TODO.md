@@ -20,14 +20,13 @@ This roadmap may evolve as product decisions are made.
 
 **Current milestone:** M2 — Authentication v1.
 
-**Current task:** none — `tasks/current/` is empty. The next application task is
-**A-010 — Authentication v1 milestone verification** (not started).
+**Current task:** none — `tasks/current/` is empty. Authentication v1 is complete;
+the next milestone/task is decided separately.
 
-**Recently completed:** H-000–H-009; A-001–A-009 (auth domain, registration,
-email, verification, login/session lifecycle, password recovery, Google
-authentication, frontend auth flows, security hardening).
+**Recently completed:** H-000–H-009; A-001–A-010 (Authentication v1 COMPLETE).
 
-**Next application task:** A-010 — Authentication v1 milestone verification.
+**Next application task:** M3+ milestones, decided separately. No A-011
+authentication task is started.
 
 **Parallel workstream:** production infrastructure / Oracle (`sm-oracle-infra`),
 tracked as `OPS-*` below.
@@ -127,7 +126,7 @@ The Harness baseline is complete. Application development proceeds under M2.
 - [x] A-007 — Google authentication and safe account linking
 - [x] A-008 — Frontend authentication flows
 - [x] A-009 — Authentication security hardening
-- [ ] A-010 — Auth v1 milestone verification
+- [x] A-010 — Auth v1 milestone verification
 
 Milestone M2 — Authentication v1 remains the current application milestone; see
 its checklist below for the full scope.
@@ -217,9 +216,24 @@ because it was discussed.
 
 External repository: `sm-oracle-infra` (cross-repository reference only).
 
+## Production follow-ups (auth-related)
+
+- [ ] Configure Fastify `trustProxy` for the known production reverse-proxy hops
+      in `sm-oracle-infra` before launch, so auth rate limiting keys on the real
+      client IP rather than the proxy. Current default is `trustProxy=false`
+      (client-supplied `X-Forwarded-For` is not trusted). Do not blindly trust
+      arbitrary forwarded-IP headers. See `docs/authentication.md`.
+- [ ] Move auth rate limiting to a shared store (e.g. Redis) if/when the API is
+      scaled horizontally; the current in-memory limiter is per-instance.
+- [ ] Verify the actual `apps/api` and `apps/web` Docker image builds and run the
+      images; the Dockerfiles remain unverified by a real build.
+
 ---
 
 # M2 — Authentication v1
+
+**Status: COMPLETE (A-010).** The full credentials + Google authentication slice
+is implemented, hardened, documented, and verified end-to-end.
 
 Goal: establish complete customer identity and authentication infrastructure.
 
