@@ -29,8 +29,8 @@ infrastructure interface is defined in the application deployment contract
 - Graceful SIGTERM shutdown with meaningful exit codes.
 - Images must not contain or depend on PM2, supervisord, systemd, or another
   process supervisor.
-- Migrations reuse the API image and run `prisma migrate deploy`; the exact
-  runtime command is an implementation detail until the API image is designed.
+- Migrations reuse the API image and run `prisma migrate deploy`; the API runtime
+  image is also the migration image (see below).
 
 ## Cross-repository deployment contract
 
@@ -44,31 +44,68 @@ Application provides / expects (all under `/api` unless noted):
 
 - **Runtime:** Node.js 24 (`.nvmrc`, `engines.node = >=24 <25`); pnpm workspace.
 - **Images:** prebuilt `linux/arm64` from CI, pinned by digest; no server builds.
-- **Entrypoints:** web `node .next/standalone/apps/web/server.js` (port `3000`);
-  API `node dist/main.js` (port `3001`).
+- **Entrypoints:** web `node apps/web/server.js` with working directory `/app`
+  (port `3000`); API `node /app/apps/api/dist/main.js` (port `3001`). The API
+  image's default working directory is `/app/packages/db` so the one-shot
+  `prisma migrate deploy` job resolves `prisma7.config.ts` and
+  `prisma/schema.prisma`; the API server is started by absolute path, so the
+  working directory does not affect it.
 - **Routing:** the API owns `/api` and `/api/*`; `/health/ready` is served
   outside `/api` on both services.
 - **Health/readiness:** `/health/ready` (API returns 200 only after a DB query).
 - **Environment contract:** documented in `docs/configuration.md`
-  (`NODE_ENV`, `PORT`, `DATABASE_URL`, `WEB_ORIGIN`, `API_ORIGIN`, `JWT_*`,
-  `SMTP_*`, `MAIL_FROM`, `GOOGLE_*`).
+  (`NODE_ENV`, `PORT`, `DATABASE_URL`/`DB_*`, `WEB_ORIGIN`, `API_ORIGIN`,
+  `JWT_*`, `SMTP_*`, `MAIL_FROM`, `GOOGLE_*`).
+- **Database connection:** the API consumes a single PostgreSQL URL resolved
+  from `DATABASE_URL`/`DATABASE_URL_FILE` or assembled from
+  `DB_HOST`/`DB_PORT`/`DB_NAME`/`DB_USER`/`DB_PASSWORD`(`_FILE`); the Prisma CLI
+  uses the same resolution. The infrastructure delivers components plus a
+  mounted password file, so the credential is never rendered into a nonsecret
+  env value.
 - **Secrets:** every secret accepts a direct value or `<NAME>_FILE` pointing at a
-  secret file (contract C.4 application side).
-- **Database:** PostgreSQL via Prisma; connection from `DATABASE_URL`.
-- **Migrations:** `prisma migrate deploy` using the API image; exit 0 on success.
+  secret file (contract C.4 application side). The application secrets are
+  `DATABASE_URL`/`DB_PASSWORD`, `JWT_ACCESS_SECRET`, `SMTP_PASSWORD`,
+  `GOOGLE_CLIENT_SECRET`, and `TURNSTILE_SECRET_KEY`.
+- **Database:** PostgreSQL via Prisma; connection assembled per above.
+- **Migrations:** `prisma migrate deploy` using the API image (the API runtime
+  image is also the migration image; its default working directory is the
+  `@smshop/db` package so the Prisma config/schema resolve); exit 0 on success.
 - **Shutdown:** graceful SIGTERM with meaningful exit codes; no process
   supervisor.
 - **Persistence:** stateless containers; no writable application paths by
   default.
+
+### Exact runtime interface (reconciled 2026-09-15)
+
+Application-owned (semantics/names) — see `docs/configuration.md`:
+
+- Ordinary (nonsecret) service env: `NODE_ENV=production`, `PORT`, `WEB_ORIGIN`,
+  optional `API_ORIGIN`, `JWT_ACCESS_TTL`, `AUTH_SESSION_TTL`, SMTP/Google/Turnstile
+  blocks as applicable. `/api` is served on the API's internal port `3001`; the
+  frontend serves `3000`.
+- File-backed secrets (`<NAME>_FILE`, one trailing newline tolerated):
+  `DB_PASSWORD_FILE` (or `DATABASE_URL_FILE`), `JWT_ACCESS_SECRET_FILE`,
+  `SMTP_PASSWORD_FILE`, `GOOGLE_CLIENT_SECRET_FILE`,
+  `TURNSTILE_SECRET_KEY_FILE`.
+- Frontend build-time public values (inlined by Next.js): production uses
+  relative `/api` (no `NEXT_PUBLIC_API_BASE_URL`); `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
+  is required at image build time only when Turnstile is enabled.
+
+Infrastructure-owned (values/mounts/lifecycle) — see the authoritative contract
+`sm-oracle-infra/docs/application-deployment-contract.md` and
+`sm-oracle-infra/docs/deployment.md`: secret values, file names and mount paths,
+per-service grants, PostgreSQL roles and credentials, restart policy, health
+cadence, and container lifecycle.
 
 `sm-oracle-infra` supplies: actual secret values and mounts, DNS, TLS/ACME,
 reverse-proxy routing, persistent storage, production database connectivity,
 and container orchestration/lifecycle.
 
 Still **open** (application/infrastructure alignment): production image digests
-(C.1), production variable/DB layout values (C.3), production secret file names
-and mount locations (C.4), concrete writable paths if any (C.5), persistent
-storage beyond PostgreSQL (C.6), and required egress (C.7).
+(C.1 — blocked on GHCR publication), concrete writable paths if any (C.5),
+persistent storage beyond PostgreSQL (C.6), and required egress (C.7). The
+environment/secret interface (C.3/C.4), migration command (C.2), and database
+connection layout are reconciled (see "Exact runtime interface" above).
 
 ## Infra-owned (not application contract)
 
@@ -81,11 +118,16 @@ storage beyond PostgreSQL (C.6), and required egress (C.7).
 
 ## Open fields (application-owned)
 
-1. C.1 — production image references (digests): resolved at build time.
-2. C.3 — environment variable names and DB connection layout: implementation.
-3. C.4 — file-based secret names and file-reading support: coordinate with
-   `sm-oracle-infra`.
-4. C.5 — writable runtime paths: ephemeral `/tmp` by default; concrete paths
+1. C.1 — production image references (digests): blocked on GHCR publication
+   (requires an authorized commit/push to trigger CI); local `linux/arm64`
+   images build and run (verified 2026-09-15).
+2. C.2 — migration command: resolved — API image, `prisma migrate deploy`, exit 0.
+3. C.3 — environment variable names and DB connection layout: resolved — URL or
+   `DB_*` component assembly; see `docs/configuration.md`.
+4. C.4 — file-based secret names and file-reading support: application side
+   resolved (`<NAME>_FILE`); production secret file names/mounts remain
+   infrastructure-owned.
+5. C.5 — writable runtime paths: ephemeral `/tmp` by default; concrete paths
    at implementation.
-5. C.6 — persistent storage beyond PostgreSQL: product-dependent, open.
-6. C.7 — egress requirements: product-dependent, open.
+6. C.6 — persistent storage beyond PostgreSQL: product-dependent, open.
+7. C.7 — egress requirements: product-dependent, open.

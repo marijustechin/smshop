@@ -152,12 +152,14 @@ Do not place feature modules directly under `src/`.
 
 ## Open fields (application-owned)
 
-- C.1 — production image references (digests): open until images are built.
-- C.3 — environment variable names and DB connection layout: dev defaults are
-  `DATABASE_URL` and `PORT`; production values open until implementation and
-  `sm-oracle-infra` coordination.
+- C.1 — production image references (digests): open until images are published
+  to GHCR.
+- C.3 — environment variable names and DB connection layout: resolved — a full
+  `DATABASE_URL`/`DATABASE_URL_FILE`, or assembly from
+  `DB_HOST`/`DB_PORT`/`DB_NAME`/`DB_USER`/`DB_PASSWORD`(`_FILE`); see
+  `docs/configuration.md`.
 - C.4 — file-based secret names and file-reading support: the application side is
-  now defined — the API accepts either a direct environment variable or a
+  defined — the API accepts either a direct environment variable or a
   `<NAME>_FILE` path for every secret (see `docs/configuration.md`). Exact
   production secret file names and mount locations remain coordinated with
   `sm-oracle-infra`.

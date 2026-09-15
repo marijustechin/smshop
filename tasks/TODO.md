@@ -225,8 +225,21 @@ External repository: `sm-oracle-infra` (cross-repository reference only).
       arbitrary forwarded-IP headers. See `docs/authentication.md`.
 - [ ] Move auth rate limiting to a shared store (e.g. Redis) if/when the API is
       scaled horizontally; the current in-memory limiter is per-instance.
-- [ ] Verify the actual `apps/api` and `apps/web` Docker image builds and run the
-      images; the Dockerfiles remain unverified by a real build.
+- [x] Verify the actual `apps/api` and `apps/web` Docker image builds and run the
+      images (D-001, 2026-09-15): both build and run for `linux/arm64`; readiness
+      and registration verified; `prisma migrate deploy` verified against
+      PostgreSQL 18. GHCR publication and CI execution remain blocked on an
+      authorized commit/push.
+- [ ] (D-001 discovery) The API does not recover `/health/ready` after a database
+      restart without a process restart: a fresh container returns 200, but a
+      container that lost its database connection keeps returning 503. The
+      infrastructure architecture expects the API to reconnect with bounded
+      backoff after database recovery. Investigate the Prisma/pg pool recovery
+      behaviour and fix or document.
+- [ ] (D-001 discovery) When Turnstile is enabled, the public
+      `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is inlined into the frontend image at
+      build time; ensure the image build supplies it (it is not a runtime env
+      value).
 
 ---
 

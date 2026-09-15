@@ -12,6 +12,7 @@ export const SECRET_KEYS = [
   'SMTP_PASSWORD',
   'GOOGLE_CLIENT_SECRET',
   'TURNSTILE_SECRET_KEY',
+  'DB_PASSWORD',
 ] as const;
 
 type SecretKey = (typeof SECRET_KEYS)[number];
@@ -39,6 +40,23 @@ export const GOOGLE_KEYS = [
   'GOOGLE_CLIENT_ID',
   'GOOGLE_CLIENT_SECRET',
   'GOOGLE_CALLBACK_URL',
+] as const;
+
+/**
+ * Optional database connection components. The accepted infrastructure secret
+ * model mounts the database password as a file and expects the application to
+ * assemble the connection URL in process, so the credential is never rendered
+ * into a nonsecret environment value or Compose interpolation. When a full
+ * `DATABASE_URL` (or `DATABASE_URL_FILE`) is not supplied, the API assembles
+ * one from these components plus the password (`DB_PASSWORD` or
+ * `DB_PASSWORD_FILE`). `DB_PORT` defaults to `5432`.
+ */
+export const DB_COMPONENT_KEYS = [
+  'DB_HOST',
+  'DB_PORT',
+  'DB_NAME',
+  'DB_USER',
+  'DB_PASSWORD',
 ] as const;
 
 export type FileReader = (path: string) => string;
@@ -92,11 +110,21 @@ export const envSchema = z
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     PORT: z.coerce.number().int().min(1).max(65535).default(3001),
 
-    // Database (application-owned). No production fallback.
+    // Database (application-owned). Either a full URL is supplied, or it is
+    // assembled from the components below (see the database refinement).
     DATABASE_URL: z
       .string()
       .min(1, 'DATABASE_URL is required')
-      .refine(isPostgresUrl, 'must be a PostgreSQL URL (postgres:// or postgresql://)'),
+      .refine(isPostgresUrl, 'must be a PostgreSQL URL (postgres:// or postgresql://)')
+      .optional(),
+
+    // Optional database connection components used to assemble DATABASE_URL
+    // when a full URL is not provided (see DB_COMPONENT_KEYS).
+    DB_HOST: z.string().min(1).optional(),
+    DB_PORT: z.coerce.number().int().min(1).max(65535).optional(),
+    DB_NAME: z.string().min(1).optional(),
+    DB_USER: z.string().min(1).optional(),
+    DB_PASSWORD: z.string().min(1).optional(),
 
     // Origins. WEB_ORIGIN is required: it is used for CORS with credentials and
     // for building email links.
@@ -134,6 +162,32 @@ export const envSchema = z
     TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
   })
   .superRefine((env, ctx) => {
+    // A full URL always wins. Otherwise the component group is required in
+    // full; a partial group fails fast with the missing names.
+    if (hasValue(env.DATABASE_URL)) {
+      return;
+    }
+    const configured = DB_COMPONENT_KEYS.filter((key) => hasValue(env[key]));
+    if (configured.length === 0) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['DATABASE_URL'],
+        message:
+          'DATABASE_URL is required, or provide DB_HOST/DB_NAME/DB_USER/DB_PASSWORD (DB_PASSWORD supports DB_PASSWORD_FILE)',
+      });
+      return;
+    }
+    for (const key of ['DB_HOST', 'DB_NAME', 'DB_USER', 'DB_PASSWORD'] as const) {
+      if (!hasValue(env[key])) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [key],
+          message: `${key} is required when database components are configured`,
+        });
+      }
+    }
+  })
+  .superRefine((env, ctx) => {
     const configured = SMTP_KEYS.filter((key) => hasValue(env[key]));
     if (configured.length === 0) {
       return;
@@ -165,6 +219,29 @@ export const envSchema = z
   });
 
 export type Env = z.infer<typeof envSchema>;
+
+function asNonEmptyString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+/**
+ * Assembles a PostgreSQL connection URL from the optional component variables.
+ * Returns `undefined` when the required components are not all present, so the
+ * caller can fall back to the normal `DATABASE_URL` requirement. The user and
+ * password are URL-encoded so credentials containing reserved characters are
+ * handled correctly.
+ */
+export function assembleDatabaseUrl(env: Record<string, unknown>): string | undefined {
+  const host = asNonEmptyString(env.DB_HOST);
+  const name = asNonEmptyString(env.DB_NAME);
+  const user = asNonEmptyString(env.DB_USER);
+  const password = asNonEmptyString(env.DB_PASSWORD);
+  if (!host || !name || !user || !password) {
+    return undefined;
+  }
+  const port = asNonEmptyString(env.DB_PORT) ?? '5432';
+  return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:${port}/${name}`;
+}
 
 /**
  * Resolves `<NAME>_FILE` secret definitions into `<NAME>` values. A direct
@@ -241,6 +318,14 @@ function stripEmptyStrings(env: Record<string, unknown>): Record<string, unknown
  */
 export function validateEnv(raw: Record<string, unknown>): Env {
   const resolved = stripEmptyStrings(resolveSecretFiles(raw));
+  // Assemble DATABASE_URL from components only when no full URL was supplied.
+  // An explicit DATABASE_URL or DATABASE_URL_FILE always wins.
+  if (!hasValue(resolved.DATABASE_URL)) {
+    const assembled = assembleDatabaseUrl(resolved);
+    if (assembled) {
+      resolved.DATABASE_URL = assembled;
+    }
+  }
   const result = envSchema.safeParse(resolved);
   if (!result.success) {
     throw new Error(formatEnvError(result.error, resolved));

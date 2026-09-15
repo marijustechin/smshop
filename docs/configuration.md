@@ -42,7 +42,10 @@ consumer (Auth v1) is implemented; it is validated only when present.
 | --------------- | -------------------------------- | ------------ | ------ | --------------------------------------------------- |
 | Application     | `NODE_ENV`                       | no (default) | no     | `development` \| `test` \| `production`             |
 | Application     | `PORT`                           | no (default) | no     | Defaults to `3001`                                  |
-| Database        | `DATABASE_URL`                   | **yes**      | yes    | `postgres://` or `postgresql://`; no fallback       |
+| Database        | `DATABASE_URL`                   | **yes\***    | yes    | `postgres://` or `postgresql://`; no fallback       |
+| Database        | `DB_HOST` / `DB_PORT`            | **yes\***    | no     | Alternative to `DATABASE_URL`; port defaults `5432` |
+| Database        | `DB_NAME` / `DB_USER`            | **yes\***    | no     | Alternative to `DATABASE_URL`                       |
+| Database        | `DB_PASSWORD`                    | **yes\***    | yes    | Supports `DB_PASSWORD_FILE`                         |
 | Origins         | `WEB_ORIGIN`                     | **yes**      | no     | Browser origin; CORS with credentials + email links |
 | Origins         | `API_ORIGIN`                     | reserved     | no     | Public API origin; email links / callbacks          |
 | Access token    | `JWT_ACCESS_SECRET`              | **yes**      | yes    | Min 32 chars; signs access JWTs                     |
@@ -60,6 +63,12 @@ consumer (Auth v1) is implemented; it is validated only when present.
 | Turnstile       | `TURNSTILE_SECRET_KEY`           | optional     | yes    | Backend secret; absent disables Turnstile. `_FILE`  |
 | Turnstile       | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | optional     | no     | Frontend (public) site key; absent hides the widget |
 
+\* Provide **either** a full `DATABASE_URL` (or `DATABASE_URL_FILE`) **or** the
+complete `DB_HOST`/`DB_NAME`/`DB_USER`/`DB_PASSWORD` group. An explicit
+`DATABASE_URL` always wins. The API assembles the URL in process (URL-encoding
+the credentials), which matches the infrastructure secret model where only the
+password is mounted as a file; see "Database connection" below.
+
 PostgreSQL Compose values (`POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`,
 `POSTGRES_PORT`) are development-only and consumed by `docker-compose.yml`, not
 by the API.
@@ -75,9 +84,29 @@ required at application startup. They are consumed only by the test tooling:
 | `TEST_POSTGRES_DB`       | Compose `db-test` service database (default `smshop_test`) |
 | `TEST_POSTGRES_PORT`     | Compose `db-test` host port (default `5433`)               |
 
+## Database connection
+
+The API consumes a single PostgreSQL connection URL. It is resolved in this
+order:
+
+1. `DATABASE_URL` (direct value); else
+2. `DATABASE_URL_FILE` (file contents); else
+3. assembled from `DB_HOST`, `DB_PORT` (default `5432`), `DB_NAME`, `DB_USER`,
+   and `DB_PASSWORD` (or `DB_PASSWORD_FILE`).
+
+The assembled form URL-encodes the user and password, so credentials containing
+reserved characters are handled correctly. A partial component group fails
+startup with the missing variable names; a full URL always wins over components.
+
+The Prisma CLI (`prisma migrate deploy`, run from the migration image) uses the
+same resolution order (`packages/db/prisma7.config.ts`) so migrations and the
+runtime agree. Secret files are read as raw values; one trailing newline is
+tolerated.
+
 ## Required now vs reserved
 
-- **Required now:** `DATABASE_URL`, `WEB_ORIGIN`, and `JWT_ACCESS_SECRET`.
+- **Required now:** a database connection (`DATABASE_URL`/`DATABASE_URL_FILE` or
+  the complete `DB_*` component group), `WEB_ORIGIN`, and `JWT_ACCESS_SECRET`.
   `NODE_ENV`, `PORT`, `JWT_ACCESS_TTL` (`15m`), and `AUTH_SESSION_TTL` (`7d`) have
   safe defaults. `JWT_ACCESS_SECRET` is a secret (supports `JWT_ACCESS_SECRET_FILE`).
 - **SMTP group (all-or-none):** if any of `SMTP_HOST`, `SMTP_PORT`,

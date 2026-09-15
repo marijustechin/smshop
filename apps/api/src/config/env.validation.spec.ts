@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { resolveSecretFiles, validateEnv } from './env.validation.js';
+import { assembleDatabaseUrl, resolveSecretFiles, validateEnv } from './env.validation.js';
 
 const validEnv = {
   DATABASE_URL: 'postgresql://smshop:smshop@localhost:5432/smshop',
@@ -26,8 +26,13 @@ describe('validateEnv', () => {
     expect(env.SMTP_HOST).toBeUndefined();
   });
 
-  it('rejects a missing required variable', () => {
-    expect(() => validateEnv({})).toThrow(/DATABASE_URL/);
+  it('rejects a missing database configuration', () => {
+    expect(() =>
+      validateEnv({
+        WEB_ORIGIN: 'https://sokoladas.eu',
+        JWT_ACCESS_SECRET: 'a'.repeat(32),
+      }),
+    ).toThrow(/DATABASE_URL/);
   });
 
   it('rejects a non-PostgreSQL DATABASE_URL', () => {
@@ -200,6 +205,68 @@ describe('resolveSecretFiles', () => {
     expect(() => resolveSecretFiles({ SMTP_PASSWORD_FILE: '/missing' }, readFile)).toThrow(
       /SMTP_PASSWORD/,
     );
+  });
+});
+
+describe('database connection assembly', () => {
+  const components = {
+    WEB_ORIGIN: 'https://sokoladas.eu',
+    JWT_ACCESS_SECRET: 'a'.repeat(32),
+    DB_HOST: 'db',
+    DB_NAME: 'sokoladas_staging',
+    DB_USER: 'sokoladas_app',
+    DB_PASSWORD: 'p@ss word/with:specials',
+  };
+
+  it('assembles DATABASE_URL from components when no URL is supplied', () => {
+    const env = validateEnv(components);
+
+    expect(env.DATABASE_URL).toBe(
+      'postgresql://sokoladas_app:p%40ss%20word%2Fwith%3Aspecials@db:5432/sokoladas_staging',
+    );
+  });
+
+  it('honours DB_PORT when provided', () => {
+    const env = validateEnv({ ...components, DB_PORT: '6543' });
+
+    expect(env.DATABASE_URL).toContain('@db:6543/');
+  });
+
+  it('prefers an explicit DATABASE_URL over components', () => {
+    const env = validateEnv({
+      ...components,
+      DATABASE_URL: 'postgresql://direct:direct@example:5432/direct',
+    });
+
+    expect(env.DATABASE_URL).toBe('postgresql://direct:direct@example:5432/direct');
+  });
+
+  it('resolves DB_PASSWORD_FILE through the secret-file mechanism', () => {
+    const readFile = vi.fn().mockReturnValue('file-password\n');
+
+    const resolved = resolveSecretFiles(
+      { DB_PASSWORD_FILE: '/run/secrets/db_app_password' },
+      readFile,
+    );
+
+    expect(resolved.DB_PASSWORD).toBe('file-password');
+  });
+
+  it('returns undefined when required components are missing', () => {
+    expect(assembleDatabaseUrl({ DB_HOST: 'db', DB_NAME: 'x', DB_USER: 'u' })).toBeUndefined();
+  });
+
+  it('rejects a partial component group without exposing the password', () => {
+    const password = 'super-secret-db-password';
+
+    try {
+      validateEnv({ ...components, DB_USER: undefined, DB_PASSWORD: password });
+      throw new Error('expected validateEnv to throw');
+    } catch (error) {
+      const message = (error as Error).message;
+      expect(message).toContain('DB_USER');
+      expect(message).not.toContain(password);
+    }
   });
 });
 
