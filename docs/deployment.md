@@ -51,16 +51,21 @@ human-authorized and human-executed; the workflow never contacts the host.
 ## Frontend build-time configuration (Turnstile)
 
 `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is inlined into the web image at build time and
-is **not** a runtime environment value. The current `Images` workflow does not
-inject it, so published images carry no Turnstile sitekey. If the staging API has
-`TURNSTILE_SECRET_KEY` set, the widget will not render while the API still
-enforces the challenge (`403 TURNSTILE_REQUIRED`), so **staging Turnstile cannot
-be safely enabled (D-004) until the image build supplies the sitekey**.
+is **not** a runtime environment value. The `Images` workflow now supplies it to
+the **web** build only, as a Docker build argument sourced from the GitHub
+Actions **repository variable** `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (public; never a
+secret). The API image is unaffected, and the Turnstile secret is never placed in
+GitHub Actions.
 
-Recommended follow-up (ARCH-004): pass the public sitekey as a build argument
-sourced from a GitHub Actions _variable_ (never a secret) and document that
-changing it requires an image rebuild. If staging and production share a
-sitekey, one image build serves both.
+Because it is build-time configuration, **changing the site key requires
+rebuilding the web image**. If staging and production share a site key, one image
+build serves both.
+
+To prevent silently publishing an auth UI that cannot render while the API
+enforces the challenge, the web build **fails loudly** if the variable is unset
+(the `Require public Turnstile site key (web)` step). Local/development builds
+may leave the arg empty to produce a Turnstile-disabled UI. The wiring is guarded
+by `apps/web/src/test/build-config.test.ts`.
 
 ## Cross-repository deployment contract
 
@@ -119,7 +124,9 @@ Application-owned (semantics/names) — see `docs/configuration.md`:
   `TURNSTILE_SECRET_KEY_FILE`.
 - Frontend build-time public values (inlined by Next.js): production uses
   relative `/api` (no `NEXT_PUBLIC_API_BASE_URL`); `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
-  is required at image build time only when Turnstile is enabled.
+  is supplied to the web image by the `Images` workflow from a GitHub Actions
+  repository variable and is required for the published image (see "Frontend
+  build-time configuration" above).
 
 Infrastructure-owned (values/mounts/lifecycle) — see the authoritative contract
 `sm-oracle-infra/docs/application-deployment-contract.md` and

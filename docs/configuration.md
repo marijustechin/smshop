@@ -168,6 +168,13 @@ the process environment, so no `.env` file is required.
   require a valid challenge and fail closed. The site key
   `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is public and belongs to the frontend; it must
   never be confused with the secret.
+- **Turnstile site key at image build time:** the production **web** image gets
+  `NEXT_PUBLIC_TURNSTILE_SITE_KEY` as a Docker build argument supplied by the
+  `Images` workflow from the GitHub Actions repository variable
+  `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (public, never a secret). The web build fails
+  if the variable is unset, so an auth image cannot be published with the widget
+  silently disabled. Changing the value requires rebuilding the web image; the
+  API image is unaffected.
 - **Turnstile in local development:** the committed examples
   (`apps/api/.env.example`, `apps/web/.env.example`) contain Cloudflare's official
   **always-pass TEST** pair — secret `1x0000000000000000000000000000000AA`,

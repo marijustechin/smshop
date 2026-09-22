@@ -13,6 +13,13 @@ COPY apps/web/package.json apps/web/
 RUN pnpm install --filter @smshop/web --frozen-lockfile
 
 FROM base AS builder
+# Public Cloudflare Turnstile site key, inlined by Next.js at build time. This is
+# public (never a secret) and CI supplies it from a GitHub Actions variable.
+# Changing it requires rebuilding the web image. An empty value builds a
+# Turnstile-disabled UI for local/dev; CI refuses to publish a web image without
+# it (the API would still enforce the challenge when its secret is set).
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
+ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY}
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY . .

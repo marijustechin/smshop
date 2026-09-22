@@ -47,6 +47,11 @@ the next milestone is **M3 — Store Information Architecture**.
   `sm-oracle-infra` gained the approved-release-manifest convention and a
   deterministic digest resolver for the host-only `images.env`. Metadata only;
   no deployment behavior changed.
+- **ARCH-004** (cross-repository) — deployment hardening: manifest-driven
+  `deploy.sh release`, host applied-release state, explicit previous-release
+  rollback, richer health/evidence, and Turnstile build configuration (the web
+  image now receives the public site key as a build arg from an Actions
+  variable, and the web build fails if it is unset).
 
 **Next application task:** **M3 — Store Information Architecture** (public site
 map, navigation, category/catalogue structure, search/filter/sort requirements),
