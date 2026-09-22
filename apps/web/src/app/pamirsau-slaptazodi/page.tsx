@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { AuthShell } from '@/components/auth-shell';
+import { PageShell } from '@/shared/ui/page-shell';
 import { ForgotPasswordForm } from './forgot-password-form';
 
 export const metadata: Metadata = { title: 'Pamiršau slaptažodį — Šokolado meistrai' };
 
 export default function ForgotPasswordPage() {
   return (
-    <AuthShell
+    <PageShell
       title="Pamiršau slaptažodį"
       description="Įveskite savo el. pašto adresą ir išsiųsime atkūrimo nuorodą."
       footer={
@@ -17,6 +17,6 @@ export default function ForgotPasswordPage() {
       }
     >
       <ForgotPasswordForm />
-    </AuthShell>
+    </PageShell>
   );
 }

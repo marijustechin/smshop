@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LoginForm } from './login-form';
-import { ApiError } from '@/lib/api/client';
+import { ApiError } from '@/shared/api/client';
 
 const { replace, searchParams, authState } = vi.hoisted(() => ({
   replace: vi.fn(),

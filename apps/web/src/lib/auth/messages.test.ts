@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mapAuthError, isEmailNotVerified, AUTH_MESSAGES } from './messages';
-import { ApiError } from '@/lib/api/client';
+import { ApiError } from '@/shared/api/client';
 
 describe('auth error mapping', () => {
   it('maps a network error (status 0) to the network message', () => {

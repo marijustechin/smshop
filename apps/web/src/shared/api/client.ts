@@ -1,4 +1,4 @@
-import { apiUrl } from './config';
+import { apiUrl } from '@/shared/config/api';
 
 /** Normalized API error exposed to the UI. Never carries backend internals. */
 export class ApiError extends Error {

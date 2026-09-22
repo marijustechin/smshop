@@ -5,15 +5,15 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/alert';
-import { FormField } from '@/components/form-field';
-import { PasswordField } from '@/components/password-field';
+import { Button } from '@/shared/ui/button';
+import { Alert } from '@/shared/ui/alert';
+import { FormField } from '@/shared/ui/form-field';
+import { PasswordField } from '@/shared/ui/password-field';
 import { GoogleAuthButton } from '@/components/google-auth-button';
 import { register as registerAccount, resendVerification } from '@/lib/auth/api';
-import { ApiError } from '@/lib/api/client';
+import { ApiError } from '@/shared/api/client';
 import { AUTH_MESSAGES, mapAuthError } from '@/lib/auth/messages';
-import { TurnstileWidget, useTurnstileGate } from '@/components/turnstile';
+import { TurnstileWidget, useTurnstileGate } from '@/shared/ui/turnstile';
 
 const registerSchema = z
   .object({

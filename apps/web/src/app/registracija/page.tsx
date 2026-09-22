@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { AuthShell } from '@/components/auth-shell';
+import { PageShell } from '@/shared/ui/page-shell';
 import { RegisterForm } from './register-form';
 
 export const metadata: Metadata = { title: 'Registracija — Šokolado meistrai' };
 
 export default function RegisterPage() {
   return (
-    <AuthShell
+    <PageShell
       title="Registracija"
       description="Sukurkite paskyrą su el. paštu ir slaptažodžiu."
       footer={
@@ -20,6 +20,6 @@ export default function RegisterPage() {
       }
     >
       <RegisterForm />
-    </AuthShell>
+    </PageShell>
   );
 }

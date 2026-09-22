@@ -1,5 +1,5 @@
-import { apiRequest } from '@/lib/api/client';
-import { apiUrl } from '@/lib/api/config';
+import { apiRequest } from '@/shared/api/client';
+import { apiUrl } from '@/shared/config/api';
 import type {
   AuthCapabilities,
   AuthUser,

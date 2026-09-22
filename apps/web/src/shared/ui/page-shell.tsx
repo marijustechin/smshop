@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { Card } from '@/components/ui/card';
+import { Card } from '@/shared/ui/card';
 
 /** Centered card layout shared by all authentication pages. */
-export function AuthShell({
+export function PageShell({
   title,
   description,
   children,

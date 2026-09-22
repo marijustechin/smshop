@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { AuthProvider, useAuth } from './auth-context';
-import { ApiError } from '@/lib/api/client';
+import { ApiError } from '@/shared/api/client';
 import * as api from './api';
 
 vi.mock('./api', () => ({

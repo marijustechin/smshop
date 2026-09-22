@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { mapAuthError, AUTH_MESSAGES } from './messages';
-import { ApiError } from '@/lib/api/client';
+import { ApiError } from '@/shared/api/client';
 
 describe('auth error mapping (hardening)', () => {
   it('maps 429 to the rate-limit message', () => {

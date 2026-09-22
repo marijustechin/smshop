@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { ApiError, apiRequest } from '@/lib/api/client';
+import { ApiError, apiRequest } from '@/shared/api/client';
 import * as authApi from './api';
 import type { AuthStatus, AuthUser } from './types';
 

@@ -3,8 +3,8 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/alert';
+import { Button } from '@/shared/ui/button';
+import { Alert } from '@/shared/ui/alert';
 import { useAuth } from '@/lib/auth/auth-context';
 import { getAuthCapabilities } from '@/lib/auth/api';
 

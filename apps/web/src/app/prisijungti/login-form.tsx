@@ -6,16 +6,16 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/alert';
-import { FormField } from '@/components/form-field';
-import { PasswordField } from '@/components/password-field';
+import { Button } from '@/shared/ui/button';
+import { Alert } from '@/shared/ui/alert';
+import { FormField } from '@/shared/ui/form-field';
+import { PasswordField } from '@/shared/ui/password-field';
 import { GoogleAuthButton } from '@/components/google-auth-button';
 import { useAuth } from '@/lib/auth/auth-context';
 import { mapAuthError, isEmailNotVerified, AUTH_MESSAGES } from '@/lib/auth/messages';
-import { safeReturnTo } from '@/lib/auth/return-to';
+import { safeReturnTo } from '@/shared/lib/return-to';
 import { resendVerification } from '@/lib/auth/api';
-import { TurnstileWidget, useTurnstileGate } from '@/components/turnstile';
+import { TurnstileWidget, useTurnstileGate } from '@/shared/ui/turnstile';
 
 const loginSchema = z.object({
   email: z

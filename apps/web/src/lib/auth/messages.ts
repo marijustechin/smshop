@@ -1,4 +1,4 @@
-import { ApiError } from '@/lib/api/client';
+import { ApiError } from '@/shared/api/client';
 
 /** Lithuanian user-facing auth messages. Never exposes backend internals. */
 export const AUTH_MESSAGES = {

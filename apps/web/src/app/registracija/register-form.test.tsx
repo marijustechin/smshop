@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RegisterForm } from './register-form';
-import { ApiError } from '@/lib/api/client';
+import { ApiError } from '@/shared/api/client';
 import * as api from '@/lib/auth/api';
 
 vi.mock('@/lib/auth/api', () => ({

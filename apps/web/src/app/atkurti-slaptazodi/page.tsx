@@ -1,14 +1,14 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { AuthShell } from '@/components/auth-shell';
+import { PageShell } from '@/shared/ui/page-shell';
 import { ResetPasswordForm } from './reset-password-form';
 
 export const metadata: Metadata = { title: 'Atkurti slaptažodį — Šokolado meistrai' };
 
 export default function ResetPasswordPage() {
   return (
-    <AuthShell
+    <PageShell
       title="Atkurti slaptažodį"
       description="Įveskite naują slaptažodį."
       footer={
@@ -20,6 +20,6 @@ export default function ResetPasswordPage() {
       <Suspense fallback={<p className="text-sm text-muted">Kraunama…</p>}>
         <ResetPasswordForm />
       </Suspense>
-    </AuthShell>
+    </PageShell>
   );
 }

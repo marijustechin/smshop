@@ -6,11 +6,11 @@ import { useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Alert } from '@/components/ui/alert';
-import { PasswordField } from '@/components/password-field';
+import { Button } from '@/shared/ui/button';
+import { Alert } from '@/shared/ui/alert';
+import { PasswordField } from '@/shared/ui/password-field';
 import { resetPassword } from '@/lib/auth/api';
-import { ApiError } from '@/lib/api/client';
+import { ApiError } from '@/shared/api/client';
 import { AUTH_MESSAGES } from '@/lib/auth/messages';
 
 const schema = z
