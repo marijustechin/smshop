@@ -18,14 +18,17 @@ and must not be silently changed.
 
 ## Status
 
-**Monorepo scaffolded (foundation only).** No product features. See
+**Authentication v1 complete and manually verified end-to-end in local
+development** (credentials + Google, automatic Google↔credentials convergence,
+password recovery including Google-only users, abuse hardening, transactional
+email). No storefront/catalogue/product features yet. See
 [`tasks/TODO.md`](tasks/TODO.md) for the roadmap and current state.
 
 ## Repository structure
 
 ```
-apps/web/        Next.js frontend (port 3000)
-apps/api/        NestJS API (port 3001, owns /api/*)
+apps/web/        Next.js frontend (local 3101; container 3000)
+apps/api/        NestJS API (local 3100; container 3001, owns /api/*)
 packages/db/     Prisma schema + migrations + generated client
 docker/          web.Dockerfile, api.Dockerfile (linux/arm64, UID 10001:10001)
 docker-compose.yml  local PostgreSQL 18 for development
@@ -39,34 +42,53 @@ Prerequisites: Node.js 24 LTS (`nvm use` reads the root `.nvmrc`), pnpm, Docker
 
 ```sh
 pnpm install
-cp .env.example .env                    # development DB/connection values
+cp .env.example .env                    # local PostgreSQL Compose values
 cp packages/db/.env.example packages/db/.env
-cp apps/api/.env.example apps/api/.env
+cp apps/api/.env.example apps/api/.env  # required: the API will not start without it
+cp apps/web/.env.example apps/web/.env.local   # optional (browser API origin)
+
 pnpm db:up                              # start local PostgreSQL 18
-pnpm dev                                # build db package, then run web + api
+pnpm prisma:migrate:deploy              # apply migrations (first run)
+pnpm dev                                # build db, then run web + api
 ```
+
+**The API environment is required.** `pnpm dev` runs a preflight
+(`scripts/check-dev-env.mjs`) that stops before either server starts if
+`apps/api/.env` is missing required values. The minimum is `DATABASE_URL`
+(matching the local Compose database), `PORT=3100`,
+`WEB_ORIGIN=http://localhost:3101`, and a `JWT_ACCESS_SECRET` of at least 32
+characters:
+
+```sh
+node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'))"
+```
+
+See [`docs/development.md`](docs/development.md) for the full local setup and
+[`docs/configuration.md`](docs/configuration.md) for the variable contract.
+Never commit `.env` files.
 
 Endpoints (development):
 
-- Frontend `http://localhost:3000` — `/health/ready`
-- API `http://localhost:3001` — `/health/ready`, `/api`
+- Frontend `http://localhost:3101` — `/health/ready`
+- API `http://localhost:3100` — `/health/ready`, `/api`
 
 ## Scripts
 
-| Command                               | Purpose                                                             |
-| ------------------------------------- | ------------------------------------------------------------------- |
-| `pnpm dev`                            | build `@smshop/db`, then run web + api on the host                  |
-| `pnpm build`                          | production builds (db → api → web)                                  |
-| `pnpm typecheck`                      | type-check all packages                                             |
-| `pnpm lint`                           | ESLint across packages                                              |
-| `pnpm format` / `pnpm format:check`   | Prettier write / check                                              |
-| `pnpm test`                           | run unit/integration tests (Vitest, API via Supertest)              |
-| `pnpm verify`                         | full local verification gate (format, lint, typecheck, test, build) |
-| `pnpm verify:db`                      | `verify` plus database-backed tests (starts the test DB)            |
-| `pnpm test:db`                        | run database-backed integration tests                               |
-| `pnpm db:up` / `pnpm db:down`         | start/stop local PostgreSQL 18                                      |
-| `pnpm prisma:generate`                | generate Prisma client                                              |
-| `pnpm prisma:migrate:dev` / `:deploy` | dev / deploy migrations                                             |
+| Command                               | Purpose                                                               |
+| ------------------------------------- | --------------------------------------------------------------------- |
+| `pnpm dev`                            | preflight API env, build `@smshop/db`, then run web + api on the host |
+| `pnpm check:dev-env`                  | check `apps/api/.env` for required local values (no output = ok)      |
+| `pnpm build`                          | production builds (db → api → web)                                    |
+| `pnpm typecheck`                      | type-check all packages                                               |
+| `pnpm lint`                           | ESLint across packages                                                |
+| `pnpm format` / `pnpm format:check`   | Prettier write / check                                                |
+| `pnpm test`                           | run unit/integration tests (Vitest, API via Supertest)                |
+| `pnpm verify`                         | full local verification gate (format, lint, typecheck, test, build)   |
+| `pnpm verify:db`                      | `verify` plus database-backed tests (starts the test DB)              |
+| `pnpm test:db`                        | run database-backed integration tests                                 |
+| `pnpm db:up` / `pnpm db:down`         | start/stop local PostgreSQL 18                                        |
+| `pnpm prisma:generate`                | generate Prisma client                                                |
+| `pnpm prisma:migrate:dev` / `:deploy` | dev / deploy migrations                                               |
 
 ## Verification gate
 

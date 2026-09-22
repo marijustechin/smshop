@@ -1,6 +1,33 @@
-import 'dotenv/config';
+import { config as loadEnv } from 'dotenv';
 import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'prisma/config';
+
+/**
+ * Loads local development environment files for Prisma CLI commands
+ * (`prisma migrate …`, `prisma generate`).
+ *
+ * Process environment variables always win, and the first file that defines a
+ * key provides it. The candidates are the files the local setup documents in
+ * `docs/development.md`, so a developer who copied any (or all) of them can run
+ * migrations without a separate copy:
+ *   1. `packages/db/.env` (Prisma-specific),
+ *   2. repository-root `.env` (local Compose/connection values),
+ *   3. `apps/api/.env` (API runtime config; same local database).
+ *
+ * In CI and production the database connection comes from the process
+ * environment, so no `.env` file is required. Missing files are ignored.
+ */
+const packageDir = dirname(fileURLToPath(import.meta.url));
+loadEnv({
+  path: [
+    resolve(packageDir, '.env'),
+    resolve(packageDir, '../../.env'),
+    resolve(packageDir, '../../apps/api/.env'),
+  ],
+  quiet: true,
+});
 
 /**
  * Resolves the datasource URL for Prisma CLI commands (migrations).

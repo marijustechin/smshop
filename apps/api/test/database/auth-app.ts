@@ -77,7 +77,7 @@ export async function createAuthTestApp(
   const moduleRef = await builder.compile();
 
   const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
-  await configureFastifyApp(app, process.env.WEB_ORIGIN ?? 'http://localhost:3000');
+  await configureFastifyApp(app, process.env.WEB_ORIGIN ?? 'http://localhost:3101');
   await app.init();
   await (app.getHttpAdapter().getInstance() as unknown as { ready: () => Promise<void> }).ready();
 

@@ -7,7 +7,8 @@
     "node": ">=24 <25"
   },
   "scripts": {
-    "dev": "pnpm --filter @smshop/db build && pnpm -r --parallel --filter @smshop/web --filter @smshop/api run dev",
+    "check:dev-env": "node scripts/check-dev-env.mjs",
+    "dev": "pnpm check:dev-env && pnpm --filter @smshop/db build && pnpm -r --parallel --filter @smshop/web --filter @smshop/api run dev",
     "build": "pnpm --filter @smshop/db build && pnpm --filter @smshop/api build && pnpm --filter @smshop/web build",
     "typecheck": "pnpm --filter @smshop/db build && pnpm --filter @smshop/api typecheck && pnpm --filter @smshop/web typecheck",
     "lint": "pnpm --filter @smshop/db lint && pnpm --filter @smshop/api lint && pnpm --filter @smshop/web lint",

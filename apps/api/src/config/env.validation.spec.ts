@@ -1,9 +1,12 @@
+import { readFileSync } from 'node:fs';
+import { parseEnv } from 'node:util';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import { assembleDatabaseUrl, resolveSecretFiles, validateEnv } from './env.validation.js';
 
 const validEnv = {
   DATABASE_URL: 'postgresql://smshop:smshop@localhost:5432/smshop',
-  WEB_ORIGIN: 'http://localhost:3000',
+  WEB_ORIGIN: 'http://localhost:3101',
   JWT_ACCESS_SECRET: 'a'.repeat(32),
 };
 
@@ -19,9 +22,9 @@ describe('validateEnv', () => {
   });
 
   it('accepts optional future Auth variables without requiring them', () => {
-    const env = validateEnv({ ...validEnv, API_ORIGIN: 'http://localhost:3001' });
+    const env = validateEnv({ ...validEnv, API_ORIGIN: 'http://localhost:3100' });
 
-    expect(env.API_ORIGIN).toBe('http://localhost:3001');
+    expect(env.API_ORIGIN).toBe('http://localhost:3100');
     expect(env.GOOGLE_CLIENT_ID).toBeUndefined();
     expect(env.SMTP_HOST).toBeUndefined();
   });
@@ -60,6 +63,29 @@ describe('validateEnv', () => {
       expect(message).toContain('JWT_ACCESS_SECRET');
       expect(message).not.toContain(secret);
     }
+  });
+});
+
+describe('committed apps/api/.env.example', () => {
+  const examplePath = fileURLToPath(new URL('../../.env.example', import.meta.url));
+
+  // Guards the local-development contract: a required variable added to the
+  // schema without updating the committed example would fail here, before a
+  // developer hits it via `pnpm dev`.
+  it('is a valid local development API configuration', () => {
+    const example = parseEnv(readFileSync(examplePath, 'utf8'));
+    const env = validateEnv(example);
+
+    expect(env.DATABASE_URL).toMatch(/^postgresql:\/\//);
+    expect(env.WEB_ORIGIN).toBe('http://localhost:3101');
+    expect(env.JWT_ACCESS_SECRET.length).toBeGreaterThanOrEqual(32);
+  });
+
+  // Guards against committing real Turnstile credentials: local dev must use
+  // Cloudflare's official always-pass TEST secret (public, test-only).
+  it('uses the Cloudflare always-pass test secret for local Turnstile', () => {
+    const example = parseEnv(readFileSync(examplePath, 'utf8'));
+    expect(example.TURNSTILE_SECRET_KEY).toBe('1x0000000000000000000000000000000AA');
   });
 });
 
@@ -138,7 +164,7 @@ describe('Google OAuth configuration', () => {
     ...validEnv,
     GOOGLE_CLIENT_ID: 'client-id.apps.googleusercontent.com',
     GOOGLE_CLIENT_SECRET: 'client-secret-value',
-    GOOGLE_CALLBACK_URL: 'http://localhost:3001/api/auth/google/callback',
+    GOOGLE_CALLBACK_URL: 'http://localhost:3100/api/auth/google/callback',
   };
 
   it('accepts a complete Google configuration', () => {
