@@ -1,10 +1,4 @@
-export interface AuthUser {
-  id: string;
-  email: string;
-  emailVerified: boolean;
-  /** Whether a Google identity is explicitly linked to this account. */
-  googleLinked?: boolean;
-}
+import type { AuthUser } from '@/entities/user';
 
 export interface LoginResponse {
   accessToken: string;

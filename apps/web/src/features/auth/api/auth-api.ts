@@ -1,8 +1,8 @@
 import { apiRequest } from '@/shared/api/client';
 import { apiUrl } from '@/shared/config/api';
+import type { AuthUser } from '@/entities/user';
 import type {
   AuthCapabilities,
-  AuthUser,
   LoginResponse,
   RefreshResponse,
   RegisterResponse,

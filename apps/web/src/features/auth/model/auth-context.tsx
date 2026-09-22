@@ -3,7 +3,8 @@
 import * as React from 'react';
 import { ApiError, apiRequest } from '@/shared/api/client';
 import * as authApi from '../api/auth-api';
-import type { AuthStatus, AuthUser } from './types';
+import type { AuthUser } from '@/entities/user';
+import type { AuthStatus } from './types';
 
 interface AuthContextValue {
   status: AuthStatus;
