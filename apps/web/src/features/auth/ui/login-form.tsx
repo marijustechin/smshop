@@ -10,11 +10,11 @@ import { Button } from '@/shared/ui/button';
 import { Alert } from '@/shared/ui/alert';
 import { FormField } from '@/shared/ui/form-field';
 import { PasswordField } from '@/shared/ui/password-field';
-import { GoogleAuthButton } from '@/components/google-auth-button';
-import { useAuth } from '@/lib/auth/auth-context';
-import { mapAuthError, isEmailNotVerified, AUTH_MESSAGES } from '@/lib/auth/messages';
+import { GoogleAuthButton } from '@/features/auth/ui/google-auth-button';
+import { useAuth } from '@/features/auth/model/auth-context';
+import { mapAuthError, isEmailNotVerified, AUTH_MESSAGES } from '@/features/auth/model/messages';
 import { safeReturnTo } from '@/shared/lib/return-to';
-import { resendVerification } from '@/lib/auth/api';
+import { resendVerification } from '@/features/auth/api/auth-api';
 import { TurnstileWidget, useTurnstileGate } from '@/shared/ui/turnstile';
 
 const loginSchema = z.object({

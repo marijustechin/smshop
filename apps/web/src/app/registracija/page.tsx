@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageShell } from '@/shared/ui/page-shell';
-import { RegisterForm } from './register-form';
+import { RegisterForm } from '@/features/auth';
 
 export const metadata: Metadata = { title: 'Registracija — Šokolado meistrai' };
 

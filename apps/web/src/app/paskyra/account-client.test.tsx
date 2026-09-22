@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AccountClient } from './account-client';
-import { getAuthCapabilities } from '@/lib/auth/api';
+import { getAuthCapabilities } from '@/features/auth/api/auth-api';
 
 const { replace, logout, bootstrap, state } = vi.hoisted(() => ({
   replace: vi.fn(),
@@ -23,11 +23,11 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace, push: vi.fn() }),
 }));
 
-vi.mock('@/lib/auth/auth-context', () => ({
+vi.mock('@/features/auth/model/auth-context', () => ({
   useAuth: () => ({ ...state, logout, bootstrap }),
 }));
 
-vi.mock('@/lib/auth/api', () => ({
+vi.mock('@/features/auth/api/auth-api', () => ({
   getAuthCapabilities: vi.fn(),
 }));
 

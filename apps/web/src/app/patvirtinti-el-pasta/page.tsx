@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { PageShell } from '@/shared/ui/page-shell';
-import { VerifyEmailClient } from './verify-email-client';
+import { VerifyEmailClient } from '@/features/auth';
 
 export const metadata: Metadata = { title: 'El. pašto patvirtinimas — Šokolado meistrai' };
 

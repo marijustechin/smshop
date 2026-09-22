@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageShell } from '@/shared/ui/page-shell';
-import { ResetPasswordForm } from './reset-password-form';
+import { ResetPasswordForm } from '@/features/auth';
 
 export const metadata: Metadata = { title: 'Atkurti slaptažodį — Šokolado meistrai' };
 

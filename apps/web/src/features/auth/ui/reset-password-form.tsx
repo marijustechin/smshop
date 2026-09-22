@@ -9,9 +9,9 @@ import { z } from 'zod';
 import { Button } from '@/shared/ui/button';
 import { Alert } from '@/shared/ui/alert';
 import { PasswordField } from '@/shared/ui/password-field';
-import { resetPassword } from '@/lib/auth/api';
+import { resetPassword } from '@/features/auth/api/auth-api';
 import { ApiError } from '@/shared/api/client';
-import { AUTH_MESSAGES } from '@/lib/auth/messages';
+import { AUTH_MESSAGES } from '@/features/auth/model/messages';
 
 const schema = z
   .object({

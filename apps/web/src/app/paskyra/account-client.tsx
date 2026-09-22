@@ -5,8 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/shared/ui/button';
 import { Alert } from '@/shared/ui/alert';
-import { useAuth } from '@/lib/auth/auth-context';
-import { getAuthCapabilities } from '@/lib/auth/api';
+import { useAuth, getAuthCapabilities } from '@/features/auth';
 
 export function AccountClient() {
   const { status, user, logout, bootstrap } = useAuth();

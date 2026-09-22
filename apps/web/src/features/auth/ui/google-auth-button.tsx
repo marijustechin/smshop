@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { getAuthCapabilities, googleStartUrl } from '@/lib/auth/api';
+import { getAuthCapabilities, googleStartUrl } from '@/features/auth/api/auth-api';
 
 type Availability = 'unknown' | 'available' | 'unavailable';
 

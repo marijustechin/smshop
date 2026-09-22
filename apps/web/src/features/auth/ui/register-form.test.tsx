@@ -3,9 +3,9 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RegisterForm } from './register-form';
 import { ApiError } from '@/shared/api/client';
-import * as api from '@/lib/auth/api';
+import * as api from '@/features/auth/api/auth-api';
 
-vi.mock('@/lib/auth/api', () => ({
+vi.mock('@/features/auth/api/auth-api', () => ({
   getAuthCapabilities: vi.fn(),
   googleStartUrl: () => 'http://localhost:3100/api/auth/google',
   register: vi.fn(),

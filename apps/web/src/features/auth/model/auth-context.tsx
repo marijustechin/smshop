@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { ApiError, apiRequest } from '@/shared/api/client';
-import * as authApi from './api';
+import * as authApi from '../api/auth-api';
 import type { AuthStatus, AuthUser } from './types';
 
 interface AuthContextValue {

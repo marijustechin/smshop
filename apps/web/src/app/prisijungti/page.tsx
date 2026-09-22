@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { PageShell } from '@/shared/ui/page-shell';
-import { LoginForm, LoginFooter } from './login-form';
+import { LoginForm, LoginFooter } from '@/features/auth';
 
 export const metadata: Metadata = { title: 'Prisijungti — Šokolado meistrai' };
 

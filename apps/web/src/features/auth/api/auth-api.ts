@@ -6,7 +6,7 @@ import type {
   LoginResponse,
   RefreshResponse,
   RegisterResponse,
-} from './types';
+} from '../model/types';
 
 /** Typed wrappers around the backend auth endpoints. */
 

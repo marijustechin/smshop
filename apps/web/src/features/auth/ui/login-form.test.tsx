@@ -20,11 +20,11 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => searchParams,
 }));
 
-vi.mock('@/lib/auth/auth-context', () => ({
+vi.mock('@/features/auth/model/auth-context', () => ({
   useAuth: () => authState,
 }));
 
-vi.mock('@/lib/auth/api', () => ({
+vi.mock('@/features/auth/api/auth-api', () => ({
   getAuthCapabilities: vi.fn(),
   googleStartUrl: () => 'http://localhost:3100/api/auth/google',
   resendVerification: vi.fn(),
@@ -38,7 +38,7 @@ vi.mock('@/lib/auth/api', () => ({
   fetchMe: vi.fn(),
 }));
 
-import { getAuthCapabilities, resendVerification } from '@/lib/auth/api';
+import { getAuthCapabilities, resendVerification } from '@/features/auth/api/auth-api';
 
 const resend = vi.mocked(resendVerification);
 const getCapabilities = vi.mocked(getAuthCapabilities);

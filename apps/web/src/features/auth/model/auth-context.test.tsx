@@ -3,9 +3,9 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { AuthProvider, useAuth } from './auth-context';
 import { ApiError } from '@/shared/api/client';
-import * as api from './api';
+import * as api from '../api/auth-api';
 
-vi.mock('./api', () => ({
+vi.mock('../api/auth-api', () => ({
   refresh: vi.fn(),
   fetchMe: vi.fn(),
   login: vi.fn(),

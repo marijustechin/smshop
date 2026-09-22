@@ -4,9 +4,9 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Alert } from '@/shared/ui/alert';
-import { verifyEmail } from '@/lib/auth/api';
+import { verifyEmail } from '@/features/auth/api/auth-api';
 import { ApiError } from '@/shared/api/client';
-import { AUTH_MESSAGES } from '@/lib/auth/messages';
+import { AUTH_MESSAGES } from '@/features/auth/model/messages';
 
 type VerificationState =
   | { kind: 'verifying' }

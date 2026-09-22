@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageShell } from '@/shared/ui/page-shell';
-import { ForgotPasswordForm } from './forgot-password-form';
+import { ForgotPasswordForm } from '@/features/auth';
 
 export const metadata: Metadata = { title: 'Pamiršau slaptažodį — Šokolado meistrai' };
 
