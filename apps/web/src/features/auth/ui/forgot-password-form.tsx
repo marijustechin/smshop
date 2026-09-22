@@ -7,8 +7,8 @@ import { z } from 'zod';
 import { Button } from '@/shared/ui/button';
 import { Alert } from '@/shared/ui/alert';
 import { FormField } from '@/shared/ui/form-field';
-import { forgotPassword } from '@/features/auth/api/auth-api';
-import { AUTH_MESSAGES, mapAuthError } from '@/features/auth/model/messages';
+import { forgotPassword } from '../api/auth-api';
+import { AUTH_MESSAGES, mapAuthError } from '../model/messages';
 import { TurnstileWidget, useTurnstileGate } from '@/shared/ui/turnstile';
 
 const schema = z.object({

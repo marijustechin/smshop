@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { ForgotPasswordForm } from './forgot-password-form';
 import { ResetPasswordForm } from './reset-password-form';
 import { ApiError } from '@/shared/api/client';
-import * as api from '@/features/auth/api/auth-api';
+import * as api from '../api/auth-api';
 
 const { searchParams } = vi.hoisted(() => ({ searchParams: new URLSearchParams() }));
 
@@ -12,7 +12,7 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => searchParams,
 }));
 
-vi.mock('@/features/auth/api/auth-api', () => ({
+vi.mock('../api/auth-api', () => ({
   forgotPassword: vi.fn(),
   resetPassword: vi.fn(),
 }));

@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { VerifyEmailClient } from './verify-email-client';
 import { ApiError } from '@/shared/api/client';
-import * as api from '@/features/auth/api/auth-api';
+import * as api from '../api/auth-api';
 
 const { searchParams } = vi.hoisted(() => ({ searchParams: new URLSearchParams() }));
 
@@ -10,7 +10,7 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => searchParams,
 }));
 
-vi.mock('@/features/auth/api/auth-api', () => ({
+vi.mock('../api/auth-api', () => ({
   verifyEmail: vi.fn(),
 }));
 

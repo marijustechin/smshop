@@ -2,12 +2,12 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { GoogleAuthButton } from './google-auth-button';
 
-vi.mock('@/features/auth/api/auth-api', () => ({
+vi.mock('../api/auth-api', () => ({
   getAuthCapabilities: vi.fn(),
   googleStartUrl: () => 'http://localhost:3100/api/auth/google',
 }));
 
-import { getAuthCapabilities } from '@/features/auth/api/auth-api';
+import { getAuthCapabilities } from '../api/auth-api';
 
 const getCapabilities = vi.mocked(getAuthCapabilities);
 

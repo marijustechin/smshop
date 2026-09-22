@@ -9,10 +9,10 @@ import { Button } from '@/shared/ui/button';
 import { Alert } from '@/shared/ui/alert';
 import { FormField } from '@/shared/ui/form-field';
 import { PasswordField } from '@/shared/ui/password-field';
-import { GoogleAuthButton } from '@/features/auth/ui/google-auth-button';
-import { register as registerAccount, resendVerification } from '@/features/auth/api/auth-api';
+import { GoogleAuthButton } from './google-auth-button';
+import { register as registerAccount, resendVerification } from '../api/auth-api';
 import { ApiError } from '@/shared/api/client';
-import { AUTH_MESSAGES, mapAuthError } from '@/features/auth/model/messages';
+import { AUTH_MESSAGES, mapAuthError } from '../model/messages';
 import { TurnstileWidget, useTurnstileGate } from '@/shared/ui/turnstile';
 
 const registerSchema = z
