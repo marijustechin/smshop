@@ -19,10 +19,11 @@ This roadmap may evolve as product decisions are made.
 # Current State
 
 **Current milestone:** M2 — Authentication v1 (COMPLETE; manually verified
-end-to-end in local development).
+end-to-end in local development). The architecture/documentation stabilization
+(ARCH-000) and the frontend FSD-lite structural refactor (ARCH-001) are complete;
+the next milestone is **M3 — Store Information Architecture**.
 
-**Current task:** none — `tasks/current/` is empty. Authentication work through
-A-012 is complete; the next milestone (M3+) is decided separately.
+**Current task:** none — `tasks/current/` is empty.
 
 **Recently completed:** H-000–H-010; A-001–A-012. Beyond Auth v1
 (A-001–A-010), this includes:
@@ -35,9 +36,16 @@ A-012 is complete; the next milestone (M3+) is decided separately.
   access for the same `User`.
 - **H-010** — local development environment hardening (local ports 3101/3100,
   `pnpm dev` env preflight, Prisma local env resolution, local docs/tests).
+- **ARCH-000** (cross-repository) — documentation and technical-debt
+  reconciliation; isolated the test Compose stack so DB-test teardown cannot
+  remove the development volume.
+- **ARCH-001** — frontend FSD-lite structural refactor (shared/features/entities
+  layers, import boundaries, docs). Source structure only: no route, API
+  contract, auth, cookie/session, Turnstile, Google or error-message changes.
 
-**Next application task:** M3+ milestones, decided separately. No further
-authentication feature work is planned.
+**Next application task:** **M3 — Store Information Architecture** (public site
+map, navigation, category/catalogue structure, search/filter/sort requirements),
+decided separately. No further authentication feature work is planned.
 
 **Parallel workstream:** production infrastructure / Oracle (`sm-oracle-infra`),
 tracked as `OPS-*` below.

@@ -135,6 +135,56 @@ apps/api/src/
 
 Do not place feature modules directly under `src/`.
 
+## Frontend source layout (FSD-lite)
+
+`apps/web` follows a **pragmatic five-layer FSD-lite** structure (ARCH-001).
+Next.js App Router remains the routing/composition layer; classic FSD `pages/`
+and `processes/` layers are intentionally omitted because `app/` already owns
+routing and there is no cross-page process orchestration to model.
+
+```
+apps/web/src/
+├── app/         Next.js routes, layouts, metadata, route handlers, composition
+├── widgets/     larger reusable UI composition blocks (none yet)
+├── features/    user actions/use cases (currently `auth`)
+├── entities/    domain-oriented frontend models/UI (currently `user`)
+└── shared/      domain-agnostic ui / api / config / lib
+```
+
+Dependency direction (strict): `app → widgets → features → entities → shared`.
+
+- `app/` composes the layers below. `page.tsx` files, `layout.tsx`,
+  `globals.css`, route handlers and metadata stay here; it should not contain
+  reusable business logic.
+- `widgets/` are larger UI composition blocks (header, footer, mobile nav,
+  product grid, filters panel, account navigation, ...). None exist yet.
+- `features/` are user actions/use cases (auth, and later add-to-cart, search,
+  filtering, checkout actions, account actions). They may use entities and
+  shared.
+- `entities/` are domain-oriented frontend models/UI (user, and later product,
+  category, cart, order). They must not know page-specific flows.
+- `shared/` is domain-agnostic infrastructure (`ui`, `api`, `config`, `lib`) and
+  must not import from entities/features/widgets/app.
+
+Same-layer policy: cross-feature and cross-entity imports are disallowed by
+default. Imports within a slice use relative paths; the `@/...` alias is reserved
+for imports from other slices/layers. When two slices need common logic it moves
+down into `entities/` or `shared/`.
+
+Public API: slices imported across boundaries expose a small `index.ts` public
+API (currently `shared/ui`, `shared/api`, `shared/lib`, `entities/user`,
+`features/auth`). There is no global/root barrel, and slices import one another
+through the public API rather than through a slice's internals.
+
+Enforcement uses the existing ESLint setup only (`no-restricted-imports` in
+`apps/web/eslint.config.mjs`); no FSD-specific tooling is added. The existing
+`@/*` alias (`@/ → src/*`) is unchanged and no layer-specific aliases were
+introduced.
+
+The authentication implementation was migrated into this structure as a
+source-structure change only: routes, URLs, the API contract, cookies/session
+behaviour, Turnstile and Google behaviour, and error messages are unchanged.
+
 ## Domain boundaries
 
 - **Authentication identity is separate from the e-commerce customer.** `User`
