@@ -152,8 +152,9 @@ Do not place feature modules directly under `src/`.
 
 ## Open fields (application-owned)
 
-- C.1 — production image references (digests): open until images are published
-  to GHCR.
+- C.1 — production image references (digests): **resolved** — immutable
+  `linux/arm64` images published to GHCR and pinned by digest; see the
+  authoritative infrastructure deployment contract.
 - C.3 — environment variable names and DB connection layout: resolved — a full
   `DATABASE_URL`/`DATABASE_URL_FILE`, or assembly from
   `DB_HOST`/`DB_PORT`/`DB_NAME`/`DB_USER`/`DB_PASSWORD`(`_FILE`); see
@@ -166,7 +167,8 @@ Do not place feature modules directly under `src/`.
 - C.5 — writable runtime paths: the foundation requires **no** writable runtime
   paths (stateless by default); reopen only if a requirement introduces them.
 - C.6 — persistent storage beyond PostgreSQL: product-dependent, open.
-- C.7 — egress: product-dependent, open.
+- C.7 — egress: SMTP egress is **prepared** (committed, not deployed); other
+  future egress requirements remain product-dependent and open.
 
 Contract C.2 (migration command) is effectively resolved by the foundation:
 `prisma migrate deploy`, exit 0 on success. The exact wrapper command inside the

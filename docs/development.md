@@ -185,23 +185,23 @@ always-fail test secret `2x0000000000000000000000000000000AA`, to exercise
 
 ## Commands (implemented)
 
-| Command                               | Purpose                                                               |
-| ------------------------------------- | --------------------------------------------------------------------- |
-| `pnpm dev`                            | preflight API env, build `@smshop/db`, then run web + api on the host |
-| `pnpm check:dev-env`                  | check `apps/api/.env` for the required local values (no output = ok)  |
-| `pnpm build`                          | production builds (db → api → web)                                    |
-| `pnpm lint`                           | ESLint across packages                                                |
-| `pnpm format` / `pnpm format:check`   | Prettier write / check                                                |
-| `pnpm typecheck`                      | type-check all packages                                               |
-| `pnpm test`                           | run the test suite (Vitest; see `docs/testing.md`)                    |
-| `pnpm verify`                         | full local verification gate (format, lint, typecheck, test, build)   |
-| `pnpm verify:db`                      | `verify` plus database-backed tests (starts the test DB)              |
-| `pnpm db:test:up` / `db:test:down`    | start/stop the isolated test database                                 |
-| `pnpm db:test:migrate` / `:reset`     | apply / reset migrations on the test database                         |
-| `pnpm test:db`                        | run database-backed integration tests                                 |
-| `pnpm db:up` / `pnpm db:down`         | start/stop the local PostgreSQL Compose                               |
-| `pnpm prisma:generate`                | generate the Prisma client                                            |
-| `pnpm prisma:migrate:dev` / `:deploy` | create/apply / deploy migrations                                      |
+| Command                               | Purpose                                                                                                   |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                            | preflight API env, build `@smshop/db`, then run web + api on the host                                     |
+| `pnpm check:dev-env`                  | check `apps/api/.env` for the required local values (no output = ok)                                      |
+| `pnpm build`                          | production builds (db → api → web)                                                                        |
+| `pnpm lint`                           | ESLint across packages                                                                                    |
+| `pnpm format` / `pnpm format:check`   | Prettier write / check                                                                                    |
+| `pnpm typecheck`                      | type-check all packages                                                                                   |
+| `pnpm test`                           | run the test suite (Vitest; see `docs/testing.md`)                                                        |
+| `pnpm verify`                         | full local verification gate (format, lint, typecheck, test, build)                                       |
+| `pnpm verify:db`                      | `verify` plus database-backed tests (starts the test DB)                                                  |
+| `pnpm db:test:up` / `db:test:down`    | start/stop the isolated test database (Compose project `smshop-test`; teardown removes only test volumes) |
+| `pnpm db:test:migrate` / `:reset`     | apply / reset migrations on the test database                                                             |
+| `pnpm test:db`                        | run database-backed integration tests                                                                     |
+| `pnpm db:up` / `pnpm db:down`         | start/stop the local PostgreSQL Compose                                                                   |
+| `pnpm prisma:generate`                | generate the Prisma client                                                                                |
+| `pnpm prisma:migrate:dev` / `:deploy` | create/apply / deploy migrations                                                                          |
 
 ## Verification gate
 

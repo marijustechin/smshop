@@ -85,6 +85,11 @@ separate from development, using the real Prisma migration state.
 - **Service:** a dedicated Compose service `db-test` (profile `test`, port
   `5433`, its own volume) so the development database can never be touched. It is
   not started by `pnpm db:up`.
+- **Project isolation:** the test stack runs under its own Compose project
+  (`smshop-test`, set in `scripts/test-db.mjs`), separate from the development
+  project (`smshop`). `pnpm db:test:down` therefore removes `-v` only the test
+  container/network/volume; the development volume `smshop_pgdata` is never
+  targeted.
 - **Migrations:** `prisma migrate deploy` is applied to the test database; tests
   also assert the `_prisma_migrations` state exists. No `prisma db push`.
 - **Isolation:** `truncateAll` truncates every application table (excluding
@@ -96,14 +101,14 @@ separate from development, using the real Prisma migration state.
 
 Commands:
 
-| Command                | Purpose                                                   |
-| ---------------------- | --------------------------------------------------------- |
-| `pnpm db:test:up`      | start the isolated test database (Compose profile `test`) |
-| `pnpm db:test:migrate` | apply migrations to the test database                     |
-| `pnpm test:db`         | run database-backed integration tests                     |
-| `pnpm db:test:reset`   | reset the test database and re-apply migrations           |
-| `pnpm db:test:down`    | stop the test database and remove its volume              |
-| `pnpm verify:db`       | start test DB → migrate → `pnpm verify` → DB tests        |
+| Command                | Purpose                                                    |
+| ---------------------- | ---------------------------------------------------------- |
+| `pnpm db:test:up`      | start the isolated test database (Compose profile `test`)  |
+| `pnpm db:test:migrate` | apply migrations to the test database                      |
+| `pnpm test:db`         | run database-backed integration tests                      |
+| `pnpm db:test:reset`   | reset the test database and re-apply migrations            |
+| `pnpm db:test:down`    | stop the test database and remove its isolated volume only |
+| `pnpm verify:db`       | start test DB → migrate → `pnpm verify` → DB tests         |
 
 `pnpm verify` deliberately stays service-free and deterministic, so it does not
 include database-backed tests. Database-affecting work must also pass

@@ -101,11 +101,14 @@ cadence, and container lifecycle.
 reverse-proxy routing, persistent storage, production database connectivity,
 and container orchestration/lifecycle.
 
-Still **open** (application/infrastructure alignment): production image digests
-(C.1 — blocked on GHCR publication), concrete writable paths if any (C.5),
-persistent storage beyond PostgreSQL (C.6), and required egress (C.7). The
-environment/secret interface (C.3/C.4), migration command (C.2), and database
-connection layout are reconciled (see "Exact runtime interface" above).
+Resolved/current (application/infrastructure alignment): production image
+digests (C.1 — published and pinned by immutable digest), writable paths (C.5 —
+ephemeral `/tmp` only), the environment/secret interface (C.3/C.4), migration
+command (C.2), and database connection layout (see "Exact runtime interface"
+above). SMTP egress (C.7) is **prepared** (committed, not deployed); any other
+future egress remains open. Persistent storage beyond PostgreSQL (C.6) remains
+product-dependent and open. The authoritative field status is maintained in
+`sm-oracle-infra/docs/application-deployment-contract.md`.
 
 ## Infra-owned (not application contract)
 
@@ -116,18 +119,23 @@ connection layout are reconciled (see "Exact runtime interface" above).
 - Production Compose service names.
 - Everything else listed in the deployment contract's infra boundary.
 
-## Open fields (application-owned)
+## Contract field status (application-owned)
 
-1. C.1 — production image references (digests): blocked on GHCR publication
-   (requires an authorized commit/push to trigger CI); local `linux/arm64`
-   images build and run (verified 2026-09-15).
-2. C.2 — migration command: resolved — API image, `prisma migrate deploy`, exit 0.
-3. C.3 — environment variable names and DB connection layout: resolved — URL or
-   `DB_*` component assembly; see `docs/configuration.md`.
+The authoritative field status is maintained in the infrastructure deployment
+contract (`sm-oracle-infra/docs/application-deployment-contract.md`). Summary of
+the application-owned fields:
+
+1. C.1 — production image references (digests): **resolved** — immutable
+   `linux/arm64` images published to GHCR and pinned by digest; see the
+   contract's "Published application images".
+2. C.2 — migration command: **resolved** — API image, `prisma migrate deploy`, exit 0.
+3. C.3 — environment variable names and DB connection layout: **resolved** — URL
+   or `DB_*` component assembly; see `docs/configuration.md`.
 4. C.4 — file-based secret names and file-reading support: application side
-   resolved (`<NAME>_FILE`); production secret file names/mounts remain
+   **resolved** (`<NAME>_FILE`); production secret file names/mounts remain
    infrastructure-owned.
-5. C.5 — writable runtime paths: ephemeral `/tmp` by default; concrete paths
-   at implementation.
+5. C.5 — writable runtime paths: **resolved** — ephemeral `/tmp`; otherwise
+   stateless.
 6. C.6 — persistent storage beyond PostgreSQL: product-dependent, open.
-7. C.7 — egress requirements: product-dependent, open.
+7. C.7 — egress requirements: SMTP egress **prepared** (committed, not deployed);
+   other future egress remains product-dependent and open.

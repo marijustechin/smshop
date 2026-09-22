@@ -191,36 +191,36 @@ because it was discussed.
 - `DONE` **OPS-000 — Oracle host access and identity baseline**
   - SSH connectivity and hostname-based SSH access confirmed.
   - ED25519 host fingerprint recorded; host identity matched to known address.
-- `PARTIAL` **OPS-001 — HTTP bootstrap readiness**
-  - Prepared: execution/rollback runbook, Compose file, Nginx configuration,
-    firewall helpers, planned TCP 80/443 network allowance.
-  - Only HTTP 80 intended initially; ACME challenge path handled directly;
-    ordinary requests return 503; Certbot excluded.
-  - Not yet executed: Nginx runtime validation remains a pre-exposure gate; no
-    live exposure/change confirmed yet.
-- `PLANNED` **OPS-002 — TLS / ACME enablement**
-  - ACME validation, certificate acquisition, HTTPS listener, HTTP → HTTPS
-    redirect, renewal validation.
-- `PARTIAL` **OPS-003 — Application deployment contract**
-  - Application side exists: Node 24 baseline, configuration contract, `*_FILE`
-    secret support, API health endpoint, container/runtime documentation.
-  - Remaining infrastructure-side contract alignment is still open.
-- `PLANNED` **OPS-004 — Production database and persistence strategy**
-  - PostgreSQL placement, volume persistence, backup, restore, migration
-    procedure.
-- `PLANNED` **OPS-005 — Deployment and rollback workflow**
-  - Release process, migration ordering, startup ordering, health verification,
-    rollback.
-- `PLANNED` **OPS-006 — Backups, logging and monitoring**
-  - DB backups, restore test, disk monitoring, service health, logs, error
-    visibility, restart strategy.
+- `DONE` **OPS-001 — HTTP bootstrap readiness**
+  - Executed and verified (Section 6): proxy-only HTTP bootstrap, ACME challenge
+    path, maintenance response, OCI/Docker exposure.
+- `DONE` **OPS-002 — TLS / ACME enablement**
+  - Executed and verified (Section 6): trusted certificate, HTTPS listener,
+    HTTP → HTTPS and `www` → apex redirects, containerized renewal loop.
+- `DONE` **OPS-003 — Application deployment contract**
+  - Reconciled and published: confirmed runtime facts, environment/secret names,
+    database connection layout, and immutable image digests.
+- `DONE` **OPS-004 — Production database and persistence strategy**
+  - Deployed (D-002): PostgreSQL 18 on the internal network with a persistent
+    volume and separate runtime/migration roles. Backups/restore remain OPS-006.
+- `DONE` **OPS-005 — Deployment and rollback workflow**
+  - Executed (D-002): release layout, migration ordering, health verification and
+    a repeatable `deploy.sh deploy`. Rollback does not revert migrations.
+- `PARTIAL` **OPS-006 — Backups, logging and monitoring**
+  - Bounded container logs exist; DB backups/restore tests, monitoring and error
+    visibility are not implemented.
 - `PLANNED` **OPS-007 — Production readiness review**
   - Final infrastructure gate before production launch.
+
+Authoritative operational status lives in `sm-oracle-infra/TODO.md`
+(Sections 7–10) and `sm-oracle-infra/CHANGELOG.md`; this list is a
+cross-repository summary only.
 
 ## Infrastructure ↔ application dependencies
 
 - Auth development (M2) **does not** require production Oracle deployment.
-- Pre-launch (M21–M22) requires `OPS-002` … `OPS-007` as applicable.
+- Pre-launch (M21–M22) requires `OPS-006`, `OPS-007`, and the remaining
+  infrastructure workstream items as applicable.
 - `OPS-003` (deployment contract) bridges the two repositories; the
   application-side declaration lives in `docs/deployment.md`, the authoritative
   contract remains in
@@ -240,8 +240,9 @@ External repository: `sm-oracle-infra` (cross-repository reference only).
 - [x] Verify the actual `apps/api` and `apps/web` Docker image builds and run the
       images (D-001, 2026-09-15): both build and run for `linux/arm64`; readiness
       and registration verified; `prisma migrate deploy` verified against
-      PostgreSQL 18. GHCR publication and CI execution remain blocked on an
-      authorized commit/push.
+      PostgreSQL 18. GHCR publication and CI execution are complete (immutable
+      `linux/arm64` images published by the `Images` workflow; digests recorded
+      in the deployment contract).
 - [ ] (D-001 discovery) The API does not recover `/health/ready` after a database
       restart without a process restart: a fresh container returns 200, but a
       container that lost its database connection keeps returning 503. The

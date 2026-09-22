@@ -12,7 +12,28 @@ import { spawnSync } from 'node:child_process';
 
 const DEFAULT_TEST_DATABASE_URL = 'postgresql://smshop_test:smshop_test@localhost:5433/smshop_test';
 
-const COMPOSE_TEST_ARGS = ['compose', '--profile', 'test'];
+/**
+ * Dedicated Compose project identity for the isolated test stack.
+ *
+ * This MUST differ from the developer's default project (`DEV_COMPOSE_PROJECT`,
+ * derived from the repository directory) so that `db:test:down -v` can only
+ * remove test containers and volumes. If the test stack shared the default
+ * project, `docker compose down -v` would also delete the development volume
+ * `smshop_pgdata`.
+ */
+const COMPOSE_PROJECT = 'smshop-test';
+const DEV_COMPOSE_PROJECT = 'smshop';
+
+function assertIsolatedProject() {
+  if (COMPOSE_PROJECT === DEV_COMPOSE_PROJECT || !COMPOSE_PROJECT.endsWith('-test')) {
+    throw new Error(
+      `Refusing to operate: test Compose project "${COMPOSE_PROJECT}" is not isolated ` +
+        `(it must differ from "${DEV_COMPOSE_PROJECT}" and end with "-test").`,
+    );
+  }
+}
+
+const COMPOSE_TEST_ARGS = ['compose', '-p', COMPOSE_PROJECT, '--profile', 'test'];
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -95,15 +116,22 @@ function withOnlyTestDatabaseUrl(url) {
 
 function main() {
   const command = process.argv[2];
+  assertIsolatedProject();
 
   switch (command) {
     case 'up':
-      console.log('Starting isolated test database (docker compose profile "test")...');
+      console.log(
+        `Starting isolated test database (Compose project "${COMPOSE_PROJECT}", profile "test")...`,
+      );
       run('docker', [...COMPOSE_TEST_ARGS, 'up', '-d', '--wait', 'db-test']);
       break;
 
     case 'down':
-      console.log('Stopping isolated test database and removing its volume...');
+      console.log(
+        `Stopping isolated test database (Compose project "${COMPOSE_PROJECT}") and removing only its volume...`,
+      );
+      // `-v` is scoped to COMPOSE_PROJECT, so the development `smshop_pgdata`
+      // volume is never targeted.
       run('docker', [...COMPOSE_TEST_ARGS, 'down', '-v', '--remove-orphans']);
       break;
 
