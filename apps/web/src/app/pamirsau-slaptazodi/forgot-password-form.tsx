@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import { FormField } from '@/components/form-field';
 import { forgotPassword } from '@/lib/auth/api';
-import { mapAuthError } from '@/lib/auth/messages';
+import { AUTH_MESSAGES, mapAuthError } from '@/lib/auth/messages';
 import { TurnstileWidget, useTurnstileGate } from '@/components/turnstile';
 
 const schema = z.object({
@@ -29,17 +29,23 @@ export function ForgotPasswordForm() {
   } = useForm<Values>({ resolver: zodResolver(schema) });
   const [sent, setSent] = React.useState(false);
   const [formError, setFormError] = React.useState<string | null>(null);
-  const turnstile = useTurnstileGate();
+  const turnstile = useTurnstileGate({
+    // A fresh token makes a stale Turnstile error obsolete; unrelated errors stay.
+    onTokenAvailable: () => {
+      setFormError((current) => (current === AUTH_MESSAGES.turnstile ? null : current));
+    },
+  });
 
   const submit = handleSubmit(async (values) => {
     setFormError(null);
+    // Turnstile tokens are single-use: consume before sending (see register-form).
+    const turnstileToken = turnstile.token;
+    turnstile.reset();
     try {
-      await forgotPassword(values.email.trim(), turnstile.token);
+      await forgotPassword(values.email.trim(), turnstileToken);
       setSent(true);
     } catch (error) {
       setFormError(mapAuthError(error));
-    } finally {
-      turnstile.reset();
     }
   });
 

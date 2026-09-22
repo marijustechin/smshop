@@ -28,5 +28,8 @@ import { AuthSessionModule } from '../session/auth-session.module.js';
     GoogleAuthService,
     OAuthTransactionCookieService,
   ],
+  // Exported so the auth capability surface can report whether Google is
+  // configured without duplicating the provider's enabled check.
+  exports: [GoogleAuthService],
 })
 export class GoogleModule {}

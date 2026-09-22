@@ -8,6 +8,8 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import { FormField } from '@/components/form-field';
+import { PasswordField } from '@/components/password-field';
+import { GoogleAuthButton } from '@/components/google-auth-button';
 import { register as registerAccount, resendVerification } from '@/lib/auth/api';
 import { ApiError } from '@/lib/api/client';
 import { AUTH_MESSAGES, mapAuthError } from '@/lib/auth/messages';
@@ -46,13 +48,23 @@ export function RegisterForm() {
   const [resendState, setResendState] = React.useState<'idle' | 'sending' | 'sent' | 'error'>(
     'idle',
   );
-  const turnstile = useTurnstileGate();
+  const turnstile = useTurnstileGate({
+    // A fresh token makes a stale Turnstile error obsolete; unrelated errors stay.
+    onTokenAvailable: () => {
+      setFormError((current) => (current === AUTH_MESSAGES.turnstile ? null : current));
+    },
+  });
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
     setDuplicate(false);
+    // Turnstile tokens are single-use. Consume the token before the request is
+    // sent so a token the server may have consumed can never be resubmitted;
+    // the widget immediately starts acquiring a fresh token for any retry.
+    const turnstileToken = turnstile.token;
+    turnstile.reset();
     try {
-      const response = await registerAccount(values.email.trim(), values.password, turnstile.token);
+      const response = await registerAccount(values.email.trim(), values.password, turnstileToken);
       setResult({ email: values.email.trim(), emailSent: response.verificationEmailSent });
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
@@ -60,8 +72,6 @@ export function RegisterForm() {
         return;
       }
       setFormError(mapAuthError(error));
-    } finally {
-      turnstile.reset();
     }
   });
 
@@ -73,14 +83,14 @@ export function RegisterForm() {
       turnstile.reset();
       return;
     }
+    const turnstileToken = turnstile.token;
+    turnstile.reset();
     setResendState('sending');
     try {
-      await resendVerification(result.email, turnstile.token);
+      await resendVerification(result.email, turnstileToken);
       setResendState('sent');
     } catch {
       setResendState('error');
-    } finally {
-      turnstile.reset();
     }
   };
 
@@ -148,19 +158,17 @@ export function RegisterForm() {
         error={errors.email?.message}
         {...register('email')}
       />
-      <FormField
+      <PasswordField
         id="password"
         label="Slaptažodis"
-        type="password"
         autoComplete="new-password"
         hint="Bent 12 simbolių."
         error={errors.password?.message}
         {...register('password')}
       />
-      <FormField
+      <PasswordField
         id="confirm"
         label="Pakartokite slaptažodį"
-        type="password"
         autoComplete="new-password"
         error={errors.confirm?.message}
         {...register('confirm')}
@@ -170,6 +178,7 @@ export function RegisterForm() {
       <Button type="submit" className="w-full" disabled={isSubmitting || !turnstile.canSubmit}>
         {isSubmitting ? 'Registruojamasi…' : 'Registruotis'}
       </Button>
+      <GoogleAuthButton label="Registruotis su Google" />
     </form>
   );
 }

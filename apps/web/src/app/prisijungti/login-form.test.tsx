@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LoginForm } from './login-form';
 import { ApiError } from '@/lib/api/client';
@@ -25,7 +25,8 @@ vi.mock('@/lib/auth/auth-context', () => ({
 }));
 
 vi.mock('@/lib/auth/api', () => ({
-  googleStartUrl: () => 'http://localhost:3001/api/auth/google',
+  getAuthCapabilities: vi.fn(),
+  googleStartUrl: () => 'http://localhost:3100/api/auth/google',
   resendVerification: vi.fn(),
   login: vi.fn(),
   register: vi.fn(),
@@ -37,12 +38,20 @@ vi.mock('@/lib/auth/api', () => ({
   fetchMe: vi.fn(),
 }));
 
-import { resendVerification } from '@/lib/auth/api';
+import { getAuthCapabilities, resendVerification } from '@/lib/auth/api';
 
 const resend = vi.mocked(resendVerification);
+const getCapabilities = vi.mocked(getAuthCapabilities);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.unstubAllEnvs();
+  // Turnstile globals/injected script are document-wide; reset per test.
+  delete (window as { turnstile?: unknown }).turnstile;
+  document.querySelectorAll('script[data-smshop-turnstile]').forEach((s) => s.remove());
+  // Unresolved by default so tests without the Google action don't trigger a
+  // post-render capability state update; Google tests resolve it explicitly.
+  getCapabilities.mockReturnValue(new Promise(() => {}));
   for (const key of [...searchParams.keys()]) {
     searchParams.delete(key);
   }
@@ -113,10 +122,19 @@ describe('LoginForm', () => {
     await waitFor(() => expect(replace).toHaveBeenCalledWith('/paskyra'));
   });
 
-  it('renders the Google button targeting the backend OAuth start route', () => {
+  it('renders the Google button targeting the backend OAuth start route when available', async () => {
+    getCapabilities.mockResolvedValue({ google: true });
     render(<LoginForm />);
-    const link = screen.getByRole('link', { name: 'Prisijungti su Google' });
-    expect(link).toHaveAttribute('href', 'http://localhost:3001/api/auth/google');
+    const link = await screen.findByRole('link', { name: 'Prisijungti su Google' });
+    expect(link).toHaveAttribute('href', 'http://localhost:3100/api/auth/google');
+  });
+
+  it('does not offer Google when the backend reports it unavailable', async () => {
+    getCapabilities.mockResolvedValue({ google: false });
+    render(<LoginForm />);
+
+    await waitFor(() => expect(getCapabilities).toHaveBeenCalled());
+    expect(screen.queryByRole('link', { name: 'Prisijungti su Google' })).not.toBeInTheDocument();
   });
 
   it('handles oauth=success by bootstrapping and redirecting', async () => {
@@ -126,14 +144,6 @@ describe('LoginForm', () => {
 
     await waitFor(() => expect(authState.bootstrap).toHaveBeenCalled());
     await waitFor(() => expect(replace).toHaveBeenCalledWith('/paskyra'));
-  });
-
-  it('explains account-link-required without claiming a link', () => {
-    searchParams.set('oauth', 'account-link-required');
-    render(<LoginForm />);
-
-    expect(screen.getByText(/jau naudojamas paskyroje/i)).toBeInTheDocument();
-    expect(screen.getByText(/bus galima susieti vėliau/i)).toBeInTheDocument();
   });
 
   it('shows a neutral message for oauth=failed', () => {
@@ -163,5 +173,34 @@ describe('LoginForm', () => {
     expect(
       await screen.findByText('Nepavyko patvirtinti, kad nesate robotas. Bandykite dar kartą.'),
     ).toBeInTheDocument();
+  });
+
+  it('becomes usable when Turnstile initializes on a client-side mount', async () => {
+    vi.stubEnv('NEXT_PUBLIC_TURNSTILE_SITE_KEY', '1x00000000000000000000AA');
+    authState.login.mockResolvedValue(undefined);
+
+    render(<LoginForm />);
+
+    // Mounted without the global (as after client-side navigation): the script
+    // is injected by the component rather than relying on next/script.
+    const script = document.querySelector<HTMLScriptElement>('script[data-smshop-turnstile]');
+    expect(script).not.toBeNull();
+
+    (window as { turnstile?: unknown }).turnstile = {
+      render: (_el: HTMLElement, options: { callback?: (token: string) => void }) => {
+        options.callback?.('tok-nav');
+        return 'w1';
+      },
+      reset: vi.fn(),
+      remove: vi.fn(),
+    };
+    act(() => script!.dispatchEvent(new Event('load')));
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Prisijungti' })).toBeEnabled());
+
+    await submitLogin();
+    await waitFor(() =>
+      expect(authState.login).toHaveBeenCalledWith('a@example.com', 'password', 'tok-nav'),
+    );
   });
 });

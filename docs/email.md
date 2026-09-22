@@ -1,8 +1,9 @@
 # Email
 
-Status: **implemented (infrastructure, A-003).** Provider-independent
-transactional email infrastructure. No verification or password-reset flow is
-implemented yet.
+Status: **implemented (infrastructure A-003; consumed by A-004/A-006).**
+Provider-independent transactional email infrastructure used by email
+verification/resend and password recovery. Real SMTP is not configured on
+staging yet (see "Staging enablement" below).
 
 ## Architecture
 
@@ -69,6 +70,57 @@ direct value wins over the file. Credentials are never logged, never included in
 validation errors (the error formatter scrubs secret values), and never exposed
 by `MailSendError` — only a generic `Failed to send email` message with the
 original error attached as an internal `cause`.
+
+## Staging enablement (external requirements)
+
+Email is **implemented application-side**; the staging deployment simply has no
+SMTP configured, so `readSmtpConfig` returns `null` and every send fails with
+`MailNotConfiguredError`. Registration therefore commits the account and returns
+`verificationEmailSent: false` (the UI offers resend), and resend /
+forgot-password log a warning but never reveal delivery state. This is a
+configuration gap, not a product or code gap: verification and password recovery
+remain required and are never weakened or hidden because SMTP is unset.
+
+To send real staging email, the following must be provided/approved **outside
+this repository**. No credential is invented or committed here.
+
+**Application-side contract (already implemented — nothing to change in code):**
+
+| Variable / file      | Kind            | Notes                                                   |
+| -------------------- | --------------- | ------------------------------------------------------- |
+| `SMTP_HOST`          | nonsecret       | Provider SMTP hostname                                  |
+| `SMTP_PORT`          | nonsecret       | Provider SMTP port                                      |
+| `SMTP_SECURE`        | nonsecret       | Explicit `"true"` (implicit TLS, e.g. 465) or `"false"` |
+| `SMTP_USER`          | nonsecret       | Provider SMTP username                                  |
+| `SMTP_PASSWORD_FILE` | **secret file** | Mounted for the `api` service; read as `SMTP_PASSWORD`  |
+| `MAIL_FROM`          | nonsecret       | Sender, e.g. `Šokolado meistrai <noreply@…>`            |
+
+The group is all-or-none: if any value is present, all are required, and the API
+fails fast at startup otherwise. `SMTP_SECURE` is never inferred from the port.
+
+**Infrastructure-side requirements (`sm-oracle-infra`, requires human approval):**
+
+1. **Provider + credentials.** A sending provider and its SMTP credentials must
+   be chosen and supplied by the human administrator. Choosing/paying for an
+   external provider is a human decision; the application code is
+   provider-independent.
+2. **Secret delivery.** A root-managed `smtp_password` file under
+   `/etc/sokoladas-staging/secrets/`, owned by app UID `10001` mode `0400`, and
+   mounted into `api` as `SMTP_PASSWORD_FILE` alongside the `SMTP_*`/`MAIL_FROM`
+   environment values (same model as `jwt_access_secret`).
+3. **API egress.** The accepted architecture gives the API **no initial outbound
+   Internet access** (`app`/`db` are internal Docker networks). SMTP requires the
+   API to reach the provider's SMTP host, so an approved, dedicated egress path
+   must be added for the `api` service (or another explicitly approved network
+   design). This is the contract's C.2.6 egress field and is not yet implemented.
+4. **DNS / SPF / DKIM.** The `MAIL_FROM` domain must be authorized by the chosen
+   provider (verified sending domain) with the provider's required SPF/DKIM (and
+   any DMARC) records added to DNS. Exact records are provider-specific and must
+   come from the human administrator.
+
+Until 1–4 are provided and a redeploy is authorized, staging email cannot be
+end-to-end verified; the application-side behaviour is fully covered by tests
+with a stubbed transport.
 
 ## Manual smoke test
 

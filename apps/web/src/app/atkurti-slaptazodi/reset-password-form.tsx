@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
-import { FormField } from '@/components/form-field';
+import { PasswordField } from '@/components/password-field';
 import { resetPassword } from '@/lib/auth/api';
 import { ApiError } from '@/lib/api/client';
 import { AUTH_MESSAGES } from '@/lib/auth/messages';
@@ -112,20 +112,18 @@ export function ResetPasswordForm() {
 
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
-      <FormField
+      <PasswordField
         id="password"
         label="Naujas slaptažodis"
-        type="password"
         autoComplete="new-password"
         autoFocus
         hint="Bent 12 simbolių."
         error={errors.password?.message}
         {...register('password')}
       />
-      <FormField
+      <PasswordField
         id="confirm"
         label="Pakartokite naują slaptažodį"
-        type="password"
         autoComplete="new-password"
         error={errors.confirm?.message}
         {...register('confirm')}

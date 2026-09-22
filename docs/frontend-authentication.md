@@ -10,11 +10,11 @@ stays public; authentication is only required for account functionality.
 | ----------------------- | ------------- | ------------------------------------------- |
 | `/`                     | public        | Storefront placeholder + dev nav links      |
 | `/prisijungti`          | public        | Login, Google entry, OAuth outcome handling |
-| `/registracija`         | public        | Registration                                |
+| `/registracija`         | public        | Registration (credentials + Google entry)   |
 | `/patvirtinti-el-pasta` | public        | Verification-link consumer                  |
 | `/pamirsau-slaptazodi`  | public        | Forgot password                             |
 | `/atkurti-slaptazodi`   | public        | Reset password                              |
-| `/paskyra`              | **protected** | Simple account/test page                    |
+| `/paskyra`              | **protected** | Account page (session info + Google status) |
 
 Slugs are ASCII-only Lithuanian. No English auth routes.
 
@@ -71,8 +71,35 @@ falling back to `/paskyra`.
 The Google button is a real link/navigation to `GET /api/auth/google` (no JS
 SDK, no JSON fetch). The backend redirects to `/prisijungti?oauth=success`, where
 the login page bootstraps the session via refresh and navigates on;
-`oauth=account-link-required` and `oauth=failed` show Lithuanian guidance. No
-token ever appears in a URL.
+`oauth=failed` shows Lithuanian guidance. No token ever appears in a URL.
+
+The backend OAuth flow creates, auto-links, or logs in the account through the
+same `GET /api/auth/google` endpoint (identity resolution in
+`docs/authentication.md`): a Google sign-in with the same verified email as an
+existing credentials account transparently enters that account. The registration
+page therefore exposes the same Google entry point as login rather than a
+separate "Google registration" flow.
+
+### Google availability (capability-gated)
+
+The frontend must not advertise an action the deployed backend cannot perform.
+`GoogleAuthButton` (`src/components/google-auth-button.tsx`) is shared by
+`/prisijungti` and `/registracija` and:
+
+1. fetches `GET /api/auth/capabilities` (non-secret, public; currently
+   `{ "google": boolean }`) on mount;
+2. renders the Google action only when `google === true`;
+3. renders nothing while the answer is unknown and **fails closed** (hidden) if
+   the request fails.
+
+This means a disabled deployment never shows a usable Google control, so a user
+cannot be sent to the backend's explicit `GET /api/auth/google` `503` response
+by clicking the UI. When Google is configured, the action appears consistently
+on both pages. The backend's disabled-provider behaviour is unchanged.
+
+Email verification, resend, and password recovery are permanent product
+capabilities and are **not** capability-gated: they remain visible even when
+staging SMTP is temporarily unconfigured (`docs/email.md`).
 
 ## Protected route behaviour
 
@@ -85,20 +112,33 @@ does **not** redirect to login. Logout calls `POST /api/auth/logout`, clears
 in-memory state, and returns to login. Public pages remain usable regardless of
 bootstrap outcome.
 
+### Google status (read-only)
+
+Google accounts are linked automatically on Google login when the Google email is
+verified and matches an existing account whose own email is verified (see
+`docs/authentication.md`). There is **no user action** to link or unlink. When
+Google is enabled (`GET /api/auth/capabilities` → `{ google: true }`), `/paskyra`
+shows a read-only `Google paskyra: Susieta | Nesusieta` row based on
+`user.googleLinked`.
+
 ## API origin
 
 `src/lib/api/config.ts` resolves the API origin once: `NEXT_PUBLIC_API_BASE_URL`
 when set, otherwise empty string in production (same-origin under `/api`) and
-`http://localhost:3001` in development. Components never hard-code origins. The
+`http://localhost:3100` in development. Components never hard-code origins. The
 client always sends `credentials: 'include'` for cookie-bearing calls.
 
 ## Turnstile and rate-limit UX (A-009)
 
 - `TurnstileWidget` (`src/components/turnstile.tsx`) loads Cloudflare's explicit
   widget when `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set, and renders nothing when it
-  is not (so local dev without keys works). It emits the challenge token via a
-  callback; `useTurnstileGate()` exposes `token`, `reset()`, `needsChallenge`, and
-  `canSubmit`.
+  is not. It emits the challenge token via a callback; `useTurnstileGate()`
+  exposes `token`, `reset()`, `needsChallenge`, and `canSubmit`.
+- Local development uses Cloudflare's official always-pass **test** sitekey
+  `1x00000000000000000000AA` (see `apps/web/.env.example`), paired with the test
+  secret in the API; these are test-only and must not reach staging/production.
+  If the API enforces Turnstile but no site key is set, the widget never renders
+  and submissions fail with `403 TURNSTILE_REQUIRED`.
 - Forms on `/prisijungti`, `/registracija`, `/pamirsau-slaptazodi`, and the login
   resend action include `turnstileToken` in the request and disable submission
   until a valid token is available (when a site key is configured). After every
@@ -108,6 +148,18 @@ client always sends `credentials: 'include'` for cookie-bearing calls.
   "Per daug bandymų…". Raw Cloudflare/backend detail is never shown.
 - The secret key is backend-only; only the public site key reaches the frontend,
   and it is never used in `NEXT_PUBLIC_*` for the secret.
+
+## Password visibility
+
+Every password input uses `PasswordField` (`src/components/password-field.tsx`),
+which wraps the shared `FormField` and adds an accessible show/hide toggle:
+login password, registration password and confirmation, and reset-password
+(new + confirmation). The toggle only switches the input `type` between
+`password` and `text`; it never reads or changes the field value, so
+`react-hook-form` registration and validation are unaffected. It is keyboard
+operable, has an action-labelled accessible name (Lithuanian "Rodyti
+slaptažodį" / "Slėpti slaptažodį"), and exposes state via `aria-pressed`. No new
+UI dependency was added (the icons come from the existing `lucide-react`).
 
 ## Not implemented (intentionally)
 
@@ -121,5 +173,8 @@ not the final customer dashboard.
 (bootstrap success/failure, login, logout, coordinated refresh), `returnTo`
 safety, error mapping (including `429` and Turnstile codes), login/registration/
 verification/password-recovery forms, Turnstile gating and widget rendering,
-OAuth query outcomes, and the protected `/paskyra` behaviour. All backend HTTP and
-Cloudflare are mocked; no test calls the live API or Cloudflare.
+OAuth query outcomes, and the protected `/paskyra` behaviour. `PasswordField`
+tests cover hidden-by-default, reveal/hide without changing the value, and
+keyboard operation; `GoogleAuthButton` and the login/registration forms cover the
+capability-gated Google action (available, unavailable, and fail-closed). All
+backend HTTP and Cloudflare are mocked; no test calls the live API or Cloudflare.

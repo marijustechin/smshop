@@ -2,6 +2,8 @@ export interface AuthUser {
   id: string;
   email: string;
   emailVerified: boolean;
+  /** Whether a Google identity is explicitly linked to this account. */
+  googleLinked?: boolean;
 }
 
 export interface LoginResponse {
@@ -18,6 +20,16 @@ export interface RegisterResponse {
 
 export interface RefreshResponse {
   accessToken: string;
+}
+
+/**
+ * Non-secret auth capabilities reported by the backend. The frontend uses this
+ * to avoid advertising an action the deployed backend cannot perform. It only
+ * covers optional/provider-backed actions; email verification and password
+ * recovery are permanent product capabilities and are always shown.
+ */
+export interface AuthCapabilities {
+  google: boolean;
 }
 
 /**

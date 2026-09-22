@@ -9,10 +9,12 @@ import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import { FormField } from '@/components/form-field';
+import { PasswordField } from '@/components/password-field';
+import { GoogleAuthButton } from '@/components/google-auth-button';
 import { useAuth } from '@/lib/auth/auth-context';
 import { mapAuthError, isEmailNotVerified, AUTH_MESSAGES } from '@/lib/auth/messages';
 import { safeReturnTo } from '@/lib/auth/return-to';
-import { googleStartUrl, resendVerification } from '@/lib/auth/api';
+import { resendVerification } from '@/lib/auth/api';
 import { TurnstileWidget, useTurnstileGate } from '@/components/turnstile';
 
 const loginSchema = z.object({
@@ -38,7 +40,12 @@ export function LoginForm() {
   const oauth = searchParams.get('oauth');
   const returnTo = safeReturnTo(searchParams.get('returnTo'));
   const handledOAuth = React.useRef(false);
-  const turnstile = useTurnstileGate();
+  const turnstile = useTurnstileGate({
+    // A fresh token makes a stale Turnstile error obsolete; unrelated errors stay.
+    onTokenAvailable: () => {
+      setFormError((current) => (current === AUTH_MESSAGES.turnstile ? null : current));
+    },
+  });
 
   const {
     register,
@@ -65,8 +72,11 @@ export function LoginForm() {
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
     setUnverifiedEmail(null);
+    // Turnstile tokens are single-use: consume before sending (see register-form).
+    const turnstileToken = turnstile.token;
+    turnstile.reset();
     try {
-      await login(values.email.trim(), values.password, turnstile.token);
+      await login(values.email.trim(), values.password, turnstileToken);
       router.replace(returnTo);
     } catch (error) {
       if (isEmailNotVerified(error)) {
@@ -75,8 +85,6 @@ export function LoginForm() {
         return;
       }
       setFormError(mapAuthError(error));
-    } finally {
-      turnstile.reset();
     }
   });
 
@@ -88,25 +96,19 @@ export function LoginForm() {
       turnstile.reset();
       return;
     }
+    const turnstileToken = turnstile.token;
+    turnstile.reset();
     setResendState('sending');
     try {
-      await resendVerification(unverifiedEmail, turnstile.token);
+      await resendVerification(unverifiedEmail, turnstileToken);
       setResendState('sent');
     } catch {
       setResendState('error');
-    } finally {
-      turnstile.reset();
     }
   };
 
   return (
     <form onSubmit={onSubmit} className="space-y-4" noValidate>
-      {oauth === 'account-link-required' ? (
-        <Alert variant="error">
-          Toks el. pašto adresas jau naudojamas paskyroje. Prisijunkite kitu būdu. Google paskyrą
-          bus galima susieti vėliau.
-        </Alert>
-      ) : null}
       {oauth === 'failed' ? (
         <Alert variant="error">
           Prisijungti su Google nepavyko. Bandykite dar kartą arba prisijunkite su el. paštu.
@@ -122,10 +124,9 @@ export function LoginForm() {
         error={errors.email?.message}
         {...register('email')}
       />
-      <FormField
+      <PasswordField
         id="password"
         label="Slaptažodis"
-        type="password"
         autoComplete="current-password"
         error={errors.password?.message}
         {...register('password')}
@@ -168,18 +169,7 @@ export function LoginForm() {
         {isSubmitting ? 'Jungiamasi…' : 'Prisijungti'}
       </Button>
 
-      <div className="flex items-center gap-3 text-xs text-muted">
-        <span className="h-px flex-1 bg-border" />
-        arba
-        <span className="h-px flex-1 bg-border" />
-      </div>
-
-      <a
-        href={googleStartUrl()}
-        className="inline-flex h-10 w-full items-center justify-center rounded-md border border-border bg-white text-sm font-medium text-ink hover:bg-cream/40"
-      >
-        Prisijungti su Google
-      </a>
+      <GoogleAuthButton label="Prisijungti su Google" />
 
       <div className="text-center text-sm">
         <Link

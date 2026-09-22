@@ -1,6 +1,12 @@
 import { apiRequest } from '@/lib/api/client';
 import { apiUrl } from '@/lib/api/config';
-import type { AuthUser, LoginResponse, RefreshResponse, RegisterResponse } from './types';
+import type {
+  AuthCapabilities,
+  AuthUser,
+  LoginResponse,
+  RefreshResponse,
+  RegisterResponse,
+} from './types';
 
 /** Typed wrappers around the backend auth endpoints. */
 
@@ -75,6 +81,11 @@ export function resetPassword(token: string, password: string): Promise<{ passwo
     method: 'POST',
     body: { token, password },
   });
+}
+
+/** Non-secret auth capabilities the frontend may rely on. */
+export function getAuthCapabilities(): Promise<AuthCapabilities> {
+  return apiRequest<AuthCapabilities>('/api/auth/capabilities');
 }
 
 /** Browser-navigation URL that starts the backend Google OAuth flow. */

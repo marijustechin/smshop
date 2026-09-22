@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AuthService, type RegisteredUser } from './auth.service.js';
+import { GoogleAuthService } from './google/google-auth.service.js';
 import { EmailVerificationService } from './email-verification/email-verification.service.js';
 import { PasswordResetService } from './password-reset/password-reset.service.js';
 import { RegisterDto } from './dto/register.dto.js';
@@ -48,7 +49,20 @@ export class AuthController {
     private readonly passwordReset: PasswordResetService,
     private readonly sessions: AuthSessionService,
     private readonly refreshCookie: RefreshCookieService,
+    private readonly googleAuth: GoogleAuthService,
   ) {}
+
+  /**
+   * Non-secret, public capability surface. Lets the frontend render only the
+   * auth actions the deployed backend can actually perform (currently Google);
+   * it never exposes configuration values. Email verification and password
+   * recovery are permanent product capabilities and are intentionally not
+   * gated here even when staging SMTP is not yet configured.
+   */
+  @Get('capabilities')
+  capabilities(): { google: boolean } {
+    return { google: this.googleAuth.isEnabled() };
+  }
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
