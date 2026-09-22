@@ -8,8 +8,7 @@ import { OAuthTransactionCookieService } from './oauth-transaction-cookie.servic
 import { generateTransactionSecret } from './oauth-transaction.js';
 import { calculatePKCECodeChallenge } from 'openid-client';
 
-export type GoogleCallbackOutcome =
-  { status: 'success' } | { status: 'link_required' } | { status: 'failed' };
+export type GoogleCallbackOutcome = { status: 'success' } | { status: 'failed' };
 
 @Injectable()
 export class GoogleAuthService {
@@ -51,9 +50,9 @@ export class GoogleAuthService {
 
   /**
    * Completes the Google flow. Validates the transaction, exchanges the code,
-   * resolves the identity, and on success issues the shared A-005 session and
-   * refresh cookie. The transaction cookie is cleared on every outcome so a
-   * callback cannot be replayed.
+   * resolves the identity (auto-linking a same-email verified account), and on
+   * success issues the shared A-005 session and refresh cookie. The transaction
+   * cookie is cleared on every outcome so a callback cannot be replayed.
    */
   async handleCallback(
     request: FastifyRequest,
@@ -84,9 +83,6 @@ export class GoogleAuthService {
     }
 
     const resolution = await this.accounts.resolveIdentity(identity);
-    if (resolution.status === 'link_required') {
-      return { status: 'link_required' };
-    }
     if (resolution.status === 'invalid') {
       return { status: 'failed' };
     }

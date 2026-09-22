@@ -53,10 +53,6 @@ export class GoogleAuthController {
       reply.redirect(`${webOrigin}/prisijungti?oauth=success`, 302);
       return;
     }
-    if (outcome.status === 'link_required') {
-      reply.redirect(`${webOrigin}/prisijungti?oauth=account-link-required`, 302);
-      return;
-    }
     reply.redirect(`${webOrigin}/prisijungti?oauth=failed`, 302);
   }
 }

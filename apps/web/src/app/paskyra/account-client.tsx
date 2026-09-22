@@ -6,12 +6,14 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import { useAuth } from '@/lib/auth/auth-context';
+import { getAuthCapabilities } from '@/lib/auth/api';
 
 export function AccountClient() {
   const { status, user, logout, bootstrap } = useAuth();
   const router = useRouter();
   const [loggingOut, setLoggingOut] = React.useState(false);
   const [retrying, setRetrying] = React.useState(false);
+  const [googleEnabled, setGoogleEnabled] = React.useState(false);
 
   React.useEffect(() => {
     // Only a *confirmed* unauthenticated state redirects to login. A transient
@@ -20,6 +22,24 @@ export function AccountClient() {
       router.replace('/prisijungti?returnTo=/paskyra');
     }
   }, [status, router]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    getAuthCapabilities()
+      .then((capabilities) => {
+        if (!cancelled) {
+          setGoogleEnabled(capabilities.google);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setGoogleEnabled(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const onRetry = async () => {
     setRetrying(true);
@@ -67,6 +87,12 @@ export function AccountClient() {
             {user.emailVerified ? 'Patvirtintas' : 'Nepatvirtintas'}
           </dd>
         </div>
+        {googleEnabled ? (
+          <div className="flex justify-between gap-4">
+            <dt className="text-muted">Google paskyra</dt>
+            <dd className="font-medium text-ink">{user.googleLinked ? 'Susieta' : 'Nesusieta'}</dd>
+          </div>
+        ) : null}
         {process.env.NODE_ENV !== 'production' ? (
           <>
             <div className="flex justify-between gap-4">

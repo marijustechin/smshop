@@ -7,8 +7,35 @@ import { Argon2PasswordHasher } from '../../src/modules/auth/password/argon2-pas
 import { hashPasswordResetToken } from '../../src/modules/auth/password-reset/password-reset-token.js';
 import { PASSWORD_RESET_TTL_HOURS } from '../../src/modules/auth/password-reset/password-reset.constants.js';
 import { REFRESH_COOKIE_NAME } from '../../src/modules/auth/session/refresh-cookie.service.js';
+import { OAUTH_TXN_COOKIE_NAME } from '../../src/modules/auth/google/oauth-transaction-cookie.service.js';
+import type {
+  AuthorizationUrlInput,
+  GoogleIdentity,
+  GoogleOidcProvider,
+} from '../../src/modules/auth/google/google-oidc.provider.js';
 import { createTestPrismaClient, truncateAll } from './helpers.js';
 import { createAuthTestApp } from './auth-app.js';
+
+/** Minimal Google provider boundary so this suite never contacts Google. */
+class StubGoogleProvider implements GoogleOidcProvider {
+  identity: GoogleIdentity = {
+    sub: 'google-sub-1',
+    email: 'google@example.com',
+    emailVerified: true,
+  };
+
+  isEnabled(): boolean {
+    return true;
+  }
+
+  async createAuthorizationUrl(input: AuthorizationUrlInput): Promise<string> {
+    return `https://accounts.google.com/o/oauth2/v2/auth?state=${input.state}`;
+  }
+
+  async exchangeCode(): Promise<GoogleIdentity> {
+    return this.identity;
+  }
+}
 
 const PASSWORD = 'correct horse battery staple';
 const NEW_PASSWORD = 'a brand new passphrase value';
@@ -37,10 +64,11 @@ describe('Password recovery (real PostgreSQL)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   const sendMail = vi.fn();
+  const provider = new StubGoogleProvider();
 
   beforeAll(async () => {
     prisma = createTestPrismaClient() as unknown as PrismaService;
-    ({ app } = await createAuthTestApp(prisma, sendMail));
+    ({ app } = await createAuthTestApp(prisma, sendMail, { googleProvider: provider }));
   });
 
   afterAll(async () => {
@@ -74,6 +102,31 @@ describe('Password recovery (real PostgreSQL)', () => {
       },
     });
     return user;
+  }
+
+  /** Runs the real OAuth callback (stubbed provider) and returns the user id. */
+  async function googleLoginUserId(email: string, sub: string): Promise<string> {
+    provider.identity = { sub, email, emailVerified: true };
+    const start = await request(app.getHttpServer()).get('/api/auth/google').redirects(0);
+    const raw = cookieValue(start, OAUTH_TXN_COOKIE_NAME);
+    const payload = raw?.split('.')[0];
+    const state = payload
+      ? (JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as { state: string }).state
+      : undefined;
+    const res = await request(app.getHttpServer())
+      .get('/api/auth/google/callback?code=test-code')
+      .query({ state })
+      .set('Cookie', `${OAUTH_TXN_COOKIE_NAME}=${raw}`)
+      .redirects(0);
+    expect(res.headers.location).toBe('http://localhost:3101/prisijungti?oauth=success');
+    const refresh = cookieValue(res, REFRESH_COOKIE_NAME) as string;
+    const refreshed = await request(app.getHttpServer())
+      .post('/api/auth/refresh')
+      .set('Cookie', `${REFRESH_COOKIE_NAME}=${refresh}`);
+    const me = await request(app.getHttpServer())
+      .get('/api/auth/me')
+      .set('Authorization', `Bearer ${refreshed.body.accessToken as string}`);
+    return me.body.id as string;
   }
 
   const GENERIC_MESSAGE =
@@ -111,22 +164,33 @@ describe('Password recovery (real PostgreSQL)', () => {
       expect(Math.abs(delta - PASSWORD_RESET_TTL_HOURS * 3_600_000)).toBeLessThan(5_000);
     });
 
-    it('remains enumeration-safe for unknown, Google-only, and unverified accounts', async () => {
-      await seedUser('google@example.com', { provider: 'GOOGLE' });
+    it('remains enumeration-safe for unknown and unverified accounts', async () => {
       await seedUser('unverified@example.com', { verified: false });
 
       const unknown = await post('/api/auth/forgot-password', { email: 'nobody@example.com' });
-      const google = await post('/api/auth/forgot-password', { email: 'google@example.com' });
       const unverified = await post('/api/auth/forgot-password', {
         email: 'unverified@example.com',
       });
 
-      for (const res of [unknown, google, unverified]) {
+      for (const res of [unknown, unverified]) {
         expect(res.status).toBe(202);
         expect(res.body).toEqual({ message: GENERIC_MESSAGE });
       }
       expect(sendMail).not.toHaveBeenCalled();
       await expect(prisma.passwordResetToken.count()).resolves.toBe(0);
+    });
+
+    it('issues a reset token and email for a verified Google-only user', async () => {
+      const user = await seedUser('google@example.com', { provider: 'GOOGLE' });
+
+      const res = await post('/api/auth/forgot-password', { email: 'google@example.com' });
+
+      expect(res.status).toBe(202);
+      expect(res.body).toEqual({ message: GENERIC_MESSAGE });
+      expect(sendMail).toHaveBeenCalledTimes(1);
+      const tokens = await prisma.passwordResetToken.findMany({ where: { userId: user.id } });
+      expect(tokens).toHaveLength(1);
+      expect(tokens[0].consumedAt).toBeNull();
     });
 
     it('rotates the previous token on a repeat request', async () => {
@@ -275,6 +339,96 @@ describe('Password recovery (real PostgreSQL)', () => {
         (await post('/api/auth/reset-password', { token, password: NEW_PASSWORD, extra: 1 }))
           .status,
       ).toBe(400);
+    });
+  });
+
+  describe('Google-only password recovery', () => {
+    const GOOGLE_EMAIL = 'google@example.com';
+
+    async function seedGoogleOnly(): Promise<User> {
+      return seedUser(GOOGLE_EMAIL, { provider: 'GOOGLE' });
+    }
+
+    async function issueToken(): Promise<string> {
+      await post('/api/auth/forgot-password', { email: GOOGLE_EMAIL });
+      return rawTokenFrom(sendMail.mock.calls.at(-1)![0] as SentMessage);
+    }
+
+    it('creates a CREDENTIALS account for the same User on reset, preserving Google', async () => {
+      const user = await seedGoogleOnly();
+      const token = await issueToken();
+
+      await expect(prisma.user.count()).resolves.toBe(1);
+      await expect(prisma.authAccount.count({ where: { provider: 'CREDENTIALS' } })).resolves.toBe(
+        0,
+      );
+
+      const res = await post('/api/auth/reset-password', { token, password: NEW_PASSWORD });
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ passwordReset: true });
+
+      await expect(prisma.user.count()).resolves.toBe(1);
+      const credentials = await prisma.authAccount.findFirstOrThrow({
+        where: { userId: user.id, provider: 'CREDENTIALS' },
+      });
+      expect(credentials.providerAccountId).toBe(GOOGLE_EMAIL);
+      await expect(hasher.verify(credentials.passwordHash as string, NEW_PASSWORD)).resolves.toBe(
+        true,
+      );
+      // The Google identity is untouched.
+      const google = await prisma.authAccount.findFirstOrThrow({
+        where: { userId: user.id, provider: 'GOOGLE' },
+      });
+      expect(google.providerAccountId).toBe(`google-sub-${user.id}`);
+    });
+
+    it('lets the same User log in with the new password and with Google', async () => {
+      const user = await seedGoogleOnly();
+      const token = await issueToken();
+      await post('/api/auth/reset-password', { token, password: NEW_PASSWORD });
+
+      const login = await post('/api/auth/login', { email: GOOGLE_EMAIL, password: NEW_PASSWORD });
+      expect(login.status).toBe(200);
+      expect(login.body.user.id).toBe(user.id);
+
+      const googleUserId = await googleLoginUserId(GOOGLE_EMAIL, `google-sub-${user.id}`);
+      expect(googleUserId).toBe(user.id);
+      await expect(prisma.user.count()).resolves.toBe(1);
+    });
+
+    it('updates the same credentials account on a later Google-only reset', async () => {
+      const user = await seedGoogleOnly();
+      const first = await issueToken();
+      await post('/api/auth/reset-password', { token: first, password: NEW_PASSWORD });
+      const before = await prisma.authAccount.findFirstOrThrow({
+        where: { userId: user.id, provider: 'CREDENTIALS' },
+      });
+
+      sendMail.mockClear();
+      const second = await issueToken();
+      const res = await post('/api/auth/reset-password', { token: second, password: PASSWORD });
+      expect(res.status).toBe(200);
+
+      await expect(
+        prisma.authAccount.count({ where: { userId: user.id, provider: 'CREDENTIALS' } }),
+      ).resolves.toBe(1);
+      const after = await prisma.authAccount.findFirstOrThrow({
+        where: { userId: user.id, provider: 'CREDENTIALS' },
+      });
+      expect(after.id).toBe(before.id);
+      await expect(hasher.verify(after.passwordHash as string, PASSWORD)).resolves.toBe(true);
+    });
+
+    it('still rejects a replayed reset token after creating credentials', async () => {
+      await seedGoogleOnly();
+      const token = await issueToken();
+
+      expect(
+        (await post('/api/auth/reset-password', { token, password: NEW_PASSWORD })).status,
+      ).toBe(200);
+      expect((await post('/api/auth/reset-password', { token, password: PASSWORD })).status).toBe(
+        409,
+      );
     });
   });
 

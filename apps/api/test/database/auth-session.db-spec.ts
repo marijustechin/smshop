@@ -105,6 +105,7 @@ describe('Auth session lifecycle (real PostgreSQL)', () => {
         id: expect.any(String),
         email: EMAIL,
         emailVerified: true,
+        googleLinked: false,
       });
       expect(res.body).not.toHaveProperty('refreshToken');
       expect(JSON.stringify(res.body)).not.toContain('passwordHash');
@@ -252,7 +253,12 @@ describe('Auth session lifecycle (real PostgreSQL)', () => {
       const res = await me(loginRes.body.accessToken);
 
       expect(res.status).toBe(200);
-      expect(res.body).toEqual({ id: expect.any(String), email: EMAIL, emailVerified: true });
+      expect(res.body).toEqual({
+        id: expect.any(String),
+        email: EMAIL,
+        emailVerified: true,
+        googleLinked: false,
+      });
       expect(res.body).not.toHaveProperty('passwordHash');
     });
 

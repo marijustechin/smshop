@@ -18,21 +18,33 @@ This roadmap may evolve as product decisions are made.
 
 # Current State
 
-**Current milestone:** M2 — Authentication v1.
+**Current milestone:** M2 — Authentication v1 (COMPLETE; manually verified
+end-to-end in local development).
 
-**Current task:** none — `tasks/current/` is empty. Authentication v1 is complete;
-the next milestone/task is decided separately.
+**Current task:** none — `tasks/current/` is empty. Authentication work through
+A-012 is complete; the next milestone (M3+) is decided separately.
 
-**Recently completed:** H-000–H-009; A-001–A-010 (Authentication v1 COMPLETE).
+**Recently completed:** H-000–H-010; A-001–A-012. Beyond Auth v1
+(A-001–A-010), this includes:
 
-**Next application task:** M3+ milestones, decided separately. No A-011
-authentication task is started.
+- **A-011** — automatic Google↔credentials convergence: a verified Google email
+  converges to the existing `User` (auto-link), with no manual account-linking
+  UX and no duplicate `User`; unverified Google emails are never trusted and a
+  Google `sub` is never reassigned.
+- **A-012** — password recovery for Google-only users, creating credentials
+  access for the same `User`.
+- **H-010** — local development environment hardening (local ports 3101/3100,
+  `pnpm dev` env preflight, Prisma local env resolution, local docs/tests).
+
+**Next application task:** M3+ milestones, decided separately. No further
+authentication feature work is planned.
 
 **Parallel workstream:** production infrastructure / Oracle (`sm-oracle-infra`),
 tracked as `OPS-*` below.
 
-**Commit state:** all work through A-007 is committed (latest `5627e47`); A-008
-frontend auth flows are not yet committed (pending explicit authorization).
+**Commit state:** authentication work through A-012 is committed on `main` (see
+Git history). Deploying the updated application images to Oracle staging is a
+separate, explicitly authorized step.
 
 **Infrastructure vs application:** Auth development does not depend on
 production Oracle deployment. Production infrastructure runs as a parallel
@@ -268,7 +280,7 @@ Goal: establish complete customer identity and authentication infrastructure.
 - [x] A-002 — Registration validation
 - [x] A-002 — Duplicate email handling
 - [x] Registration frontend (A-008)
-- [ ] Registration success/error states
+- [x] Registration success/error states (A-008)
 
 ## Email verification
 
@@ -294,7 +306,8 @@ Goal: establish complete customer identity and authentication infrastructure.
 ## Password recovery
 
 - [x] Forgot-password API (A-006)
-- [ ] Forgot-password frontend
+- [x] Forgot-password frontend (A-008)
+- [x] Recovery for Google-only users — creates credentials access for the same User (A-012)
 - [x] Reset token (A-006)
 - [x] Reset email (A-006)
 - [x] Reset-password frontend (A-008)
@@ -309,17 +322,19 @@ Goal: establish complete customer identity and authentication infrastructure.
 - [x] Google login (A-007)
 - [x] Google registration (A-007)
 - [x] OAuth callback handling (A-007)
-- [x] Account linking strategy (A-007 — explicit-link only; collisions return `account-link-required`)
-- [x] Existing credentials-account collision handling (A-007 — never auto-links)
+- [x] Account linking strategy (A-007; superseded by A-011 automatic linking)
+- [x] Existing credentials-account collision handling (A-011 — auto-links the same verified email; never an unverified one)
+- [x] Google↔credentials automatic convergence, same User, no manual link UX (A-011)
 - [x] Google authentication frontend (A-008)
 
 ## Account area
 
 - [x] `/paskyra` (A-008 auth/test page)
-- [ ] Basic account information
-- [ ] Email verification state
-- [ ] Logout action
-- [ ] Protected route behaviour
+- [x] Basic account information (email, verification state)
+- [x] Email verification state
+- [x] Google status (read-only; no link action required) (A-011)
+- [x] Logout action
+- [x] Protected route behaviour
 
 ## Security
 
@@ -335,12 +350,14 @@ Goal: establish complete customer identity and authentication infrastructure.
 
 ## Auth verification
 
-- [ ] Unit tests
-- [ ] Integration tests
-- [ ] API e2e tests
-- [ ] Critical frontend flow tests
-- [ ] Full Auth v1 verification
-- [ ] Auth v1 milestone review
+- [x] Unit tests
+- [x] Integration tests
+- [x] API e2e tests
+- [x] Critical frontend flow tests
+- [x] Full Auth v1 verification (A-010)
+- [x] Auth v1 milestone review (A-010)
+- [x] Google convergence + Google-only recovery DB tests (A-011/A-012)
+- [x] Manual browser end-to-end verification (local development)
 
 ---
 

@@ -10,6 +10,8 @@ export interface PublicUser {
   id: string;
   email: string;
   emailVerified: boolean;
+  /** Whether a Google identity is explicitly linked to this account. */
+  googleLinked: boolean;
 }
 
 export interface LoginResult {
@@ -29,8 +31,13 @@ export interface IssuedSession {
   refreshToken: string;
 }
 
-function toPublicUser(user: User): PublicUser {
-  return { id: user.id, email: user.email, emailVerified: user.emailVerifiedAt !== null };
+function toPublicUser(user: User, accounts: { provider: string }[] = []): PublicUser {
+  return {
+    id: user.id,
+    email: user.email,
+    emailVerified: user.emailVerifiedAt !== null,
+    googleLinked: accounts.some((account) => account.provider === 'GOOGLE'),
+  };
 }
 
 const INVALID_CREDENTIALS = 'Invalid email or password';
@@ -111,7 +118,7 @@ export class AuthSessionService {
     }
 
     const { accessToken, refreshToken } = await this.createSession(user.id);
-    return { accessToken, refreshToken, user: toPublicUser(user) };
+    return { accessToken, refreshToken, user: toPublicUser(user, user.accounts) };
   }
 
   /**
@@ -158,10 +165,13 @@ export class AuthSessionService {
   }
 
   async me(userId: string): Promise<PublicUser> {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { accounts: true },
+    });
     if (!user) {
       throw new UnauthorizedException('Invalid access token');
     }
-    return toPublicUser(user);
+    return toPublicUser(user, user.accounts);
   }
 }

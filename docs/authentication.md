@@ -1,8 +1,30 @@
 # Authentication Domain
 
-Status: **implemented (A-001 persistence foundation).** This document describes
-the authentication data model only. No auth endpoints, token issuance, password
-hashing, email, or OAuth flows are implemented yet.
+Status: **implemented and manually verified end-to-end (local development)**
+through A-012: registration, email verification, credentials login/logout,
+Google registration and login, automatic Google↔credentials convergence, email
+verification, password recovery, abuse hardening, and provider capability
+gating.
+
+## Core model: User is the account
+
+**`User` is the account. Google and credentials are authentication methods.**
+
+- One `User` may hold multiple `AuthAccount` providers (at most one per provider,
+  enforced by `@@unique([userId, provider])`).
+- A **verified identity may add another authentication method without creating a
+  second `User`**:
+  - credentials → Google with the same verified email **auto-converges** to the
+    existing `User`;
+  - a Google-only `User` can use password recovery to **create credentials
+    access for the same `User`**.
+- There is **no manual account-linking UX** (no "link Google" button, no
+  link-only OAuth mode). Convergence happens transparently on the normal Google
+  login or password-reset flow.
+- Safety invariants: an **unverified Google email is never trusted**; a Google
+  `sub` is never reassigned between users; a `User` that already holds a
+  different Google identity is rejected; uniqueness constraints make concurrent
+  attempts deterministic. No duplicate `User` is ever created.
 
 ## Core boundary: User != Customer
 
@@ -405,16 +427,18 @@ See `docs/configuration.md`.
 `POST /api/auth/forgot-password { email }` is **enumeration-safe**: for any
 syntactically valid email it returns `202` with
 `If an eligible account exists, password reset instructions will be sent.`,
-regardless of whether the account exists, is Google-only, is unverified, or
-whether delivery succeeded.
+regardless of whether the account exists, is unverified, or whether delivery
+succeeded.
 
-A reset token is issued and a reset email sent **only** for an eligible account:
+A reset token is issued and a reset email sent **only** for an eligible `User`:
 
 - `User` exists;
-- a `CREDENTIALS` `AuthAccount` exists with a `passwordHash`;
-- `emailVerifiedAt !== null` (unverified accounts use the verification flow
-  instead — no reset is issued);
-- Google-only accounts never receive a credentials reset token.
+- `emailVerifiedAt !== null` (unverified accounts are ineligible — no token is
+  issued, so they cannot be hijacked).
+
+Credentials are **not** required: the `User` is the account and providers are
+authentication methods, so a verified **Google-only** user can use recovery to
+create credentials access for the same `User`.
 
 Token creation is transactional (consume prior active tokens, create one new),
 and the email is sent **after commit**. If mail fails, database state remains and
@@ -438,10 +462,16 @@ request rotates and retries.
 
 1. hash the incoming token; find the record;
 2. reject unknown (`400`), consumed (`409`), expired (`410`);
-3. resolve the `CREDENTIALS` account (reject if missing/no hash);
+3. resolve the `User`; if it already has a `CREDENTIALS` `AuthAccount`, update its
+   `passwordHash`; otherwise **create** the `CREDENTIALS` account for the same
+   `User` (`providerAccountId` = normalized email). It never creates a second
+   `User` and never touches other provider accounts (e.g. `GOOGLE`);
 4. hash the new password via `PasswordHasher` (same A-002 policy, min 12/max 128);
-5. atomically: update the password hash, consume the token, invalidate remaining
+5. atomically: write the password hash, consume the token, invalidate remaining
    reset tokens, and **revoke all active `AuthSession` rows**.
+
+A concurrent create of the same `CREDENTIALS` account is reconciled on the
+`[userId, provider]` unique constraint, so recovery stays race-safe.
 
 The reset email link is `${WEB_ORIGIN}/atkurti-slaptazodi?token=<raw>`; the email
 is Lithuanian (`Slaptažodžio atkūrimas`) and sent through `MailService`.
@@ -491,25 +521,26 @@ policy, refresh rotation, logout, and `/me`.
   claim. A changed Google email does not rewrite `User.email` and does not create
   a second identity.
 - **New `sub`** requires `email_verified === true` and an email; missing email or
-  unverified email is rejected safely.
-- **New `sub` + no email collision** → create `User` (`emailVerifiedAt = now`) +
-  `GOOGLE AuthAccount` atomically, then a session. No password is created and no
-  verification email is sent.
-- **New `sub` + existing `User` with the same normalized email** → **never
-  auto-linked**. The callback returns `oauth=account-link-required`; no
-  `AuthAccount` is attached and no session is created. This holds even when Google
-  reports the email as verified: matching email is evidence, not authorization to
-  change an existing account's authentication methods.
-- Uniqueness races are handled by database constraints. A `P2002` retry re-checks
-  by `sub` and, if the winner was an email collision, still fails closed (no
-  linking).
+  an unverified Google email is rejected safely.
+- **New `sub` + no existing `User` with that normalized email** → create `User`
+  (`emailVerifiedAt = now`) + `GOOGLE AuthAccount` atomically, then a session. No
+  password is created and no verification email is sent.
+- **New `sub` + existing `User` with the same normalized email** → auto-link and
+  log into that `User`, provided it does not already hold a different Google
+  identity. Because Google proved control of the address
+  (`email_verified === true`), the application email is marked verified when it
+  was not already (an account may have registered the address earlier without
+  verifying it). An account already linked to another Google `sub` is rejected
+  (`oauth=failed`); a `sub` is never reassigned between users. An **unverified
+  Google email** is still never linked or logged in.
+- Linking and login run in one transaction; uniqueness races are handled by
+  database constraints, and a `P2002` retry re-checks by `sub` (then the email
+  user) deterministically without creating duplicate or conflicting identities.
 
-### Explicit linking (future)
-
-A Google identity may be attached to an existing `User` **only** from an
-authenticated account-linking flow where the user proves control of the existing
-account (e.g. logged-in `/paskyra` linking in A-008). No automatic email-based
-linking exists or is planned.
+A user who registered with email/password can later use **Prisijungti su
+Google** with the same verified email and enter the same account; no manual
+linking step exists. `GET /api/auth/me` and credentials login include
+`googleLinked: boolean` for display only.
 
 ### OAuth transaction security
 
@@ -527,15 +558,28 @@ cannot be replayed. Cancellation/denial (`?error=...`) and any failure redirect 
 
 ### External outcomes
 
-| Redirect                                   | Meaning                              |
-| ------------------------------------------ | ------------------------------------ |
-| `/prisijungti?oauth=success`               | Session created; refresh cookie set  |
-| `/prisijungti?oauth=account-link-required` | Email collides with an existing User |
-| `/prisijungti?oauth=failed`                | Denied/state/code/identity failure   |
+| Redirect                     | Meaning                                                     |
+| ---------------------------- | ----------------------------------------------------------- |
+| `/prisijungti?oauth=success` | Session created (new, auto-linked, or existing Google user) |
+| `/prisijungti?oauth=failed`  | Denied/state/code/identity failure, or unsafe auto-link     |
 
 Only `openid email profile` scopes are requested; no Gmail/Drive/Calendar and no
 offline access. `GET /api/auth/google` returns `503` when Google is disabled
 (none of `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`/`GOOGLE_CALLBACK_URL` set).
+
+A non-secret, public capability endpoint exposes the same enabled check so the
+frontend never offers an action the backend cannot perform:
+
+| Endpoint                     | Response                    |
+| ---------------------------- | --------------------------- |
+| `GET /api/auth/capabilities` | `200 { "google": boolean }` |
+
+`google` is `true` exactly when the Google group is configured (the same
+`GoogleAuthService.isEnabled()` used by the OAuth start route). It reports no
+other state and exposes no configuration values. Email verification and password
+recovery are permanent product capabilities and are deliberately **not**
+represented here: they stay visible to users even when staging SMTP is unset
+(`docs/email.md`). See `docs/frontend-authentication.md` for the UI behaviour.
 
 ### Configuration / Google Cloud
 
@@ -572,6 +616,18 @@ test contacts Cloudflare.
   feature is disabled (local dev / CI). The secret and tokens are never logged.
 - **Enumeration-safe:** Turnstile errors are identical regardless of account, so
   login/forgot/resend privacy is preserved.
+- **Local development:** the committed examples use Cloudflare's official
+  **always-pass test** pair — secret `1x0000000000000000000000000000000AA`
+  (`apps/api/.env`) and sitekey `1x00000000000000000000AA`
+  (`apps/web/.env.local`). They work on `localhost` without real challenges and
+  are **test-only**; staging/production use the real secret
+  (`TURNSTILE_SECRET_KEY_FILE`) with the real sitekey inlined at web build time.
+  The API secret and web sitekey must both be test or both be real, because the
+  always-pass test secret only accepts test-sitekey tokens and real secrets reject
+  them. The test secret accepts any token, so use the always-fail test secret
+  `2x0000000000000000000000000000000AA` (or a real secret) to verify
+  `TURNSTILE_FAILED`. Reference:
+  <https://developers.cloudflare.com/turnstile/troubleshooting/testing/>.
 
 ### Rate limiting
 
@@ -626,17 +682,31 @@ token generation/hashing and duration parsing.
 against real PostgreSQL: forgot-password eligibility and enumeration uniformity,
 token rotation, mail-failure safety, reset success, old/new password login
 behaviour, replay/expired/unknown rejection, policy enforcement, and session
-revocation after reset. `password-reset-*.spec.ts` and `secure-token.spec.ts`
-cover token hashing and email content.
+revocation after reset. Google-only recovery is covered too: a verified
+Google-only user receives a reset token and email, the reset creates a
+`CREDENTIALS` account on the same `User` (preserving the `GOOGLE` account), the
+new password and Google both log into the same user id, repeat resets update the
+same credentials account, and replay is still rejected.
+`password-reset-*.spec.ts` and `secure-token.spec.ts` cover token hashing and
+email content.
 
 `apps/api/test/database/auth-google.db-spec.ts` covers Google authentication
 against real PostgreSQL with the OIDC provider boundary stubbed (no Google network
 calls): start redirect + transaction-cookie attributes, new-user creation,
 existing-`sub` login without email rewrite, single-active-session revocation,
-verified-email collision → `account-link-required` (no linking/session),
-unverified/missing email rejection, invalid/missing state, provider denial,
-exchange failure, callback replay, and post-login refresh/`/me`/logout.
-`openid-client-google.provider.spec.ts` asserts the requested scope set.
+verified-email auto-linking into the same user, unverified/missing email
+rejection, invalid/missing state, provider denial, exchange failure, callback
+replay, post-login refresh/`/me`/logout, and the public
+`GET /api/auth/capabilities` response when Google is enabled/disabled.
+Automatic linking is covered too: a verified credentials email auto-links and
+logs into the same user, subsequent Google logins map to that user, no duplicate
+user is created, an existing but unverified matching account is linked and
+verified (the real Google-first regression), a different Google
+email creates a new user instead of linking, a Google `sub` owned by another user
+is never reassigned, a user with an existing different Google identity is
+rejected, credentials login still works after auto-linking, and concurrent
+attempts stay safe. `openid-client-google.provider.spec.ts` asserts the requested
+scope set.
 
 `apps/api/test/database/auth-hardening.db-spec.ts` covers abuse hardening against
 real PostgreSQL with the Turnstile verifier and rate limiter stubbed/controlled

@@ -139,6 +139,21 @@ describe('Google authentication (real PostgreSQL, stubbed provider)', () => {
     });
   });
 
+  describe('capabilities', () => {
+    it('reports Google as available when configured', async () => {
+      const res = await request(server()).get('/api/auth/capabilities');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ google: true });
+    });
+
+    it('reports Google as unavailable when disabled', async () => {
+      provider.enabled = false;
+      const res = await request(server()).get('/api/auth/capabilities');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ google: false });
+    });
+  });
+
   describe('callback success', () => {
     it('creates a new Google-backed User, session, and refresh cookie', async () => {
       const { state, cookie } = await startFlow();
@@ -146,7 +161,7 @@ describe('Google authentication (real PostgreSQL, stubbed provider)', () => {
       const res = await callback(state, cookie).redirects(0);
 
       expect(res.status).toBe(302);
-      expect(res.headers.location).toBe('http://localhost:3000/prisijungti?oauth=success');
+      expect(res.headers.location).toBe('http://localhost:3101/prisijungti?oauth=success');
       // The success URL never carries token material.
       expect(res.headers.location).not.toContain('token');
       expect(res.headers.location).not.toContain('code=');
@@ -184,7 +199,7 @@ describe('Google authentication (real PostgreSQL, stubbed provider)', () => {
       const { state, cookie } = await startFlow();
       const res = await callback(state, cookie).redirects(0);
 
-      expect(res.headers.location).toBe('http://localhost:3000/prisijungti?oauth=success');
+      expect(res.headers.location).toBe('http://localhost:3101/prisijungti?oauth=success');
       await expect(prisma.user.count()).resolves.toBe(1);
       await expect(prisma.authAccount.count()).resolves.toBe(1);
       const user = await prisma.user.findFirstOrThrow();
@@ -216,40 +231,13 @@ describe('Google authentication (real PostgreSQL, stubbed provider)', () => {
   });
 
   describe('collision and rejections', () => {
-    it('never auto-links a verified Google email that collides with an existing User', async () => {
-      await prisma.user.create({
-        data: {
-          email: 'google@example.com',
-          emailNormalized: 'google@example.com',
-          emailVerifiedAt: new Date(),
-          accounts: {
-            create: {
-              provider: 'CREDENTIALS',
-              providerAccountId: 'google@example.com',
-              passwordHash: 'existing-hash',
-            },
-          },
-        },
-      });
-
-      const { state, cookie } = await startFlow();
-      const res = await callback(state, cookie).redirects(0);
-
-      expect(res.headers.location).toBe(
-        'http://localhost:3000/prisijungti?oauth=account-link-required',
-      );
-      await expect(prisma.user.count()).resolves.toBe(1);
-      await expect(prisma.authAccount.count()).resolves.toBe(1);
-      await expect(prisma.authSession.count()).resolves.toBe(0);
-    });
-
     it('rejects a Google identity without a verified email', async () => {
       provider.identity = { sub: 'google-sub-2', email: 'x@example.com', emailVerified: false };
 
       const { state, cookie } = await startFlow();
       const res = await callback(state, cookie).redirects(0);
 
-      expect(res.headers.location).toBe('http://localhost:3000/prisijungti?oauth=failed');
+      expect(res.headers.location).toBe('http://localhost:3101/prisijungti?oauth=failed');
       await expect(prisma.user.count()).resolves.toBe(0);
       await expect(prisma.authSession.count()).resolves.toBe(0);
     });
@@ -260,7 +248,7 @@ describe('Google authentication (real PostgreSQL, stubbed provider)', () => {
       const { state, cookie } = await startFlow();
       const res = await callback(state, cookie).redirects(0);
 
-      expect(res.headers.location).toBe('http://localhost:3000/prisijungti?oauth=failed');
+      expect(res.headers.location).toBe('http://localhost:3101/prisijungti?oauth=failed');
       await expect(prisma.user.count()).resolves.toBe(0);
     });
 
@@ -269,13 +257,13 @@ describe('Google authentication (real PostgreSQL, stubbed provider)', () => {
 
       const res = await callback('wrong-state', cookie).redirects(0);
 
-      expect(res.headers.location).toBe('http://localhost:3000/prisijungti?oauth=failed');
+      expect(res.headers.location).toBe('http://localhost:3101/prisijungti?oauth=failed');
       await expect(prisma.user.count()).resolves.toBe(0);
     });
 
     it('rejects a callback without a transaction cookie', async () => {
       const res = await callback('some-state', undefined).redirects(0);
-      expect(res.headers.location).toBe('http://localhost:3000/prisijungti?oauth=failed');
+      expect(res.headers.location).toBe('http://localhost:3101/prisijungti?oauth=failed');
     });
 
     it('rejects a tampered transaction cookie before using its state/verifier/nonce', async () => {
@@ -289,7 +277,7 @@ describe('Google authentication (real PostgreSQL, stubbed provider)', () => {
 
       const res = await callback(state, tampered).redirects(0);
 
-      expect(res.headers.location).toBe('http://localhost:3000/prisijungti?oauth=failed');
+      expect(res.headers.location).toBe('http://localhost:3101/prisijungti?oauth=failed');
       await expect(prisma.user.count()).resolves.toBe(0);
       await expect(prisma.authSession.count()).resolves.toBe(0);
     });
@@ -302,7 +290,7 @@ describe('Google authentication (real PostgreSQL, stubbed provider)', () => {
 
       const res = await callback(state, tampered).redirects(0);
 
-      expect(res.headers.location).toBe('http://localhost:3000/prisijungti?oauth=failed');
+      expect(res.headers.location).toBe('http://localhost:3101/prisijungti?oauth=failed');
       await expect(prisma.user.count()).resolves.toBe(0);
     });
 
@@ -311,7 +299,7 @@ describe('Google authentication (real PostgreSQL, stubbed provider)', () => {
         .get('/api/auth/google/callback?error=access_denied')
         .redirects(0);
 
-      expect(res.headers.location).toBe('http://localhost:3000/prisijungti?oauth=failed');
+      expect(res.headers.location).toBe('http://localhost:3101/prisijungti?oauth=failed');
       await expect(prisma.authSession.count()).resolves.toBe(0);
     });
 
@@ -321,17 +309,230 @@ describe('Google authentication (real PostgreSQL, stubbed provider)', () => {
 
       const res = await callback(state, cookie).redirects(0);
 
-      expect(res.headers.location).toBe('http://localhost:3000/prisijungti?oauth=failed');
+      expect(res.headers.location).toBe('http://localhost:3101/prisijungti?oauth=failed');
       await expect(prisma.user.count()).resolves.toBe(0);
     });
 
     it('rejects a replayed callback (single-use transaction)', async () => {
       const { state, cookie } = await startFlow();
       const first = await callback(state, cookie).redirects(0);
-      expect(first.headers.location).toBe('http://localhost:3000/prisijungti?oauth=success');
+      expect(first.headers.location).toBe('http://localhost:3101/prisijungti?oauth=success');
 
       const second = await callback(state, cookie).redirects(0);
-      expect(second.headers.location).toBe('http://localhost:3000/prisijungti?oauth=failed');
+      expect(second.headers.location).toBe('http://localhost:3101/prisijungti?oauth=failed');
+    });
+  });
+
+  describe('automatic linking on login', () => {
+    async function seedVerifiedCredentialsUser(email = 'google@example.com') {
+      return prisma.user.create({
+        data: {
+          email,
+          emailNormalized: email,
+          emailVerifiedAt: new Date(),
+          accounts: {
+            create: { provider: 'CREDENTIALS', providerAccountId: email, passwordHash: 'hash' },
+          },
+        },
+      });
+    }
+
+    it('auto-links a verified credentials email and logs into the same user', async () => {
+      const user = await seedVerifiedCredentialsUser('google@example.com');
+
+      const { state, cookie } = await startFlow();
+      const res = await callback(state, cookie).redirects(0);
+
+      expect(res.headers.location).toBe('http://localhost:3101/prisijungti?oauth=success');
+      await expect(prisma.user.count()).resolves.toBe(1);
+      await expect(prisma.authAccount.count()).resolves.toBe(2);
+      const google = await prisma.authAccount.findFirstOrThrow({
+        where: { userId: user.id, provider: 'GOOGLE' },
+      });
+      expect(google.providerAccountId).toBe('google-sub-1');
+      expect(setCookieHeader(res, REFRESH_COOKIE_NAME)).toBeDefined();
+      await expect(
+        prisma.authSession.count({ where: { userId: user.id, revokedAt: null } }),
+      ).resolves.toBe(1);
+    });
+
+    it('keeps mapping to the same user on subsequent Google logins', async () => {
+      const user = await seedVerifiedCredentialsUser('google@example.com');
+
+      const first = await startFlow();
+      await callback(first.state, first.cookie).redirects(0);
+
+      const second = await startFlow();
+      const res = await callback(second.state, second.cookie, '-again').redirects(0);
+
+      expect(res.headers.location).toBe('http://localhost:3101/prisijungti?oauth=success');
+      await expect(prisma.user.count()).resolves.toBe(1);
+      await expect(prisma.authAccount.count()).resolves.toBe(2);
+      await expect(
+        prisma.authSession.count({ where: { userId: user.id, revokedAt: null } }),
+      ).resolves.toBe(1);
+    });
+
+    // Regression for the real Google-first failure: the chosen Google email had
+    // an existing but *unverified* credentials account. Google proved the email,
+    // so it must link, verify, and log in — not reject.
+    it('links and verifies an existing unverified application account', async () => {
+      const user = await prisma.user.create({
+        data: {
+          email: 'google@example.com',
+          emailNormalized: 'google@example.com',
+          emailVerifiedAt: null,
+          accounts: {
+            create: {
+              provider: 'CREDENTIALS',
+              providerAccountId: 'google@example.com',
+              passwordHash: 'hash',
+            },
+          },
+        },
+      });
+
+      const { state, cookie } = await startFlow();
+      const res = await callback(state, cookie).redirects(0);
+
+      expect(res.headers.location).toBe('http://localhost:3101/prisijungti?oauth=success');
+      await expect(prisma.user.count()).resolves.toBe(1);
+      const google = await prisma.authAccount.findFirstOrThrow({
+        where: { userId: user.id, provider: 'GOOGLE' },
+      });
+      expect(google.providerAccountId).toBe('google-sub-1');
+      const refreshed = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
+      expect(refreshed.emailVerifiedAt).not.toBeNull();
+      await expect(
+        prisma.authSession.count({ where: { userId: user.id, revokedAt: null } }),
+      ).resolves.toBe(1);
+    });
+
+    it('does not link a Google email to an unrelated account; it creates a new user', async () => {
+      await seedVerifiedCredentialsUser('a@example.com');
+      provider.identity = {
+        sub: 'google-sub-9',
+        email: 'different@example.com',
+        emailVerified: true,
+      };
+
+      const { state, cookie } = await startFlow();
+      const res = await callback(state, cookie).redirects(0);
+
+      expect(res.headers.location).toBe('http://localhost:3101/prisijungti?oauth=success');
+      await expect(prisma.user.count()).resolves.toBe(2);
+      const unrelated = await prisma.user.findUniqueOrThrow({
+        where: { emailNormalized: 'a@example.com' },
+      });
+      await expect(
+        prisma.authAccount.count({ where: { userId: unrelated.id, provider: 'GOOGLE' } }),
+      ).resolves.toBe(0);
+      const created = await prisma.user.findUniqueOrThrow({
+        where: { emailNormalized: 'different@example.com' },
+      });
+      const createdGoogle = await prisma.authAccount.findFirstOrThrow({
+        where: { userId: created.id, provider: 'GOOGLE' },
+      });
+      expect(createdGoogle.providerAccountId).toBe('google-sub-9');
+    });
+
+    it('never reassigns a Google sub that already belongs to another user', async () => {
+      const owner = await prisma.user.create({
+        data: {
+          email: 'owner@example.com',
+          emailNormalized: 'owner@example.com',
+          emailVerifiedAt: new Date(),
+          accounts: { create: { provider: 'GOOGLE', providerAccountId: 'google-sub-1' } },
+        },
+      });
+      const credentials = await seedVerifiedCredentialsUser('google@example.com');
+
+      const { state, cookie } = await startFlow();
+      const res = await callback(state, cookie).redirects(0);
+
+      expect(res.headers.location).toBe('http://localhost:3101/prisijungti?oauth=success');
+      await expect(
+        prisma.authAccount.count({ where: { providerAccountId: 'google-sub-1' } }),
+      ).resolves.toBe(1);
+      const linked = await prisma.authAccount.findFirstOrThrow({
+        where: { providerAccountId: 'google-sub-1' },
+      });
+      expect(linked.userId).toBe(owner.id);
+      await expect(
+        prisma.authAccount.count({ where: { userId: credentials.id, provider: 'GOOGLE' } }),
+      ).resolves.toBe(0);
+    });
+
+    it('does not attach a second Google identity to a user that already has one', async () => {
+      const user = await prisma.user.create({
+        data: {
+          email: 'google@example.com',
+          emailNormalized: 'google@example.com',
+          emailVerifiedAt: new Date(),
+          accounts: {
+            create: [
+              {
+                provider: 'CREDENTIALS',
+                providerAccountId: 'google@example.com',
+                passwordHash: 'hash',
+              },
+              { provider: 'GOOGLE', providerAccountId: 'google-sub-existing' },
+            ],
+          },
+        },
+      });
+      provider.identity = {
+        sub: 'google-sub-new',
+        email: 'google@example.com',
+        emailVerified: true,
+      };
+
+      const { state, cookie } = await startFlow();
+      const res = await callback(state, cookie).redirects(0);
+
+      expect(res.headers.location).toBe('http://localhost:3101/prisijungti?oauth=failed');
+      const google = await prisma.authAccount.findFirstOrThrow({
+        where: { userId: user.id, provider: 'GOOGLE' },
+      });
+      expect(google.providerAccountId).toBe('google-sub-existing');
+      await expect(prisma.authSession.count()).resolves.toBe(0);
+    });
+
+    it('keeps credentials login working after Google auto-linking', async () => {
+      const email = 'google@example.com';
+      const password = 'a-very-strong-passphrase';
+      const registerRes = await request(server())
+        .post('/api/auth/register')
+        .send({ email, password });
+      expect(registerRes.status).toBe(201);
+      await prisma.user.update({
+        where: { emailNormalized: email },
+        data: { emailVerifiedAt: new Date() },
+      });
+
+      const google = await startFlow();
+      await callback(google.state, google.cookie).redirects(0);
+
+      const login = await request(server()).post('/api/auth/login').send({ email, password });
+      expect(login.status).toBe(200);
+      expect(login.body.user.email).toBe(email);
+      expect(login.body.user.googleLinked).toBe(true);
+    });
+
+    it('remains safe under concurrent auto-link attempts', async () => {
+      await seedVerifiedCredentialsUser('google@example.com');
+
+      const first = await startFlow();
+      const second = await startFlow();
+      const [a, b] = await Promise.all([
+        callback(first.state, first.cookie, '-race-a').redirects(0),
+        callback(second.state, second.cookie, '-race-b').redirects(0),
+      ]);
+
+      expect(a.headers.location).toBe('http://localhost:3101/prisijungti?oauth=success');
+      expect(b.headers.location).toBe('http://localhost:3101/prisijungti?oauth=success');
+      await expect(prisma.user.count()).resolves.toBe(1);
+      await expect(prisma.authAccount.count({ where: { provider: 'GOOGLE' } })).resolves.toBe(1);
     });
   });
 

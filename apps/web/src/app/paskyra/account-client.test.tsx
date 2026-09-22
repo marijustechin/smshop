@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AccountClient } from './account-client';
+import { getAuthCapabilities } from '@/lib/auth/api';
 
 const { replace, logout, bootstrap, state } = vi.hoisted(() => ({
   replace: vi.fn(),
@@ -9,7 +10,12 @@ const { replace, logout, bootstrap, state } = vi.hoisted(() => ({
   bootstrap: vi.fn(),
   state: {
     status: 'unknown' as 'unknown' | 'authenticated' | 'unauthenticated' | 'error',
-    user: null as { id: string; email: string; emailVerified: boolean } | null,
+    user: null as {
+      id: string;
+      email: string;
+      emailVerified: boolean;
+      googleLinked?: boolean;
+    } | null,
   },
 }));
 
@@ -21,10 +27,19 @@ vi.mock('@/lib/auth/auth-context', () => ({
   useAuth: () => ({ ...state, logout, bootstrap }),
 }));
 
+vi.mock('@/lib/auth/api', () => ({
+  getAuthCapabilities: vi.fn(),
+}));
+
+const getCapabilities = vi.mocked(getAuthCapabilities);
+
 beforeEach(() => {
   vi.clearAllMocks();
   state.status = 'unknown';
   state.user = null;
+  // Unresolved by default so tests that don't exercise Google avoid a
+  // post-render capability state update; Google tests resolve it explicitly.
+  getCapabilities.mockReturnValue(new Promise(() => {}));
 });
 
 describe('AccountClient (protected /paskyra)', () => {
@@ -85,5 +100,39 @@ describe('AccountClient (protected /paskyra)', () => {
 
     await waitFor(() => expect(logout).toHaveBeenCalled());
     await waitFor(() => expect(replace).toHaveBeenCalledWith('/prisijungti'));
+  });
+
+  it('shows Google as connected when linked (read-only, no action)', async () => {
+    state.status = 'authenticated';
+    state.user = { id: 'u1', email: 'a@example.com', emailVerified: true, googleLinked: true };
+    getCapabilities.mockResolvedValue({ google: true });
+
+    render(<AccountClient />);
+
+    expect(await screen.findByText('Susieta')).toBeInTheDocument();
+    expect(screen.getByText('Google paskyra')).toBeInTheDocument();
+    // Linking is automatic on Google login; no user action is offered.
+    expect(screen.queryByRole('button', { name: /Susieti/i })).not.toBeInTheDocument();
+  });
+
+  it('shows Google as not connected when not linked', async () => {
+    state.status = 'authenticated';
+    state.user = { id: 'u1', email: 'a@example.com', emailVerified: true, googleLinked: false };
+    getCapabilities.mockResolvedValue({ google: true });
+
+    render(<AccountClient />);
+
+    expect(await screen.findByText('Nesusieta')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Susieti/i })).not.toBeInTheDocument();
+  });
+
+  it('hides the Google row when Google is unavailable', async () => {
+    state.status = 'authenticated';
+    state.user = { id: 'u1', email: 'a@example.com', emailVerified: true, googleLinked: false };
+    getCapabilities.mockResolvedValue({ google: false });
+    render(<AccountClient />);
+
+    await waitFor(() => expect(getCapabilities).toHaveBeenCalled());
+    expect(screen.queryByText('Google paskyra')).not.toBeInTheDocument();
   });
 });

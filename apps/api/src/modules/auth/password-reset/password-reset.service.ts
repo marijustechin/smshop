@@ -22,7 +22,12 @@ export interface ResetPasswordResult {
 const INVALID_TOKEN_MESSAGE = 'Invalid password reset token';
 const USED_TOKEN_MESSAGE = 'Password reset token has already been used';
 const EXPIRED_TOKEN_MESSAGE = 'Password reset token has expired';
-const INVALID_ACCOUNT_MESSAGE = 'Password reset is not available for this account';
+
+function isUniqueConstraintViolation(error: unknown): boolean {
+  return (
+    typeof error === 'object' && error !== null && (error as { code?: unknown }).code === 'P2002'
+  );
+}
 
 @Injectable()
 export class PasswordResetService {
@@ -72,25 +77,16 @@ export class PasswordResetService {
   /**
    * Enumeration-safe forgot-password. For any syntactically valid email it
    * resolves without revealing whether the account exists or was eligible.
-   * A reset token is issued and a reset email sent only for a verified
-   * credentials account. Mail failures are logged, never surfaced.
+   * A reset token is issued and a reset email sent only for a *verified* User;
+   * credentials are not required, because a Google-only user uses recovery to
+   * create credentials access for the same User. Mail failures are logged,
+   * never surfaced.
    */
   async forgotPassword(rawEmail: string): Promise<void> {
     const emailNormalized = rawEmail.trim().toLowerCase();
 
-    const user = await this.prisma.user.findUnique({
-      where: { emailNormalized },
-      include: { accounts: true },
-    });
-
-    const credentials = user?.accounts.find((account) => account.provider === 'CREDENTIALS');
-    const eligible =
-      user !== null &&
-      user.emailVerifiedAt !== null &&
-      credentials !== undefined &&
-      credentials.passwordHash !== null;
-
-    if (!user || !eligible) {
+    const user = await this.prisma.user.findUnique({ where: { emailNormalized } });
+    if (!user || user.emailVerifiedAt === null) {
       return;
     }
 
@@ -106,9 +102,11 @@ export class PasswordResetService {
   }
 
   /**
-   * Consumes a reset token: re-hashes and stores the new password on the
-   * CREDENTIALS account, consumes the token, invalidates remaining reset
-   * tokens, and revokes all active sessions — atomically.
+   * Consumes a reset token: stores the new password on the User's CREDENTIALS
+   * account (creating it when the User was Google-only), consumes the token,
+   * invalidates remaining reset tokens, and revokes all active sessions —
+   * atomically. It never creates a second User and never touches other
+   * provider accounts.
    */
   async resetPassword(rawToken: string, newPassword: string): Promise<ResetPasswordResult> {
     const tokenHash = hashPasswordResetToken(rawToken);
@@ -128,17 +126,36 @@ export class PasswordResetService {
         throw new GoneException(EXPIRED_TOKEN_MESSAGE);
       }
 
+      const user = await tx.user.findUniqueOrThrow({ where: { id: record.userId } });
       const account = await tx.authAccount.findFirst({
-        where: { userId: record.userId, provider: 'CREDENTIALS' },
+        where: { userId: user.id, provider: 'CREDENTIALS' },
       });
-      if (!account || account.passwordHash === null) {
-        throw new BadRequestException(INVALID_ACCOUNT_MESSAGE);
+      if (account) {
+        await tx.authAccount.update({ where: { id: account.id }, data: { passwordHash } });
+      } else {
+        try {
+          await tx.authAccount.create({
+            data: {
+              userId: user.id,
+              provider: 'CREDENTIALS',
+              providerAccountId: user.emailNormalized,
+              passwordHash,
+            },
+          });
+        } catch (error) {
+          if (!isUniqueConstraintViolation(error)) {
+            throw error;
+          }
+          // A concurrent reset created the account for the same User.
+          const raced = await tx.authAccount.findFirst({
+            where: { userId: user.id, provider: 'CREDENTIALS' },
+          });
+          if (!raced) {
+            throw error;
+          }
+          await tx.authAccount.update({ where: { id: raced.id }, data: { passwordHash } });
+        }
       }
-
-      await tx.authAccount.update({
-        where: { id: account.id },
-        data: { passwordHash },
-      });
       await tx.passwordResetToken.update({
         where: { id: record.id },
         data: { consumedAt: now },
