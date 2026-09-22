@@ -42,6 +42,11 @@ the next milestone is **M3 — Store Information Architecture**.
 - **ARCH-001** — frontend FSD-lite structural refactor (shared/features/entities
   layers, import boundaries, docs). Source structure only: no route, API
   contract, auth, cookie/session, Turnstile, Google or error-message changes.
+- **ARCH-003** (cross-repository) — immutable release manifest: the `Images`
+  workflow now emits a non-secret machine-readable build manifest;
+  `sm-oracle-infra` gained the approved-release-manifest convention and a
+  deterministic digest resolver for the host-only `images.env`. Metadata only;
+  no deployment behavior changed.
 
 **Next application task:** **M3 — Store Information Architecture** (public site
 map, navigation, category/catalogue structure, search/filter/sort requirements),

@@ -32,6 +32,36 @@ infrastructure interface is defined in the application deployment contract
 - Migrations reuse the API image and run `prisma migrate deploy`; the API runtime
   image is also the migration image (see below).
 
+## Release manifest artifact
+
+The `Images` workflow (`.github/workflows/images.yml`) publishes a non-secret,
+machine-readable `release-manifest` artifact alongside the human-readable
+digests in the run summary. The manifest describes the artifact that was
+**built**: source repository, full commit SHA, ref, images run id, immutable
+`@sha256:` web/API references, platform, `sha-<commit>` tag and creation
+timestamp. It deliberately contains **no** deployment state, feature flags,
+configuration values or secrets, and it is assembled deterministically from the
+real per-image build digests rather than retyped.
+
+Publishing a manifest is not a deployment. Downstream, `sm-oracle-infra` records
+an approved staging release manifest and generates its host-only `images.env`
+from it (`sm-oracle-infra/deploy/releases/README.md`). Deployment remains
+human-authorized and human-executed; the workflow never contacts the host.
+
+## Frontend build-time configuration (Turnstile)
+
+`NEXT_PUBLIC_TURNSTILE_SITE_KEY` is inlined into the web image at build time and
+is **not** a runtime environment value. The current `Images` workflow does not
+inject it, so published images carry no Turnstile sitekey. If the staging API has
+`TURNSTILE_SECRET_KEY` set, the widget will not render while the API still
+enforces the challenge (`403 TURNSTILE_REQUIRED`), so **staging Turnstile cannot
+be safely enabled (D-004) until the image build supplies the sitekey**.
+
+Recommended follow-up (ARCH-004): pass the public sitekey as a build argument
+sourced from a GitHub Actions _variable_ (never a secret) and document that
+changing it requires an image rebuild. If staging and production share a
+sitekey, one image build serves both.
+
 ## Cross-repository deployment contract
 
 This is the application-side declaration consumed by `sm-oracle-infra`. The

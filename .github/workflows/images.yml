@@ -1,9 +1,16 @@
 name: Images
 
-# Builds and publishes the application images to GitHub Container Registry.
+# Builds and publishes the application images to GitHub Container Registry and
+# emits a machine-readable, non-secret release manifest describing the artifact
+# that was built (never that it was deployed).
+#
 # Images are immutable-by-digest at deployment time; the SHA tag identifies the
 # exact source revision. Publishing requires an authorized push to main (or a
 # tag / manual dispatch), which is why no digest exists until CI runs.
+#
+# The manifest is build metadata only: it carries no deployment state, feature
+# flags, configuration values or secrets. Deployment metadata belongs to the
+# human-approved release manifest in the infrastructure repository.
 
 on:
   push:
@@ -68,9 +75,99 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      # Deterministic per-image manifest part, built from the real pushed digest.
+      - name: Write image manifest part
+        env:
+          SUFFIX: ${{ matrix.suffix }}
+          IMAGE_REF: ghcr.io/${{ github.repository }}-${{ matrix.suffix }}@${{ steps.build.outputs.digest }}
+          IMAGE_TAG: sha-${{ github.sha }}
+        run: |
+          mkdir -p .manifest
+          node <<'NODE'
+          const fs = require('node:fs');
+          const part = {
+            ref: process.env.IMAGE_REF,
+            platform: 'linux/arm64',
+            tag: process.env.IMAGE_TAG,
+          };
+          fs.writeFileSync(
+            `.manifest/${process.env.SUFFIX}.json`,
+            JSON.stringify(part, null, 2) + '\n',
+          );
+          NODE
+
       - name: Record immutable digest
         run: |
           echo "### ${{ matrix.name }} image" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           echo "ghcr.io/${{ github.repository }}-${{ matrix.suffix }}@${{ steps.build.outputs.digest }}" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload image manifest part
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-part-${{ matrix.suffix }}
+          path: .manifest/${{ matrix.suffix }}.json
+          if-no-files-found: error
+          retention-days: 90
+
+  release:
+    name: Release manifest
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download image manifest parts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-part-*
+          merge-multiple: true
+          path: parts
+
+      # Assemble one build manifest from the two real per-image digests.
+      - name: Assemble release manifest
+        env:
+          SOURCE_REPOSITORY: github.com/${{ github.repository }}
+          SOURCE_COMMIT: ${{ github.sha }}
+          SOURCE_REF: ${{ github.ref_name }}
+          IMAGES_RUN_ID: ${{ github.run_id }}
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const read = (name) => JSON.parse(fs.readFileSync(`parts/${name}.json`, 'utf8'));
+          const manifest = {
+            schemaVersion: 1,
+            createdAt: new Date().toISOString(),
+            source: {
+              repository: process.env.SOURCE_REPOSITORY,
+              commit: process.env.SOURCE_COMMIT,
+              ref: process.env.SOURCE_REF,
+            },
+            ci: { imagesRunId: process.env.IMAGES_RUN_ID },
+            images: { web: read('web'), api: read('api') },
+          };
+          fs.writeFileSync('release-manifest.json', JSON.stringify(manifest, null, 2) + '\n');
+          NODE
+
+      - name: Publish release manifest summary
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const m = JSON.parse(fs.readFileSync('release-manifest.json', 'utf8'));
+          const lines = [
+            '### Release manifest (build artifact, not a deployment)',
+            '',
+            `- source: \`${m.source.repository}@${m.source.commit}\` (${m.source.ref})`,
+            `- images run: \`${m.ci.imagesRunId}\``,
+            `- web: \`${m.images.web.ref}\``,
+            `- api: \`${m.images.api.ref}\``,
+          ];
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
+          NODE
+
+      - name: Upload release manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-manifest
+          path: release-manifest.json
+          if-no-files-found: error
+          retention-days: 90
