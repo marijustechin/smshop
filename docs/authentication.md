@@ -161,9 +161,10 @@ reset tokens are never interchangeable.
 
 ## Deliberately not modeled (A-001)
 
-`Customer`, `Address`, `Order`, `Cart`, roles/permissions, and any commerce or
-authorization state. Also omitted to avoid speculative data collection:
-session `userAgent`/`ipAddress` (add only when a concrete requirement exists).
+`Customer`, `Address`, `Order`, `Cart`, and commerce state. Roles were also out
+of scope at A-001 and are now modeled separately — see “Authorization and roles
+(ADM-001)” below. Also omitted to avoid speculative data collection: session
+`userAgent`/`ipAddress` (add only when a concrete requirement exists).
 
 ## Credentials registration (A-002)
 
@@ -653,6 +654,39 @@ test contacts Cloudflare.
 - **Test control:** the limiter has an injectable clock and is overridden in the
   API test harness (permissive by default; the hardening suite uses a real
   instance), so there are no wall-clock waits.
+
+## Authorization and roles (ADM-001)
+
+- **Model:** `User.role` is the Postgres enum `Role` with `USER` (default),
+  `EDITOR`, and `ADMIN`. The additive migration `20260923153611_add_user_roles`
+  adds it as `NOT NULL DEFAULT 'USER'`, so existing accounts keep working as
+  `USER`.
+- **Wire values:** the API exposes lowercase `user` / `editor` / `admin`
+  (`apps/api/src/modules/auth/roles/user-role.ts`); persistence uses uppercase.
+  `role` is included in the public `auth/me` and login user payload for client
+  UX only — it is not an authorization decision.
+- **Enforcement (server):** `RolesGuard`
+  (`apps/api/src/modules/admin/authorization/`) runs after `AccessTokenGuard`,
+  loads the user's role from the database on every protected request, and
+  rejects an insufficient role with `403`. It never trusts role data from the
+  short-lived access token, so a role change or account deletion takes effect
+  immediately. Hiding UI is never the control.
+- **Admin API (all `admin`-only):** `GET /api/admin/users` (paginated, safe
+  fields only: id, email, verification state, role, created time, last login),
+  `PATCH /api/admin/users/:id/role`, `DELETE /api/admin/users/:id`.
+- **Safeguards:** no self-role-change (`CANNOT_CHANGE_OWN_ROLE`) and no
+  self-deletion (`CANNOT_DELETE_SELF`) — both `403`; the last administrator
+  cannot be deleted or demoted (`409 LAST_ADMIN`); unknown users are `404`;
+  invalid roles are `400`. The last-admin check and the mutation run in one
+  serializable transaction.
+- **Deletion:** removing a user cascades to all auth-owned records (accounts,
+  sessions, tokens), so the same email can be registered again.
+- **First administrator:** `AUTH_INITIAL_ADMIN_EMAIL` promotes an existing,
+  email-verified, exact-match account to `admin` on startup. It is idempotent,
+  never creates a user, and is documented in `docs/configuration.md` and
+  `docs/development.md`.
+- **`editor`:** reserved for future editorial capabilities; it grants no
+  administration access and has no capabilities yet.
 
 ## Tests
 

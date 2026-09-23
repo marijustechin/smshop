@@ -15,6 +15,15 @@ enum AuthProvider {
   GOOGLE
 }
 
+/// Account role. `USER` is the default for every account. `EDITOR` is reserved
+/// for future editorial capabilities and deliberately carries no administration
+/// / user-management access. `ADMIN` owns the first administration area.
+enum Role {
+  USER
+  EDITOR
+  ADMIN
+}
+
 /// Authentication identity. Deliberately NOT the e-commerce Customer aggregate:
 /// no addresses, company data, order history, loyalty, or commerce preferences.
 model User {
@@ -22,6 +31,7 @@ model User {
   email           String
   emailNormalized String    @unique
   emailVerifiedAt DateTime?
+  role            Role      @default(USER)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

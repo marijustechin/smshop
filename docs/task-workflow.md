@@ -60,6 +60,7 @@ Task IDs use a prefix per project area, and filenames are
 | -------- | -------------------------------------- |
 | `H-*`    | Harness / development infra            |
 | `A-*`    | Authentication                         |
+| `ADM-*`  | Administration / access control        |
 | `CAT-*`  | Catalogue                              |
 | `CART-*` | Shopping cart                          |
 | `CHK-*`  | Checkout                               |

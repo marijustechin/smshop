@@ -138,6 +138,11 @@ export const envSchema = z
     // Refresh session — refresh tokens are opaque, so no refresh secret exists.
     AUTH_SESSION_TTL: duration.default('7d'),
 
+    // One-off first-administrator bootstrap. When set, the API promotes the
+    // already-existing, email-verified user with this exact address to `admin`
+    // on startup. Never creates a user; idempotent; removable after first use.
+    AUTH_INITIAL_ADMIN_EMAIL: z.string().trim().pipe(z.email()).optional(),
+
     // Email — the SMTP group is all-or-none (see SMTP_KEYS).
     SMTP_HOST: z.string().min(1).optional(),
     SMTP_PORT: z.coerce.number().int().min(1).max(65535).optional(),

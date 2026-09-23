@@ -318,3 +318,29 @@ describe('Turnstile configuration', () => {
     }
   });
 });
+
+describe('initial administrator bootstrap configuration', () => {
+  it('is optional and unset by default', () => {
+    const env = validateEnv(validEnv);
+
+    expect(env.AUTH_INITIAL_ADMIN_EMAIL).toBeUndefined();
+  });
+
+  it('accepts and trims a valid email address', () => {
+    const env = validateEnv({ ...validEnv, AUTH_INITIAL_ADMIN_EMAIL: '  admin@example.com ' });
+
+    expect(env.AUTH_INITIAL_ADMIN_EMAIL).toBe('admin@example.com');
+  });
+
+  it('rejects a malformed address', () => {
+    expect(() => validateEnv({ ...validEnv, AUTH_INITIAL_ADMIN_EMAIL: 'not-an-email' })).toThrow(
+      /AUTH_INITIAL_ADMIN_EMAIL/,
+    );
+  });
+
+  it('treats an empty placeholder as unset', () => {
+    const env = validateEnv({ ...validEnv, AUTH_INITIAL_ADMIN_EMAIL: '' });
+
+    expect(env.AUTH_INITIAL_ADMIN_EMAIL).toBeUndefined();
+  });
+});

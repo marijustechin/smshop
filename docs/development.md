@@ -136,6 +136,24 @@ required.
    pnpm dev                    # preflight, build @smshop/db, then web + api
    ```
 
+### Grant your first administrator
+
+The administration area is available only to the `admin` role, so the first
+administrator must be bootstrapped once from an existing account:
+
+1. Register an account through `/registracija` and verify its email address.
+2. Add `AUTH_INITIAL_ADMIN_EMAIL=<that address>` to `apps/api/.env`.
+3. Restart the API. On startup it promotes that existing, verified account to
+   `admin` and logs `Promoted the configured initial administrator account`.
+4. Sign in and open `/administravimas` (the Users section lives at
+   `/administravimas/naudotojai`).
+5. Remove `AUTH_INITIAL_ADMIN_EMAIL` from `apps/api/.env`; the promotion is
+   already applied.
+
+The bootstrap never creates a user, is idempotent, and does not log the address.
+The first registered account is **never** made an administrator automatically.
+See `docs/configuration.md` for the variable contract.
+
 ### If the API does not start
 
 `pnpm dev` runs `scripts/check-dev-env.mjs` **before** it builds or starts

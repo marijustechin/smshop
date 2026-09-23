@@ -20,14 +20,20 @@ This roadmap may evolve as product decisions are made.
 
 **Current milestone:** M2 — Authentication v1 (COMPLETE; manually verified
 end-to-end in local development). The architecture/documentation stabilization
-(ARCH-000) and the frontend FSD-lite structural refactor (ARCH-001) are complete;
-the next milestone is **M3 — Store Information Architecture**.
+(ARCH-000) and the frontend FSD-lite structural refactor (ARCH-001) are complete.
+The first M13 access-control slice (**ADM-001** — roles and admin dashboard
+foundation) is implemented, verified, manually smoke-tested, and committed; the
+next application milestone remains **M3 — Store Information Architecture**.
 
 **Current task:** none — `tasks/current/` is empty.
 
 **Recently completed:** H-000–H-010; A-001–A-012. Beyond Auth v1
 (A-001–A-010), this includes:
 
+- **ADM-001** — roles and admin dashboard foundation: `Role` enum
+  (`user`/`editor`/`admin`), server-side `RolesGuard`, admin user-management API
+  (`/api/admin/users*`), one-off `AUTH_INITIAL_ADMIN_EMAIL` bootstrap, and a
+  protected `/administravimas` admin area with a Users section.
 - **A-011** — automatic Google↔credentials convergence: a verified Google email
   converges to the existing `User` (auto-link), with no manual account-linking
   UX and no duplicate `User`; unverified Google emails are never trusted and a
@@ -725,9 +731,10 @@ Goal: allow store operators to manage core commerce data without database access
 
 ## Access control
 
-- [ ] Define admin identity model
-- [ ] Define admin authorization
-- [ ] Protect administration routes
+- [x] Define admin identity model (ADM-001 — `Role` enum: `user` / `editor` / `admin`)
+- [x] Define admin authorization (ADM-001 — server-side `RolesGuard`, `admin` only)
+- [x] Protect administration routes (ADM-001 — `/api/admin/*` admin-only; `/administravimas` UI gated)
+- [x] First-admin bootstrap (ADM-001 — `AUTH_INITIAL_ADMIN_EMAIL`, one-off, idempotent)
 - [ ] Security audit
 
 Do not overbuild RBAC unless the business actually requires it.

@@ -121,6 +121,13 @@ apps/api/src/
 │   │   ├── auth.service.ts
 │   │   ├── dto/
 │   │   └── password/
+│   ├── admin/
+│   │   ├── admin.module.ts
+│   │   ├── admin-users.controller.ts
+│   │   ├── admin-users.service.ts
+│   │   ├── authorization/
+│   │   ├── bootstrap/
+│   │   └── dto/
 │   ├── prisma/
 │   │   ├── prisma.module.ts
 │   │   └── prisma.service.ts
@@ -191,7 +198,9 @@ behaviour, Turnstile and Google behaviour, and error messages are unchanged.
   (authentication identity) must not become the `Customer` aggregate. The
   authentication model is owned by `packages/db` and documented in
   `docs/authentication.md`; a future `Customer` domain may link to `User`.
-  Authorization/roles are a separate concern and are not modeled yet.
+  Authorization uses a `Role` enum on `User` (`user` / `editor` / `admin`),
+  enforced server-side by `RolesGuard` in `apps/api/src/modules/admin`; `editor`
+  is reserved and carries no capabilities yet.
 
 ## Authentication persistence
 

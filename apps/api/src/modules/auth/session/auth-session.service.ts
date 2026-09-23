@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import type { User } from '@smshop/db';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { PASSWORD_HASHER, type PasswordHasher } from '../password/password-hasher.js';
+import { toUserRole, type UserRole } from '../roles/user-role.js';
 import { AccessTokenService } from './access-token.service.js';
 import { generateRefreshToken, hashRefreshToken, parseDurationMs } from './auth-tokens.js';
 
@@ -10,6 +11,7 @@ export interface PublicUser {
   id: string;
   email: string;
   emailVerified: boolean;
+  role: UserRole;
   /** Whether a Google identity is explicitly linked to this account. */
   googleLinked: boolean;
 }
@@ -36,6 +38,7 @@ function toPublicUser(user: User, accounts: { provider: string }[] = []): Public
     id: user.id,
     email: user.email,
     emailVerified: user.emailVerifiedAt !== null,
+    role: toUserRole(user.role),
     googleLinked: accounts.some((account) => account.provider === 'GOOGLE'),
   };
 }

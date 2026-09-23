@@ -105,6 +105,7 @@ describe('Auth session lifecycle (real PostgreSQL)', () => {
         id: expect.any(String),
         email: EMAIL,
         emailVerified: true,
+        role: 'user',
         googleLinked: false,
       });
       expect(res.body).not.toHaveProperty('refreshToken');
@@ -257,6 +258,7 @@ describe('Auth session lifecycle (real PostgreSQL)', () => {
         id: expect.any(String),
         email: EMAIL,
         emailVerified: true,
+        role: 'user',
         googleLinked: false,
       });
       expect(res.body).not.toHaveProperty('passwordHash');

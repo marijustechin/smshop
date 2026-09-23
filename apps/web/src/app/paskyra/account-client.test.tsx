@@ -14,6 +14,7 @@ const { replace, logout, bootstrap, state } = vi.hoisted(() => ({
       id: string;
       email: string;
       emailVerified: boolean;
+      role?: 'user' | 'editor' | 'admin';
       googleLinked?: boolean;
     } | null,
   },

@@ -21,7 +21,7 @@ vi.mock('../api/auth-api', () => ({
 const mocked = vi.mocked(api);
 const wrapper = ({ children }: { children: ReactNode }) => <AuthProvider>{children}</AuthProvider>;
 
-const user = { id: 'u1', email: 'a@example.com', emailVerified: true };
+const user = { id: 'u1', email: 'a@example.com', emailVerified: true, role: 'user' as const };
 
 beforeEach(() => {
   vi.clearAllMocks();

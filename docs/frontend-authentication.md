@@ -6,17 +6,21 @@ stays public; authentication is only required for account functionality.
 
 ## Routes
 
-| Route                   | Access        | Purpose                                     |
-| ----------------------- | ------------- | ------------------------------------------- |
-| `/`                     | public        | Storefront placeholder + dev nav links      |
-| `/prisijungti`          | public        | Login, Google entry, OAuth outcome handling |
-| `/registracija`         | public        | Registration (credentials + Google entry)   |
-| `/patvirtinti-el-pasta` | public        | Verification-link consumer                  |
-| `/pamirsau-slaptazodi`  | public        | Forgot password                             |
-| `/atkurti-slaptazodi`   | public        | Reset password                              |
-| `/paskyra`              | **protected** | Account page (session info + Google status) |
+| Route                         | Access        | Purpose                                     |
+| ----------------------------- | ------------- | ------------------------------------------- |
+| `/`                           | public        | Storefront placeholder + dev nav links      |
+| `/prisijungti`                | public        | Login, Google entry, OAuth outcome handling |
+| `/registracija`               | public        | Registration (credentials + Google entry)   |
+| `/patvirtinti-el-pasta`       | public        | Verification-link consumer                  |
+| `/pamirsau-slaptazodi`        | public        | Forgot password                             |
+| `/atkurti-slaptazodi`         | public        | Reset password                              |
+| `/paskyra`                    | **protected** | Account page (session info + Google status) |
+| `/administravimas`            | **admin**     | Admin shell; redirects to the Users section |
+| `/administravimas/naudotojai` | **admin**     | User management (list, role change, delete) |
 
-Slugs are ASCII-only Lithuanian. No English auth routes.
+Slugs are ASCII-only Lithuanian. No English auth routes; the admin routes follow
+the same Lithuanian slug convention. `/administravimas` is registered in
+`entities/user` as the frontend role model; the server is always the authority.
 
 ## Auth state and memory-only access token
 
@@ -112,6 +116,16 @@ does **not** redirect to login. Logout calls `POST /api/auth/logout`, clears
 in-memory state, and returns to login. Public pages remain usable regardless of
 bootstrap outcome.
 
+### Admin area access
+
+`/administravimas` and `/administravimas/naudotojai` reuse the same client
+boundary (widget `widgets/admin`): `unknown` shows loading; `unauthenticated`
+redirects to `/prisijungti?returnTo=<current path>`; `error` shows a recoverable
+retry; an authenticated `user` or `editor` gets an explicit “Neturite prieigos”
+state. Only an `admin` sees the dashboard shell with the Users section. This
+gating is UX only — every admin API request is re-authorized server-side by
+`RolesGuard` (`admin` required), so hiding the UI is never the security control.
+
 ### Google status (read-only)
 
 Google accounts are linked automatically on Google login when the Google email is
@@ -163,9 +177,11 @@ UI dependency was added (the icons come from the existing `lucide-react`).
 
 ## Not implemented (intentionally)
 
-No roles/RBAC, no Customer/addresses/orders/checkout, no catalog, no account-
-linking UI, no multi-session/device management. `/paskyra` is an auth/test page,
-not the final customer dashboard.
+Roles exist (`user` / `editor` / `admin`) and the first admin area is
+implemented (ADM-001); `editor` is reserved and carries no capabilities yet. No
+Customer/addresses/orders/checkout, no catalog, no account-linking UI, no
+multi-session/device management, no full RBAC, and no admin audit log.
+`/paskyra` is still an auth/test page, not the final customer dashboard.
 
 ## Tests
 

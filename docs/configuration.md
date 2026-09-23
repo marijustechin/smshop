@@ -39,8 +39,9 @@ node -e "console.log(require('node:crypto').randomBytes(48).toString('base64url'
 
 `NODE_ENV`, `JWT_ACCESS_TTL`, and `AUTH_SESSION_TTL` have development defaults.
 `PORT` has a schema default of `3001` (the production/container contract), so
-local development sets `PORT=3100` explicitly. SMTP, Google, Turnstile, and
-`API_ORIGIN` are optional and disabled when unset. A `.env` created before a new required variable was introduced will
+local development sets `PORT=3100` explicitly. SMTP, Google, Turnstile,
+`AUTH_INITIAL_ADMIN_EMAIL`, and `API_ORIGIN` are optional and disabled when
+unset. A `.env` created before a new required variable was introduced will
 fail current startup validation: re-copy or merge the new names from
 `apps/api/.env.example`. `pnpm dev` runs a preflight
 (`scripts/check-dev-env.mjs`) that reports missing names before either server
@@ -161,6 +162,14 @@ the process environment, so no `.env` file is required.
   `docs/authentication.md`.
 - **Reserved:** `API_ORIGIN`. It is accepted and format-checked today but does not
   block the current application.
+- **First administrator bootstrap (optional, one-off):**
+  `AUTH_INITIAL_ADMIN_EMAIL`. When set, the API promotes the **already-existing,
+  email-verified** user whose normalized email exactly matches this address to
+  the `admin` role on startup. It never creates a user, is idempotent (a no-op
+  once the account is an admin), and never logs the address. Remove the variable
+  from the environment after the first successful use. See
+  `docs/development.md` for the local procedure and `docs/authentication.md` for
+  the authorization model. Not a secret, so no `_FILE` variant exists.
 - **Turnstile (optional, backend secret):** `TURNSTILE_SECRET_KEY` (supports
   `TURNSTILE_SECRET_KEY_FILE`). When absent, Turnstile is disabled and the public
   auth endpoints accept requests without a challenge (CI needs no secret). When
