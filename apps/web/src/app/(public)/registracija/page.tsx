@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { PageShell } from '@/shared/ui/page-shell';
-import { RegisterForm } from '@/features/auth';
+import { RegisterForm, RedirectIfAuthenticated } from '@/features/auth';
 
 export const metadata: Metadata = { title: 'Registracija — Šokolado meistrai' };
 
@@ -13,13 +13,15 @@ export default function RegisterPage() {
       footer={
         <span>
           Jau turite paskyrą?{' '}
-          <Link href="/prisijungti" className="text-chocolate underline-offset-2 hover:underline">
+          <Link href="/prisijungti" className="text-primary underline-offset-2 hover:underline">
             Prisijungti
           </Link>
         </span>
       }
     >
-      <RegisterForm />
+      <RedirectIfAuthenticated>
+        <RegisterForm />
+      </RedirectIfAuthenticated>
     </PageShell>
   );
 }

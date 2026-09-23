@@ -1,6 +1,7 @@
 export * from './alert';
 export * from './button';
 export * from './card';
+export * from './container';
 export * from './form-field';
 export * from './input';
 export * from './label';

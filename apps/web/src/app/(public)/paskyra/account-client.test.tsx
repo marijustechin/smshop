@@ -90,7 +90,7 @@ describe('AccountClient (protected /paskyra)', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('logs out and redirects to login', async () => {
+  it('logs out to the home page', async () => {
     state.status = 'authenticated';
     state.user = { id: 'u1', email: 'a@example.com', emailVerified: false };
     logout.mockResolvedValue(undefined);
@@ -100,7 +100,7 @@ describe('AccountClient (protected /paskyra)', () => {
     await user.click(screen.getByRole('button', { name: 'Atsijungti' }));
 
     await waitFor(() => expect(logout).toHaveBeenCalled());
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/prisijungti'));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/'));
   });
 
   it('shows Google as connected when linked (read-only, no action)', async () => {

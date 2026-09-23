@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Button } from '@/shared/ui/button';
+import { Button, buttonVariants } from '@/shared/ui/button';
 import { Alert } from '@/shared/ui/alert';
 import { FormField } from '@/shared/ui/form-field';
 import { PasswordField } from '@/shared/ui/password-field';
@@ -128,7 +128,7 @@ export function RegisterForm() {
         )}
         <Link
           href="/prisijungti"
-          className="inline-flex h-10 w-full items-center justify-center rounded-md bg-chocolate px-4 text-sm font-medium text-ivory hover:bg-[#3f2114]"
+          className={buttonVariants({ variant: 'primary', className: 'w-full' })}
         >
           Prisijungti
         </Link>

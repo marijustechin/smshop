@@ -22,11 +22,11 @@ function formatDate(value: string | null): string {
 
 function VerificationBadge({ verified }: { verified: boolean }) {
   return verified ? (
-    <span className="rounded-full bg-[#eef7ec] px-2 py-0.5 text-xs font-medium text-[#2f5d2a]">
+    <span className="rounded-full bg-success-surface px-2 py-0.5 text-xs font-medium text-success">
       Patvirtintas
     </span>
   ) : (
-    <span className="rounded-full bg-cream/60 px-2 py-0.5 text-xs font-medium text-muted">
+    <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs font-medium text-text-muted">
       Nepatvirtintas
     </span>
   );
@@ -160,7 +160,7 @@ export function UsersManager({
       {error ? <Alert variant="error">{error}</Alert> : null}
       {notice ? <Alert variant="success">{notice}</Alert> : null}
 
-      {status === 'loading' && !data ? <p className="text-sm text-muted">Kraunama…</p> : null}
+      {status === 'loading' && !data ? <p className="text-sm text-text-muted">Kraunama…</p> : null}
 
       {status === 'error' && !data ? (
         <Button variant="outline" onClick={reload}>
@@ -176,7 +176,7 @@ export function UsersManager({
             <div className="hidden overflow-x-auto md:block" data-testid="users-table">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-border text-xs uppercase tracking-wide text-muted">
+                  <tr className="border-b border-border text-xs uppercase tracking-wide text-text-muted">
                     <th className="px-3 py-2 font-medium">El. paštas</th>
                     <th className="px-3 py-2 font-medium">Būsena</th>
                     <th className="px-3 py-2 font-medium">Vaidmuo</th>
@@ -188,18 +188,18 @@ export function UsersManager({
                 <tbody>
                   {data.items.map((user) => (
                     <tr key={user.id} className="border-b border-border/60 align-top">
-                      <td className="px-3 py-3 font-medium break-all text-ink">
+                      <td className="px-3 py-3 font-medium break-all text-text">
                         {user.email}
                         {user.id === currentUserId ? (
-                          <span className="ml-2 text-xs font-normal text-muted">(jūs)</span>
+                          <span className="ml-2 text-xs font-normal text-text-muted">(jūs)</span>
                         ) : null}
                       </td>
                       <td className="px-3 py-3">
                         <VerificationBadge verified={user.emailVerified} />
                       </td>
-                      <td className="px-3 py-3 text-ink">{ROLE_LABELS[user.role]}</td>
-                      <td className="px-3 py-3 text-muted">{formatDate(user.createdAt)}</td>
-                      <td className="px-3 py-3 text-muted">{formatDate(user.lastLoginAt)}</td>
+                      <td className="px-3 py-3 text-text">{ROLE_LABELS[user.role]}</td>
+                      <td className="px-3 py-3 text-text-muted">{formatDate(user.createdAt)}</td>
+                      <td className="px-3 py-3 text-text-muted">{formatDate(user.lastLoginAt)}</td>
                       <td className="px-3 py-3">{renderActions(user)}</td>
                     </tr>
                   ))}
@@ -209,18 +209,18 @@ export function UsersManager({
 
             <ul className="space-y-3 md:hidden" data-testid="users-list">
               {data.items.map((user) => (
-                <li key={user.id} className="rounded-lg border border-border bg-white p-4">
-                  <p className="font-medium break-all text-ink">
+                <li key={user.id} className="rounded-lg border border-border bg-surface p-4">
+                  <p className="font-medium break-all text-text">
                     {user.email}
                     {user.id === currentUserId ? (
-                      <span className="ml-2 text-xs font-normal text-muted">(jūs)</span>
+                      <span className="ml-2 text-xs font-normal text-text-muted">(jūs)</span>
                     ) : null}
                   </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-text-muted">
                     <VerificationBadge verified={user.emailVerified} />
                     <span>{ROLE_LABELS[user.role]}</span>
                   </div>
-                  <p className="mt-2 text-xs text-muted">
+                  <p className="mt-2 text-xs text-text-muted">
                     Paskutinis prisijungimas: {formatDate(user.lastLoginAt)}
                   </p>
                   <div className="mt-3">{renderActions(user)}</div>
@@ -241,7 +241,7 @@ export function UsersManager({
           >
             Atgal
           </Button>
-          <span className="text-muted">
+          <span className="text-text-muted">
             {data.page} / {data.totalPages}
           </span>
           <Button

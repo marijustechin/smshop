@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Button } from '@/shared/ui/button';
+import { Button, buttonVariants } from '@/shared/ui/button';
 import { Alert } from '@/shared/ui/alert';
 import { PasswordField } from '@/shared/ui/password-field';
 import { resetPassword } from '../api/auth-api';
@@ -78,7 +78,7 @@ export function ResetPasswordForm() {
         <Alert variant="success">Slaptažodis pakeistas. Dabar galite prisijungti.</Alert>
         <Link
           href="/prisijungti"
-          className="inline-flex h-10 w-full items-center justify-center rounded-md bg-chocolate px-4 text-sm font-medium text-ivory hover:bg-[#3f2114]"
+          className={buttonVariants({ variant: 'primary', className: 'w-full' })}
         >
           Prisijungti
         </Link>

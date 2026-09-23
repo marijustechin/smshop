@@ -64,43 +64,43 @@ export function AccountClient() {
 
   // Avoid rendering protected content before the session is known.
   if (status !== 'authenticated' || !user) {
-    return <p className="text-sm text-muted">Kraunama…</p>;
+    return <p className="text-sm text-text-muted">Kraunama…</p>;
   }
 
   const onLogout = async () => {
     setLoggingOut(true);
     await logout();
-    router.replace('/prisijungti');
+    router.replace('/');
   };
 
   return (
     <div className="space-y-5">
       <dl className="space-y-2 text-sm">
         <div className="flex justify-between gap-4">
-          <dt className="text-muted">El. paštas</dt>
-          <dd className="font-medium text-ink">{user.email}</dd>
+          <dt className="text-text-muted">El. paštas</dt>
+          <dd className="font-medium text-text">{user.email}</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-muted">El. pašto būsena</dt>
-          <dd className="font-medium text-ink">
+          <dt className="text-text-muted">El. pašto būsena</dt>
+          <dd className="font-medium text-text">
             {user.emailVerified ? 'Patvirtintas' : 'Nepatvirtintas'}
           </dd>
         </div>
         {googleEnabled ? (
           <div className="flex justify-between gap-4">
-            <dt className="text-muted">Google paskyra</dt>
-            <dd className="font-medium text-ink">{user.googleLinked ? 'Susieta' : 'Nesusieta'}</dd>
+            <dt className="text-text-muted">Google paskyra</dt>
+            <dd className="font-medium text-text">{user.googleLinked ? 'Susieta' : 'Nesusieta'}</dd>
           </div>
         ) : null}
         {process.env.NODE_ENV !== 'production' ? (
           <>
             <div className="flex justify-between gap-4">
-              <dt className="text-muted">Vartotojo ID</dt>
-              <dd className="font-mono text-xs text-ink">{user.id}</dd>
+              <dt className="text-text-muted">Vartotojo ID</dt>
+              <dd className="font-mono text-xs text-text">{user.id}</dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-muted">Sesijos būsena</dt>
-              <dd className="font-mono text-xs text-ink">{status}</dd>
+              <dt className="text-text-muted">Sesijos būsena</dt>
+              <dd className="font-mono text-xs text-text">{status}</dd>
             </div>
           </>
         ) : null}
@@ -118,7 +118,7 @@ export function AccountClient() {
         </Button>
         <Link
           href="/"
-          className="inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium text-chocolate hover:bg-cream/50"
+          className="inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium text-primary hover:bg-surface-muted"
         >
           Į parduotuvę
         </Link>

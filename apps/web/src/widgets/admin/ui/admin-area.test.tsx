@@ -99,6 +99,25 @@ describe('AdminArea access handling', () => {
     const navLink = screen.getByRole('link', { name: 'Naudotojai' });
     expect(navLink).toHaveAttribute('aria-current', 'page');
   });
+
+  it('does not render the public storefront header inside the admin shell', () => {
+    hoisted.state.status = 'authenticated';
+    hoisted.state.user = {
+      id: 'a1',
+      email: 'admin@example.com',
+      emailVerified: true,
+      role: 'admin',
+    };
+
+    render(
+      <AdminArea>
+        <div>ADMIN CONTENT</div>
+      </AdminArea>,
+    );
+
+    expect(screen.getByText('ADMIN CONTENT')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Atidaryti meniu' })).toBeNull();
+  });
 });
 
 describe('AdminUsersView', () => {

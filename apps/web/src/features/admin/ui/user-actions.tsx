@@ -35,7 +35,7 @@ export function UserActions({
   onConfirmDelete,
 }: UserActionsProps) {
   if (isSelf) {
-    return <p className="text-xs text-muted">Tai jūsų paskyra — keisti negalima.</p>;
+    return <p className="text-xs text-text-muted">Tai jūsų paskyra — keisti negalima.</p>;
   }
 
   const roleChanged = draftRole !== user.role;
@@ -51,7 +51,7 @@ export function UserActions({
         value={draftRole}
         disabled={pending}
         onChange={(event) => onDraftRoleChange(event.target.value as UserRole)}
-        className="h-9 rounded-md border border-border bg-white px-2 text-sm text-ink disabled:opacity-50"
+        className="h-9 rounded-md border border-border bg-surface px-2 text-sm text-text disabled:opacity-50"
       >
         {USER_ROLES.map((role) => (
           <option key={role} value={role}>
@@ -65,7 +65,7 @@ export function UserActions({
 
       {confirmingDelete ? (
         <span className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-[#8a2f2f]">Tikrai šalinti?</span>
+          <span className="text-xs font-medium text-danger">Tikrai šalinti?</span>
           <Button size="sm" variant="primary" onClick={onConfirmDelete} disabled={pending}>
             Taip, šalinti
           </Button>

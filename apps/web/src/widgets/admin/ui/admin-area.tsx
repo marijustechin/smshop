@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/features/auth';
@@ -15,16 +16,16 @@ const NAV_ITEMS = [{ href: '/administravimas/naudotojai', label: 'Naudotojai' }]
 function AccessDenied({ email }: { email: string }) {
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md rounded-lg border border-border bg-white p-6 text-center shadow-sm">
-        <h1 className="text-xl font-semibold text-chocolate">Neturite prieigos</h1>
-        <p className="mt-2 text-sm text-muted">
+      <div className="w-full max-w-md rounded-lg border border-border bg-surface p-6 text-center shadow-sm">
+        <h1 className="text-xl font-semibold text-primary">Neturite prieigos</h1>
+        <p className="mt-2 text-sm text-text-muted">
           Ši sritis skirta tik administratoriams. Prisijungta kaip {email}.
         </p>
         <div className="mt-6 flex justify-center gap-3 text-sm">
-          <Link href="/paskyra" className="font-medium text-chocolate hover:underline">
+          <Link href="/paskyra" className="font-medium text-primary hover:underline">
             Mano paskyra
           </Link>
-          <Link href="/" className="font-medium text-chocolate hover:underline">
+          <Link href="/" className="font-medium text-primary hover:underline">
             Į parduotuvę
           </Link>
         </div>
@@ -64,7 +65,7 @@ export function AdminArea({ children }: { children: React.ReactNode }) {
   if (status === 'unknown') {
     return (
       <main className="flex min-h-screen items-center justify-center px-4">
-        <p className="text-sm text-muted">Kraunama…</p>
+        <p className="text-sm text-text-muted">Kraunama…</p>
       </main>
     );
   }
@@ -87,7 +88,7 @@ export function AdminArea({ children }: { children: React.ReactNode }) {
   if (status === 'unauthenticated' || !user) {
     return (
       <main className="flex min-h-screen items-center justify-center px-4">
-        <p className="text-sm text-muted">Kreipiamasi į prisijungimą…</p>
+        <p className="text-sm text-text-muted">Kreipiamasi į prisijungimą…</p>
       </main>
     );
   }
@@ -97,20 +98,24 @@ export function AdminArea({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-ivory">
-      <header className="border-b border-border bg-white">
+    <div className="min-h-screen bg-canvas">
+      <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
             <Link
               href="/"
-              className="flex items-center gap-2 text-sm font-semibold tracking-wide text-chocolate"
+              aria-label="Šokolado meistrai — pradžia"
+              className="flex items-center gap-2 rounded-md focus-visible:outline-focus"
             >
-              <span className="grid h-8 w-8 place-items-center rounded-full bg-chocolate text-xs text-ivory">
-                ŠM
-              </span>
-              <span>
-                Šokolado meistrai
-                <span className="hidden sm:inline"> · Administravimas</span>
+              <Image
+                src="/branding/sokolado-meistrai-logo-chocolate.webp"
+                alt="Šokolado meistrai"
+                width={512}
+                height={323}
+                className="h-8 w-auto"
+              />
+              <span className="text-sm font-semibold tracking-wide text-primary">
+                <span className="hidden sm:inline">Administravimas</span>
               </span>
             </Link>
             <nav aria-label="Administravimo navigacija">
@@ -126,8 +131,8 @@ export function AdminArea({ children }: { children: React.ReactNode }) {
                         className={cn(
                           'rounded-md px-3 py-1.5 text-sm font-medium',
                           active
-                            ? 'bg-cream/60 text-chocolate'
-                            : 'text-muted hover:bg-cream/40 hover:text-chocolate',
+                            ? 'bg-surface-muted text-primary'
+                            : 'text-text-muted hover:bg-surface-muted hover:text-primary',
                         )}
                       >
                         {item.label}
@@ -138,9 +143,9 @@ export function AdminArea({ children }: { children: React.ReactNode }) {
               </ul>
             </nav>
           </div>
-          <div className="flex items-center gap-3 text-xs text-muted">
+          <div className="flex items-center gap-3 text-xs text-text-muted">
             <span className="hidden max-w-[16rem] truncate sm:inline">{user.email}</span>
-            <Link href="/paskyra" className="font-medium text-chocolate hover:underline">
+            <Link href="/paskyra" className="font-medium text-primary hover:underline">
               Paskyra
             </Link>
           </div>

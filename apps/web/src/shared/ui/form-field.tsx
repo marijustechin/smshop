@@ -1,6 +1,6 @@
 import * as React from 'react';
-import { Input } from '@/shared/ui/input';
-import { Label } from '@/shared/ui/label';
+import { Input } from './input';
+import { Label } from './label';
 import { cn } from '@/shared/lib/cn';
 
 interface FormFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -40,12 +40,12 @@ export function FormField({
         ) : null}
       </div>
       {hint ? (
-        <p id={hintId} className="text-xs text-muted">
+        <p id={hintId} className="text-xs text-text-muted">
           {hint}
         </p>
       ) : null}
       {error ? (
-        <p id={errorId} className="text-xs text-[#8a2f2f]">
+        <p id={errorId} className="text-xs text-danger">
           {error}
         </p>
       ) : null}
@@ -55,7 +55,7 @@ export function FormField({
 
 export function FormError({ children }: { children: React.ReactNode }) {
   return (
-    <p role="alert" className={cn('text-sm text-[#8a2f2f]')}>
+    <p role="alert" className={cn('text-sm text-danger')}>
       {children}
     </p>
   );

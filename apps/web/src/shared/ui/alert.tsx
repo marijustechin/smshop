@@ -5,9 +5,10 @@ import { cn } from '@/shared/lib/cn';
 const alertVariants = cva('rounded-md border px-4 py-3 text-sm', {
   variants: {
     variant: {
-      info: 'border-border bg-cream/40 text-ink',
-      success: 'border-[#b7d7b0] bg-[#eef7ec] text-[#2f5d2a]',
-      error: 'border-[#e3b7b7] bg-[#fbecec] text-[#8a2f2f]',
+      info: 'border-border bg-surface-muted text-text',
+      success: 'border-success-border bg-success-surface text-success',
+      warning: 'border-warning-border bg-warning-surface text-warning',
+      error: 'border-danger-border bg-danger-surface text-danger',
     },
   },
   defaultVariants: { variant: 'info' },

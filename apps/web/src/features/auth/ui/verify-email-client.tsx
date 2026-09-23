@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Alert } from '@/shared/ui/alert';
+import { buttonVariants } from '@/shared/ui/button';
 import { verifyEmail } from '../api/auth-api';
 import { ApiError } from '@/shared/api/client';
 import { AUTH_MESSAGES } from '../model/messages';
@@ -81,7 +82,7 @@ export function VerifyEmailClient() {
         <Alert variant="success">El. pašto adresas patvirtintas. Dabar galite prisijungti.</Alert>
         <Link
           href="/prisijungti"
-          className="inline-flex h-10 w-full items-center justify-center rounded-md bg-chocolate px-4 text-sm font-medium text-ivory hover:bg-[#3f2114]"
+          className={buttonVariants({ variant: 'primary', className: 'w-full' })}
         >
           Prisijungti
         </Link>
