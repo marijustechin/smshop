@@ -1,5 +1,6 @@
 'use client';
 
+import { Trash2 } from 'lucide-react';
 import { USER_ROLES, type UserRole } from '@/entities/user';
 import { Button } from '@/shared/ui/button';
 import { ROLE_LABELS } from '../model/messages';
@@ -19,7 +20,9 @@ interface UserActionsProps {
 }
 
 /**
- * Role change and deletion controls for one user. Self-administration is
+ * Role change and deletion controls for one user, as one compact horizontal
+ * group: role selector, explicit save (disabled until the role changes), and a
+ * destructive icon button that reveals the confirmation. Self-administration is
  * disabled in the UI for clarity; the server independently rejects it.
  */
 export function UserActions({
@@ -42,7 +45,7 @@ export function UserActions({
   const selectId = `role-${user.id}`;
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex items-center gap-2">
       <label htmlFor={selectId} className="sr-only">
         Vaidmuo naudotojui {user.email}
       </label>
@@ -64,9 +67,9 @@ export function UserActions({
       </Button>
 
       {confirmingDelete ? (
-        <span className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-danger">Tikrai šalinti?</span>
-          <Button size="sm" variant="primary" onClick={onConfirmDelete} disabled={pending}>
+        <span className="flex items-center gap-2">
+          <span className="text-xs font-medium whitespace-nowrap text-danger">Tikrai šalinti?</span>
+          <Button size="sm" variant="destructive" onClick={onConfirmDelete} disabled={pending}>
             Taip, šalinti
           </Button>
           <Button size="sm" variant="ghost" onClick={onCancelDelete} disabled={pending}>
@@ -74,9 +77,15 @@ export function UserActions({
           </Button>
         </span>
       ) : (
-        <Button size="sm" variant="ghost" onClick={onRequestDelete} disabled={pending}>
-          Šalinti
-        </Button>
+        <button
+          type="button"
+          aria-label="Pašalinti naudotoją"
+          onClick={onRequestDelete}
+          disabled={pending}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-rose-600 transition-colors hover:bg-rose-50 disabled:hover:bg-transparent focus-visible:outline-focus disabled:opacity-50"
+        >
+          <Trash2 aria-hidden="true" className="h-4 w-4" />
+        </button>
       )}
     </div>
   );

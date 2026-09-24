@@ -18,6 +18,14 @@ export interface PaginatedUsers {
   totalPages: number;
 }
 
+/** Safe dashboard projection returned by `GET /api/admin/dashboard/summary`. */
+export interface AdminDashboardSummary {
+  totalUsers: number;
+  verifiedUsers: number;
+  roleCounts: Record<UserRole, number>;
+  recentUsers: AdminUser[];
+}
+
 /**
  * Authenticated request function supplied by the auth feature. The admin feature
  * stays auth-agnostic so it respects the FSD-lite layer boundaries; a higher

@@ -1,7 +1,16 @@
 import type { UserRole } from '@/entities/user';
-import type { AdminUser, AuthedRequest, PaginatedUsers } from '../model/types';
+import type {
+  AdminDashboardSummary,
+  AdminUser,
+  AuthedRequest,
+  PaginatedUsers,
+} from '../model/types';
 
 /** Typed wrappers around the admin user-management endpoints. */
+
+export function getDashboardSummary(request: AuthedRequest): Promise<AdminDashboardSummary> {
+  return request<AdminDashboardSummary>('/api/admin/dashboard/summary');
+}
 
 export function listUsers(
   request: AuthedRequest,

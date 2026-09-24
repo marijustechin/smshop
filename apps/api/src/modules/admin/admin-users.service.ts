@@ -27,6 +27,17 @@ export interface PaginatedUsers {
   totalPages: number;
 }
 
+/** Bounded, safe dashboard projection returned by the admin summary endpoint. */
+export interface AdminDashboardSummary {
+  totalUsers: number;
+  verifiedUsers: number;
+  roleCounts: Record<UserRole, number>;
+  recentUsers: AdminUserSummary[];
+}
+
+/** Maximum recent users returned by the dashboard (bounded query). */
+const RECENT_USERS_LIMIT = 5;
+
 @Injectable()
 export class AdminUsersService {
   constructor(private readonly prisma: PrismaService) {}
@@ -66,6 +77,48 @@ export class AdminUsersService {
       pageSize: take,
       total,
       totalPages: Math.ceil(total / take),
+    };
+  }
+
+  /**
+   * Dashboard summary: total and verified counts, per-role counts, and the five
+   * most recently created users. Everything is derived from a single bounded
+   * transaction (one verified-count, one role group-by, one recent-user query
+   * with its latest session) — no per-user or per-session queries.
+   */
+  async getDashboardSummary(): Promise<AdminDashboardSummary> {
+    const [verifiedUsers, userCount, editorCount, adminCount, recentUsers] =
+      await this.prisma.$transaction([
+        this.prisma.user.count({ where: { emailVerifiedAt: { not: null } } }),
+        this.prisma.user.count({ where: { role: PrismaRole.USER } }),
+        this.prisma.user.count({ where: { role: PrismaRole.EDITOR } }),
+        this.prisma.user.count({ where: { role: PrismaRole.ADMIN } }),
+        this.prisma.user.findMany({
+          orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+          take: RECENT_USERS_LIMIT,
+          include: {
+            sessions: {
+              orderBy: { createdAt: 'desc' },
+              take: 1,
+              select: { createdAt: true },
+            },
+          },
+        }),
+      ]);
+
+    const roleCounts: Record<UserRole, number> = {
+      user: userCount,
+      editor: editorCount,
+      admin: adminCount,
+    };
+
+    return {
+      totalUsers: userCount + editorCount + adminCount,
+      verifiedUsers,
+      roleCounts,
+      recentUsers: recentUsers.map((user) =>
+        this.toSummary(user, user.sessions[0]?.createdAt ?? null),
+      ),
     };
   }
 

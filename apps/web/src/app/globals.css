@@ -89,6 +89,20 @@
   color-scheme: light;
 }
 
+/*
+ * Interactive cursor rule: native <button> elements communicate clickability.
+ * Enabled buttons show a pointer, disabled buttons show not-allowed. Nothing
+ * else is affected — text fields keep the text cursor, and links/selects keep
+ * their normal browser behaviour.
+ */
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
 body {
   background-color: var(--color-canvas);
   color: var(--color-text);

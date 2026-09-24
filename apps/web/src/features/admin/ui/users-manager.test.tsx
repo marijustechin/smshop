@@ -43,6 +43,38 @@ describe('UsersManager', () => {
     expect(await screen.findAllByText('a@example.com')).not.toHaveLength(0);
     expect(await screen.findAllByText('b@example.com')).not.toHaveLength(0);
     expect((await table()).getAllByText('Redaktorius').length).toBeGreaterThan(0);
+    expect((await table()).getAllByText('Pirkėjas').length).toBeGreaterThan(0);
+  });
+
+  it('shows Lithuanian role labels while keeping the technical role values', async () => {
+    requestMock.mockResolvedValue(paged([makeUser()]));
+
+    render(<UsersManager request={request} currentUserId="admin-1" />);
+    const tableView = await table();
+    const select = await tableView.findByLabelText('Vaidmuo naudotojui a@example.com');
+    const options = within(select).getAllByRole('option');
+
+    expect(options.map((option) => option.textContent)).toEqual([
+      'Pirkėjas',
+      'Redaktorius',
+      'Administratorius',
+    ]);
+    expect(options.map((option) => (option as HTMLOptionElement).value)).toEqual([
+      'user',
+      'editor',
+      'admin',
+    ]);
+  });
+
+  it('uses an accessible destructive delete icon instead of a textual action', async () => {
+    requestMock.mockResolvedValue(paged([makeUser()]));
+
+    render(<UsersManager request={request} currentUserId="admin-1" />);
+    const tableView = await table();
+    const deleteButton = tableView.getByRole('button', { name: 'Pašalinti naudotoją' });
+
+    expect(deleteButton.querySelector('svg')).not.toBeNull();
+    expect(tableView.queryByRole('button', { name: 'Šalinti' })).toBeNull();
   });
 
   it('changes another user role through the API', async () => {
@@ -85,7 +117,7 @@ describe('UsersManager', () => {
     const tableView = await table();
     await tableView.findByText('a@example.com');
 
-    await user.click(tableView.getByRole('button', { name: 'Šalinti' }));
+    await user.click(tableView.getByRole('button', { name: 'Pašalinti naudotoją' }));
     const deleteCall = () =>
       requestMock.mock.calls.find(([, options]) => options?.method === 'DELETE');
     expect(deleteCall()).toBeUndefined();

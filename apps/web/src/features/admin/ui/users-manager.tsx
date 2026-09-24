@@ -174,21 +174,23 @@ export function UsersManager({
         ) : (
           <>
             <div className="hidden overflow-x-auto md:block" data-testid="users-table">
-              <table className="w-full text-left text-sm">
+              <table className="w-full min-w-[56rem] text-left text-sm">
                 <thead>
                   <tr className="border-b border-border text-xs uppercase tracking-wide text-text-muted">
-                    <th className="px-3 py-2 font-medium">El. paštas</th>
+                    <th className="min-w-[16rem] px-3 py-2 font-medium">El. paštas</th>
                     <th className="px-3 py-2 font-medium">Būsena</th>
                     <th className="px-3 py-2 font-medium">Vaidmuo</th>
-                    <th className="px-3 py-2 font-medium">Sukurta</th>
-                    <th className="px-3 py-2 font-medium">Paskutinis prisijungimas</th>
-                    <th className="px-3 py-2 font-medium">Veiksmai</th>
+                    <th className="px-3 py-2 font-medium whitespace-nowrap">Sukurta</th>
+                    <th className="px-3 py-2 font-medium whitespace-nowrap">
+                      Paskutinis prisijungimas
+                    </th>
+                    <th className="px-3 py-2 font-medium whitespace-nowrap">Veiksmai</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.items.map((user) => (
                     <tr key={user.id} className="border-b border-border/60 align-top">
-                      <td className="px-3 py-3 font-medium break-all text-text">
+                      <td className="px-3 py-3 font-medium whitespace-nowrap text-text">
                         {user.email}
                         {user.id === currentUserId ? (
                           <span className="ml-2 text-xs font-normal text-text-muted">(jūs)</span>
@@ -197,10 +199,16 @@ export function UsersManager({
                       <td className="px-3 py-3">
                         <VerificationBadge verified={user.emailVerified} />
                       </td>
-                      <td className="px-3 py-3 text-text">{ROLE_LABELS[user.role]}</td>
-                      <td className="px-3 py-3 text-text-muted">{formatDate(user.createdAt)}</td>
-                      <td className="px-3 py-3 text-text-muted">{formatDate(user.lastLoginAt)}</td>
-                      <td className="px-3 py-3">{renderActions(user)}</td>
+                      <td className="px-3 py-3 whitespace-nowrap text-text">
+                        {ROLE_LABELS[user.role]}
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-text-muted">
+                        {formatDate(user.createdAt)}
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-text-muted">
+                        {formatDate(user.lastLoginAt)}
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap">{renderActions(user)}</td>
                     </tr>
                   ))}
                 </tbody>

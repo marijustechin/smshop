@@ -2,7 +2,7 @@ import { ApiError } from '@/shared/api/client';
 
 /** User-facing Lithuanian labels for the wire roles. */
 export const ROLE_LABELS: Record<string, string> = {
-  user: 'Naudotojas',
+  user: 'Pirkėjas',
   editor: 'Redaktorius',
   admin: 'Administratorius',
 };

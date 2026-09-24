@@ -1,6 +1,8 @@
-import { redirect } from 'next/navigation';
+import type { Metadata } from 'next';
+import { AdminDashboardView } from '@/widgets/admin';
 
-/** The admin area's first real section is Users. */
+export const metadata: Metadata = { title: 'Suvestinė — Administravimas' };
+
 export default function AdminIndexPage() {
-  redirect('/administravimas/naudotojai');
+  return <AdminDashboardView />;
 }
