@@ -1,8 +1,15 @@
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 process.env.DATABASE_URL ??= 'postgresql://smshop:smshop@localhost:5432/smshop';
 process.env.WEB_ORIGIN ??= 'http://localhost:3101';
 process.env.JWT_ACCESS_SECRET ??= 'test-only-jwt-access-secret-value-32-chars';
 process.env.JWT_ACCESS_TTL ??= '15m';
 process.env.AUTH_SESSION_TTL ??= '7d';
+
+// Test-only media storage. Uploads must never reach the real local storage
+// directory; individual suites may override this with a fresh temp directory.
+process.env.MEDIA_STORAGE_DIR ??= join(tmpdir(), 'smshop-media-test');
 
 // Test-only, non-secret Google config: the test harness replaces the OIDC
 // provider with a stub (no network), but the app config must be complete so the

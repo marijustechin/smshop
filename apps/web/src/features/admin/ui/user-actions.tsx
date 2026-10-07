@@ -11,31 +11,27 @@ interface UserActionsProps {
   isSelf: boolean;
   draftRole: UserRole;
   pending: boolean;
-  confirmingDelete: boolean;
   onDraftRoleChange: (role: UserRole) => void;
   onSaveRole: () => void;
+  /** Opens the confirmation dialog owned by the parent; the row itself is unchanged. */
   onRequestDelete: () => void;
-  onCancelDelete: () => void;
-  onConfirmDelete: () => void;
 }
 
 /**
  * Role change and deletion controls for one user, as one compact horizontal
  * group: role selector, explicit save (disabled until the role changes), and a
- * destructive icon button that reveals the confirmation. Self-administration is
- * disabled in the UI for clarity; the server independently rejects it.
+ * destructive icon button that asks the parent to open the confirmation dialog.
+ * Self-administration is disabled in the UI for clarity; the server independently
+ * rejects it.
  */
 export function UserActions({
   user,
   isSelf,
   draftRole,
   pending,
-  confirmingDelete,
   onDraftRoleChange,
   onSaveRole,
   onRequestDelete,
-  onCancelDelete,
-  onConfirmDelete,
 }: UserActionsProps) {
   if (isSelf) {
     return <p className="text-xs text-text-muted">Tai jūsų paskyra — keisti negalima.</p>;
@@ -66,27 +62,15 @@ export function UserActions({
         {pending ? 'Saugoma…' : 'Išsaugoti'}
       </Button>
 
-      {confirmingDelete ? (
-        <span className="flex items-center gap-2">
-          <span className="text-xs font-medium whitespace-nowrap text-danger">Tikrai šalinti?</span>
-          <Button size="sm" variant="destructive" onClick={onConfirmDelete} disabled={pending}>
-            Taip, šalinti
-          </Button>
-          <Button size="sm" variant="ghost" onClick={onCancelDelete} disabled={pending}>
-            Atšaukti
-          </Button>
-        </span>
-      ) : (
-        <button
-          type="button"
-          aria-label="Pašalinti naudotoją"
-          onClick={onRequestDelete}
-          disabled={pending}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-rose-600 transition-colors hover:bg-rose-50 disabled:hover:bg-transparent focus-visible:outline-focus disabled:opacity-50"
-        >
-          <Trash2 aria-hidden="true" className="h-4 w-4" />
-        </button>
-      )}
+      <button
+        type="button"
+        aria-label="Pašalinti naudotoją"
+        onClick={onRequestDelete}
+        disabled={pending}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-rose-600 transition-colors hover:bg-rose-50 disabled:hover:bg-transparent focus-visible:outline-focus disabled:opacity-50"
+      >
+        <Trash2 aria-hidden="true" className="h-4 w-4" />
+      </button>
     </div>
   );
 }

@@ -5,15 +5,35 @@ import { AdminUsersController } from './admin-users.controller.js';
 import { AdminUsersService } from './admin-users.service.js';
 import { RolesGuard } from './authorization/roles.guard.js';
 import { InitialAdminBootstrapService } from './bootstrap/initial-admin-bootstrap.service.js';
+import { AdminCatalogController } from './products/admin-catalog.controller.js';
+import { AdminShopController } from './products/admin-shop.controller.js';
+import { CatalogProductsService } from './products/catalog-products.service.js';
+import { CatalogTagsService } from './products/catalog-tags.service.js';
+import { CategoriesService } from './products/categories.service.js';
+import { ShopProductsService } from './products/shop-products.service.js';
 
 /**
- * First administration vertical slice: role-guarded user management and
- * dashboard summary, plus the first-admin bootstrap. `PrismaModule` is global;
- * `AuthSessionModule` supplies the shared `AccessTokenGuard`.
+ * Administration domain: role-guarded user management, dashboard summary, and
+ * catalogue/e-shop category and product management (separate CATALOG and SHOP
+ * scopes). `PrismaModule` is global; `AuthSessionModule` supplies the shared
+ * `AccessTokenGuard`.
  */
 @Module({
   imports: [AuthSessionModule],
-  controllers: [AdminUsersController, AdminDashboardController],
-  providers: [AdminUsersService, RolesGuard, InitialAdminBootstrapService],
+  controllers: [
+    AdminUsersController,
+    AdminDashboardController,
+    AdminCatalogController,
+    AdminShopController,
+  ],
+  providers: [
+    AdminUsersService,
+    RolesGuard,
+    InitialAdminBootstrapService,
+    CategoriesService,
+    CatalogProductsService,
+    CatalogTagsService,
+    ShopProductsService,
+  ],
 })
 export class AdminModule {}

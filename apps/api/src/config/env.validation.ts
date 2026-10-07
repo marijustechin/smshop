@@ -143,6 +143,11 @@ export const envSchema = z
     // on startup. Never creates a user; idempotent; removable after first use.
     AUTH_INITIAL_ADMIN_EMAIL: z.string().trim().pipe(z.email()).optional(),
 
+    // Persistent local media storage root for uploaded product images. Relative
+    // paths resolve against the API working directory. In containers this is a
+    // bind-mounted, gitignored directory (see docs/development.md).
+    MEDIA_STORAGE_DIR: z.string().trim().min(1).optional(),
+
     // Email — the SMTP group is all-or-none (see SMTP_KEYS).
     SMTP_HOST: z.string().min(1).optional(),
     SMTP_PORT: z.coerce.number().int().min(1).max(65535).optional(),

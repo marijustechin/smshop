@@ -33,10 +33,10 @@ ENV NODE_ENV=production \
 RUN addgroup -g 10001 -S nodejs && adduser -S -u 10001 -G nodejs nextjs
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
-# `public/` is optional in Next.js. This application has no static public
-# assets yet (no `apps/web/public` directory exists and nothing references it),
-# so no COPY is performed; the standalone server serves the app regardless.
-# When public assets are introduced, add the directory and restore a COPY here.
+# Static public assets (branding logos + favicon) referenced by the app shell.
+# The standalone server resolves them relative to the app root, so they must be
+# present at `apps/web/public` in the runner stage.
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 USER nextjs
 EXPOSE 3000
 CMD ["node", "apps/web/server.js"]

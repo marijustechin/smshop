@@ -8,5 +8,8 @@ generated/
 .env.*
 !.env.example
 
+# Local media storage (uploaded product images; never commit)
+data/
+
 # diff file
 git.diff

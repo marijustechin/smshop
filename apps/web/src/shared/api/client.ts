@@ -49,8 +49,12 @@ export interface RequestOptions {
  * only when explicitly provided. No token is ever logged.
  */
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  // FormData (multipart uploads) must keep the browser-generated Content-Type
+  // boundary and must never be JSON-stringified.
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (options.body !== undefined) {
+  if (options.body !== undefined && !isFormData) {
     headers['Content-Type'] = 'application/json';
   }
   if (options.accessToken) {
@@ -63,7 +67,12 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       method: options.method ?? 'GET',
       headers,
       credentials: 'include',
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body:
+        options.body === undefined
+          ? undefined
+          : isFormData
+            ? (options.body as FormData)
+            : JSON.stringify(options.body),
       signal: options.signal,
     });
   } catch {

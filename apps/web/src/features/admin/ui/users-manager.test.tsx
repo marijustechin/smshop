@@ -104,12 +104,14 @@ describe('UsersManager', () => {
     expect(await screen.findByText(/Vaidmuo atnaujintas/)).toBeInTheDocument();
   });
 
-  it('requires confirmation before deleting a user', async () => {
+  it('opens a dialog, then deletes on confirmation and refreshes the list', async () => {
+    let deleted = false;
     requestMock.mockImplementation(async (path: string, options?: { method?: string }) => {
       if (options?.method === 'DELETE') {
+        deleted = true;
         return undefined;
       }
-      return paged([makeUser()]);
+      return deleted ? paged([]) : paged([makeUser()]);
     });
     const user = userEvent.setup();
 
@@ -118,15 +120,69 @@ describe('UsersManager', () => {
     await tableView.findByText('a@example.com');
 
     await user.click(tableView.getByRole('button', { name: 'Pašalinti naudotoją' }));
+
+    const dialog = screen.getByRole('alertdialog');
+    expect(
+      within(dialog).getByRole('heading', { name: 'Pašalinti naudotoją?' }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(/Bus pašalintas naudotojas a@example\.com\./),
+    ).toBeInTheDocument();
+    // The row itself does not expand into an inline confirmation.
+    expect(screen.queryByText('Tikrai šalinti?')).toBeNull();
+
     const deleteCall = () =>
       requestMock.mock.calls.find(([, options]) => options?.method === 'DELETE');
     expect(deleteCall()).toBeUndefined();
-    expect(tableView.getByText('Tikrai šalinti?')).toBeInTheDocument();
 
-    await user.click(tableView.getByRole('button', { name: 'Taip, šalinti' }));
+    await user.click(within(dialog).getByRole('button', { name: 'Pašalinti' }));
     await waitFor(() => expect(deleteCall()).toBeDefined());
     expect(deleteCall()?.[0]).toBe('/api/admin/users/u-1');
+
+    // Success: dialog closes, list refreshes immediately, notice shown, no error.
     expect(await screen.findByText(/Naudotojas pašalintas/)).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText('a@example.com')).toBeNull());
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(screen.queryByText('Įvyko netikėta klaida. Bandykite dar kartą.')).toBeNull();
+  });
+
+  it('does not delete when the confirmation dialog is cancelled', async () => {
+    requestMock.mockResolvedValue(paged([makeUser()]));
+    const user = userEvent.setup();
+
+    render(<UsersManager request={request} currentUserId="admin-1" />);
+    const tableView = await table();
+    await user.click(await tableView.findByRole('button', { name: 'Pašalinti naudotoją' }));
+
+    await user.click(screen.getByRole('button', { name: 'Atšaukti' }));
+
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(
+      requestMock.mock.calls.find(([, options]) => options?.method === 'DELETE'),
+    ).toBeUndefined();
+  });
+
+  it('keeps the dialog open with an actionable error when deletion fails', async () => {
+    requestMock.mockImplementation(async (path: string, options?: { method?: string }) => {
+      if (options?.method === 'DELETE') {
+        throw new ApiError(409, 'conflict', 'LAST_ADMIN');
+      }
+      return paged([makeUser()]);
+    });
+    const user = userEvent.setup();
+
+    render(<UsersManager request={request} currentUserId="admin-1" />);
+    const tableView = await table();
+    await user.click(await tableView.findByRole('button', { name: 'Pašalinti naudotoją' }));
+    await user.click(screen.getByRole('button', { name: 'Pašalinti' }));
+
+    const dialog = await screen.findByRole('alertdialog');
+    expect(
+      within(dialog).getByText(
+        'Paskutinio administratoriaus pašalinti arba sumažinti teisių negalima.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Įvyko netikėta klaida. Bandykite dar kartą.')).toBeNull();
   });
 
   it('shows an empty state when there are no users', async () => {

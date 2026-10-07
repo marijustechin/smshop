@@ -20,6 +20,7 @@ const DESKTOP_QUERY = '(min-width: 1024px)';
 const NAV_ITEMS = [
   { href: '/administravimas', label: 'Suvestinė' },
   { href: '/administravimas/naudotojai', label: 'Naudotojai' },
+  { href: '/administravimas/produktai', label: 'Prekės' },
 ] as const;
 
 function isActive(pathname: string | null, href: string): boolean {

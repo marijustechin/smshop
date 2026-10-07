@@ -139,6 +139,10 @@ describe('AdminArea shell (desktop)', () => {
       'href',
       '/administravimas',
     );
+    expect(screen.getByRole('link', { name: 'Prekės' })).toHaveAttribute(
+      'href',
+      '/administravimas/produktai',
+    );
     const usersLink = screen.getByRole('link', { name: 'Naudotojai' });
     expect(usersLink).toHaveAttribute('href', '/administravimas/naudotojai');
     expect(usersLink).toHaveAttribute('aria-current', 'page');

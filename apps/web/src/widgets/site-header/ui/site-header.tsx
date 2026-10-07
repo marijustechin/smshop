@@ -114,11 +114,15 @@ export function SiteHeader() {
     if (!isAuthenticated || !user) {
       return [
         { href: '/', label: 'Pagrindinis' },
+        { href: '/tortai', label: 'Tortai' },
         { href: '/prisijungti', label: 'Prisijungti' },
         { href: '/registracija', label: 'Registruotis' },
       ];
     }
-    const links: DrawerLink[] = [{ href: '/', label: 'Pagrindinis' }];
+    const links: DrawerLink[] = [
+      { href: '/', label: 'Pagrindinis' },
+      { href: '/tortai', label: 'Tortai' },
+    ];
     if (user.role === 'admin') {
       links.push({ href: '/administravimas', label: 'Administravimas' });
     }

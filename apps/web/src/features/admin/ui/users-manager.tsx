@@ -4,6 +4,7 @@ import * as React from 'react';
 import type { UserRole } from '@/entities/user';
 import { Alert } from '@/shared/ui/alert';
 import { Button } from '@/shared/ui/button';
+import { ConfirmDialog } from '@/shared/ui/confirm-dialog';
 import { deleteUser, listUsers, updateUserRole } from '../api/admin-api';
 import { describeAdminError, ROLE_LABELS } from '../model/messages';
 import type { AdminUser, AuthedRequest, PaginatedUsers } from '../model/types';
@@ -51,7 +52,8 @@ export function UsersManager({
   const [error, setError] = React.useState<string | null>(null);
   const [notice, setNotice] = React.useState<string | null>(null);
   const [pendingId, setPendingId] = React.useState<string | null>(null);
-  const [confirmId, setConfirmId] = React.useState<string | null>(null);
+  const [confirmUser, setConfirmUser] = React.useState<AdminUser | null>(null);
+  const [deleteError, setDeleteError] = React.useState<string | null>(null);
   const [draftRoles, setDraftRoles] = React.useState<Record<string, UserRole>>({});
 
   React.useEffect(() => {
@@ -123,9 +125,10 @@ export function UsersManager({
     setPendingId(user.id);
     setNotice(null);
     setError(null);
+    setDeleteError(null);
     try {
       await deleteUser(request, user.id);
-      setConfirmId(null);
+      setConfirmUser(null);
       setNotice(`Naudotojas pašalintas: ${user.email}.`);
       // Step back a page when the last row on a later page was removed.
       if (data && data.items.length === 1 && page > 1) {
@@ -133,11 +136,17 @@ export function UsersManager({
       } else {
         reload();
       }
-    } catch (deleteError) {
-      setError(describeAdminError(deleteError));
+    } catch (deleteFailure) {
+      // Keep the dialog open so the admin can retry or cancel.
+      setDeleteError(describeAdminError(deleteFailure));
     } finally {
       setPendingId(null);
     }
+  };
+
+  const onCancelDelete = () => {
+    setConfirmUser(null);
+    setDeleteError(null);
   };
 
   const renderActions = (user: AdminUser) => (
@@ -146,12 +155,12 @@ export function UsersManager({
       isSelf={user.id === currentUserId}
       draftRole={draftRoles[user.id] ?? user.role}
       pending={pendingId === user.id}
-      confirmingDelete={confirmId === user.id}
       onDraftRoleChange={(role) => setDraftRoles((previous) => ({ ...previous, [user.id]: role }))}
       onSaveRole={() => void onSaveRole(user)}
-      onRequestDelete={() => setConfirmId(user.id)}
-      onCancelDelete={() => setConfirmId(null)}
-      onConfirmDelete={() => void onConfirmDelete(user)}
+      onRequestDelete={() => {
+        setDeleteError(null);
+        setConfirmUser(user);
+      }}
     />
   );
 
@@ -262,6 +271,27 @@ export function UsersManager({
           </Button>
         </div>
       ) : null}
+
+      <ConfirmDialog
+        open={confirmUser !== null}
+        title="Pašalinti naudotoją?"
+        description={
+          confirmUser
+            ? `Bus pašalintas naudotojas ${confirmUser.email}. Šio veiksmo atšaukti negalima.`
+            : ''
+        }
+        confirmLabel="Pašalinti"
+        cancelLabel="Atšaukti"
+        variant="destructive"
+        isBusy={confirmUser !== null && pendingId === confirmUser.id}
+        error={deleteError}
+        onConfirm={() => {
+          if (confirmUser) {
+            void onConfirmDelete(confirmUser);
+          }
+        }}
+        onCancel={onCancelDelete}
+      />
     </div>
   );
 }

@@ -162,6 +162,14 @@ the process environment, so no `.env` file is required.
   `docs/authentication.md`.
 - **Reserved:** `API_ORIGIN`. It is accepted and format-checked today but does not
   block the current application.
+- **Media storage (optional):** `MEDIA_STORAGE_DIR` is the persistent local
+  directory for uploaded product images. When unset, the API uses
+  `./data/uploads` relative to its working directory. It is gitignored and must
+  not live under `apps/web/public`, `.next`, or any source/build directory; in a
+  container it should be a bind-mounted directory. Uploads are validated,
+  normalized to WebP and stored as `products/<uuid>.webp`, served at
+  `GET /media/products/:filename`; product records store the stable
+  application-relative `/media/products/<uuid>.webp` path. Not a secret.
 - **First administrator bootstrap (optional, one-off):**
   `AUTH_INITIAL_ADMIN_EMAIL`. When set, the API promotes the **already-existing,
   email-verified** user whose normalized email exactly matches this address to

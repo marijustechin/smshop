@@ -114,6 +114,15 @@ required.
    SMTP, Google, Turnstile, and `API_ORIGIN` are optional and disabled when unset.
    The full variable contract is in `docs/configuration.md`.
 
+   Uploaded product images are stored on disk, not in the database. Set
+   `MEDIA_STORAGE_DIR` (optional; defaults to `./data/uploads` relative to the
+   API working directory) to a **gitignored** directory outside any source or
+   build output. When the API runs in a container, bind-mount that host
+   directory into the container. Never write uploads under `apps/web/public`,
+   `.next`, or a source directory. Stored images are served at
+   `GET /media/products/<file>` and product records keep the stable
+   `/media/products/<uuid>.webp` path. See `docs/configuration.md`.
+
    **Turnstile works in local dev out of the box:** the examples already contain
    Cloudflare's official always-pass **test** pair (sitekey
    `1x00000000000000000000AA` in `apps/web/.env.local`, secret

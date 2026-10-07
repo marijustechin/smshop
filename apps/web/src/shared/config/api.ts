@@ -16,3 +16,13 @@ export const API_BASE_URL =
 export function apiUrl(path: string): string {
   return `${API_BASE_URL}${path}`;
 }
+
+/**
+ * Resolves a product-image reference for rendering. Newly uploaded images use
+ * the application-relative `/media/...` path (served by the API origin in local
+ * development, same-origin in production); legacy absolute `http(s)://` URLs are
+ * used as-is. Storage stays independent of the record.
+ */
+export function resolveMediaUrl(url: string): string {
+  return url.startsWith('/media/') ? apiUrl(url) : url;
+}

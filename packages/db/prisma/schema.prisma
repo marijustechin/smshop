@@ -113,3 +113,121 @@ model PasswordResetToken {
   @@index([userId])
   @@map("password_reset_tokens")
 }
+
+/// Public product area. A category belongs to exactly one scope, and a product
+/// row may only reference a category whose scope matches its own table.
+enum ProductScope {
+  CATALOG
+  SHOP
+}
+
+/// Publication state shared by catalogue and e-shop products.
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  HIDDEN
+}
+
+/// Category scoped to exactly one public area. Catalogue (CATALOG) and e-shop
+/// (SHOP) categories are never interchangeable; slugs are unique within a scope.
+/// `parentId` allows at least one nesting level (self-relation, delete restricted).
+model Category {
+  id           String       @id @default(uuid(7))
+  scope        ProductScope
+  name         String
+  slug         String
+  parentId     String?
+  displayOrder Int          @default(0)
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  parent          Category?        @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children        Category[]       @relation("CategoryHierarchy")
+  catalogProducts CatalogProduct[]
+  shopProducts    ShopProduct[]
+
+  @@unique([scope, slug])
+  @@index([scope])
+  @@index([parentId])
+  @@map("categories")
+}
+
+/// Informational catalogue item (cakes, confectionery, made-to-order). Never
+/// purchasable: deliberately no price, discount, stock, SKU, variants, cart,
+/// checkout or shipping fields. `rating*` fields are verified legacy imports
+/// (read-only, never employee-edited).
+model CatalogProduct {
+  id               String        @id @default(uuid(7))
+  categoryId       String
+  name             String
+  slug             String        @unique
+  description      String
+  primaryImageUrl  String
+  galleryImageUrls String[]      @default([])
+  status           ProductStatus @default(DRAFT)
+  featured         Boolean       @default(false)
+  displayOrder     Int           @default(0)
+  // Verified legacy rating imported from the old public product page. Decimal,
+  // never a floating-point approximation; exposed publicly only when both a
+  // positive score and a positive count exist.
+  ratingAverage    Decimal?      @db.Decimal(2, 1)
+  ratingCount      Int?
+  ratingSourceUrl  String?
+  ratingImportedAt DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  category Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  tags     CatalogTag[]
+
+  @@index([categoryId])
+  @@index([status])
+  @@map("catalog_products")
+}
+
+/// Reusable catalogue tag. The visual `#` is presentation only and is never
+/// stored.
+model CatalogTag {
+  id        String           @id @default(uuid(7))
+  name      String
+  slug      String           @unique
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  products  CatalogProduct[]
+
+  @@map("catalog_tags")
+}
+
+/// Online-purchasable e-shop product. Monetary values are integer cents only
+/// (never floating point). Public visibility additionally requires
+/// `status = PUBLISHED` AND `stockQuantity > 0` (see the shop public-eligibility
+/// policy); out-of-stock products stay visible in admin only.
+model ShopProduct {
+  id               String        @id @default(uuid(7))
+  categoryId       String
+  name             String
+  slug             String        @unique
+  shortDescription String
+  description      String
+  primaryImageUrl  String
+  galleryImageUrls String[]      @default([])
+  sku              String?       @unique
+  priceCents       Int
+  salePriceCents   Int?
+  saleStartsAt     DateTime?
+  saleEndsAt       DateTime?
+  stockQuantity    Int           @default(0)
+  status           ProductStatus @default(DRAFT)
+  featured         Boolean       @default(false)
+  displayOrder     Int           @default(0)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([categoryId])
+  @@index([status])
+  @@index([stockQuantity])
+  @@map("shop_products")
+}
