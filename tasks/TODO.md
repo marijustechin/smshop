@@ -27,7 +27,7 @@ next application milestone remains **M3 — Store Information Architecture**.
 
 **Current task:** none — `tasks/current/` is empty.
 
-**Recently completed:** H-000–H-010; A-001–A-012. Beyond Auth v1
+**Recently completed:** H-000–H-010; A-001–A-013. Beyond Auth v1
 (A-001–A-010), this includes:
 
 - **ADM-001** — roles and admin dashboard foundation: `Role` enum
@@ -40,6 +40,10 @@ next application milestone remains **M3 — Store Information Architecture**.
   Google `sub` is never reassigned.
 - **A-012** — password recovery for Google-only users, creating credentials
   access for the same `User`.
+- **A-013** — authentication UI polish: the shared Turnstile widget is
+  horizontally centered with balanced vertical spacing, and the header
+  `Prisijungti` control uses the chocolate/cream hover and `focus-visible`
+  treatment.
 - **H-010** — local development environment hardening (local ports 3101/3100,
   `pnpm dev` env preflight, Prisma local env resolution, local docs/tests).
 - **ARCH-000** (cross-repository) — documentation and technical-debt

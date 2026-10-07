@@ -273,6 +273,15 @@ describe('SiteHeader actions', () => {
       'href',
       '/prisijungti',
     );
+    // The login action uses the brand chocolate surface and cream text on both
+    // hover and focus-visible; the focus outline token is preserved.
+    expect(screen.getByRole('link', { name: 'Prisijungti' })).toHaveClass(
+      'hover:bg-primary',
+      'hover:text-on-primary',
+      'focus-visible:bg-primary',
+      'focus-visible:text-on-primary',
+      'focus-visible:outline-focus',
+    );
     expect(screen.queryByRole('button', { name: 'Paskyros meniu' })).toBeNull();
   });
 

@@ -101,6 +101,9 @@ describe('TurnstileWidget', () => {
     render(<TurnstileWidget onTokenChange={onTokenChange} />);
 
     expect(screen.getByTestId('turnstile-widget')).toBeInTheDocument();
+    // Horizontally centered with balanced vertical spacing; native widget
+    // dimensions are untouched (no width/height/transform utilities).
+    expect(screen.getByTestId('turnstile-widget')).toHaveClass('flex', 'justify-center', 'py-1');
     expect(renderWidget).toHaveBeenCalledTimes(1);
     expect(renderWidget.mock.calls[0][1]).toMatchObject({ sitekey: SITE_KEY });
     expect(onTokenChange).toHaveBeenCalledWith('emitted-token');

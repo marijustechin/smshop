@@ -140,8 +140,16 @@ export function SiteHeader() {
     void onLogout();
   };
 
-  const actionClass =
-    'inline-flex h-9 items-center rounded-md px-3 text-sm font-medium text-primary transition-colors hover:bg-white/60 focus-visible:outline-focus';
+  const actionBase =
+    'inline-flex h-9 items-center rounded-md px-3 text-sm font-medium text-primary transition-colors focus-visible:outline-focus';
+  // Secondary header actions keep the default subtle hover. The public login
+  // action instead uses the brand chocolate surface (like the drawer's active
+  // item) on both hover and focus-visible; the focus outline is preserved.
+  const actionClass = cn(actionBase, 'hover:bg-white/60');
+  const loginActionClass = cn(
+    actionBase,
+    'hover:bg-primary hover:text-on-primary focus-visible:bg-primary focus-visible:text-on-primary',
+  );
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface-cream">
@@ -183,7 +191,7 @@ export function SiteHeader() {
               <UserMenu showAdminItem={isAdmin && !isDesktop} onLogout={onLogout} />
             </>
           ) : status === 'unauthenticated' ? (
-            <Link href="/prisijungti" className={actionClass}>
+            <Link href="/prisijungti" className={loginActionClass}>
               Prisijungti
             </Link>
           ) : null}

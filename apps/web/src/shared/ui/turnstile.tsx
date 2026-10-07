@@ -175,7 +175,9 @@ export function TurnstileWidget({
     return null;
   }
 
-  return <div ref={containerRef} data-testid="turnstile-widget" />;
+  return (
+    <div ref={containerRef} data-testid="turnstile-widget" className="flex justify-center py-1" />
+  );
 }
 
 export interface TurnstileGate {
