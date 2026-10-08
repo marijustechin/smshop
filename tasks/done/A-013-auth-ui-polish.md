@@ -101,3 +101,28 @@ viewport configuration or mobile layout were changed.
 
 Completed date: 2026-10-08
 Commit: (recorded in the deployment report / Git history)
+
+## State Reconciliation
+
+Added 2026-10-08 as the demonstration case for the new completion requirement
+(see `docs/task-workflow.md`); the historical results above are unchanged.
+
+Reconciling A-013's outcome:
+
+- Owning task record: this file (completed, source `bff755f`).
+- `tasks/TODO.md`: updated at completion (A-013 recorded as completed).
+- `README.md`: **not** reconciled at the time — it still claimed "No
+  storefront/catalogue/product features yet". Applying the rule would have
+  required updating it or stating why not. The drift was found and corrected in
+  the harness audit (`c815176`).
+- `docs/architecture.md`, `docs/deployment.md`: unaffected by A-013 — it was a
+  UI-only change with no architecture, configuration or deployment-contract
+  impact.
+- Operational distinction: repository implementation (`bff755f`) → installed by
+  release `d007-v1` → verified live (recorded in `sm-oracle-infra/CHANGELOG.md`
+  and `docs/server.md`); these are three distinct states.
+
+State reconciliation: updated `tasks/TODO.md`; `README.md` was not updated at
+completion (corrected later in `c815176`); `docs/architecture.md` and
+`docs/deployment.md` unaffected because A-013 changed no architecture or
+deployment contract.

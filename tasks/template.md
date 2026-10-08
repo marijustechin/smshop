@@ -29,6 +29,9 @@ Explicitly excluded work. This protects against scope creep.
 ## Acceptance Criteria
 
 - [ ] ...
+- [ ] State reconciliation performed: the owning task record, `tasks/TODO.md` and
+      the applicable current-state documentation are reconciled; documents left
+      unchanged are stated with a reason (see `docs/task-workflow.md`).
 
 ## Required Verification
 
@@ -51,6 +54,14 @@ Important implementation or architecture decisions made during the task.
 
 New work discovered but intentionally kept outside this task. Do not silently
 expand the task; record it here instead.
+
+## State Reconciliation
+
+Filled when completed: the owning task record, `tasks/TODO.md` and applicable
+current-state documents reconciled; affected documents updated; any applicable
+document left unchanged with the reason.
+
+<!-- e.g. State reconciliation: updated tasks/TODO.md and README.md; docs/deployment.md had no matching change because <reason>. -->
 
 ## Completion
 

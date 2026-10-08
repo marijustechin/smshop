@@ -128,6 +128,20 @@ documentation.
   until it passes. Work that touches persistence must also pass `pnpm verify:db`
   (database-backed tests). Commands are documented in `docs/development.md` and
   `docs/testing.md`.
+- **State reconciliation (completion requirement).** Before marking any task
+  complete — including documentation-only and operational tasks — reconcile the
+  final implementation and verification results with the owning task record,
+  `tasks/TODO.md` and the applicable current-state documentation (`README.md`,
+  `docs/architecture.md`, `docs/configuration.md`, `docs/deployment.md`, and the
+  infrastructure deployment contract). Update every affected document; for an
+  applicable document that needs no change, state briefly why no update is
+  needed; resolve contradictions before completion; preserve historical records
+  and never claim verification that was not performed. For operational tasks
+  distinguish repository implementation, installed server state and actual
+  verification. The completion report ends with
+  `State reconciliation: updated <documents>; <other applicable documents> unaffected because <reason>.`
+  Detailed lifecycle step: `docs/task-workflow.md`. Cross-repository wording:
+  root `AGENTS.md` (keep identical).
 - No GitHub Actions implementation until it is listed in `tasks/TODO.md`.
 - Product implementation is permitted only when the relevant requirements are
   documented in the authoritative sources. The organized requirements

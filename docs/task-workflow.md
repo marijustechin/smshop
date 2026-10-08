@@ -48,8 +48,9 @@ the TODO.
 Every task uses `tasks/template.md`. The required sections are: Status,
 Objective, Context, Dependencies, Scope, Out of Scope, Acceptance Criteria,
 Required Verification, and — filled on completion — Implementation Result,
-Verification Result, Decisions, Follow-ups, and Completion. Do not turn task
-files into verbose work diaries; preserve useful engineering context only.
+Verification Result, Decisions, Follow-ups, State Reconciliation, and
+Completion. Do not turn task files into verbose work diaries; preserve useful
+engineering context only.
 
 ## Naming convention
 
@@ -133,11 +134,35 @@ task's completion metadata provide chronology.
 3. Fill in Verification Result.
 4. Record relevant Decisions.
 5. Record Follow-ups.
-6. Move the file from `tasks/current/` to `tasks/done/`.
-7. Update `tasks/TODO.md` to reflect the new state.
-8. Provide a concise completion report.
+6. **Reconcile state** (see _State reconciliation_ below).
+7. Move the file from `tasks/current/` to `tasks/done/`.
+8. Update `tasks/TODO.md` to reflect the new state.
+9. Provide a concise completion report ending with the `State reconciliation:`
+   field below.
 
-A task is not complete until its verification passes.
+A task is not complete until its verification passes and its state is reconciled.
+
+### State reconciliation
+
+Before a task is complete — including documentation-only and operational tasks —
+the final implementation and verification results are reconciled with the owning
+task record, `tasks/TODO.md` and the applicable current-state documentation
+(`README.md`, `docs/architecture.md`, `docs/configuration.md`,
+`docs/deployment.md`, and the infrastructure deployment contract). Update every
+affected document; for an applicable document that needs no change, state briefly
+why; resolve contradictions before completion; preserve historical records and
+never claim verification that was not performed. For operational tasks,
+distinguish **repository implementation**, **installed server state** and
+**actual verification**.
+
+The completion report ends with:
+
+```text
+State reconciliation: updated <documents>; <other applicable documents> unaffected because <reason>.
+```
+
+This mirrors the root `AGENTS.md` rule and the `sm-oracle-infra/AGENTS.md` rule
+for infrastructure tasks; keep the wording identical.
 
 ## Change discipline
 
