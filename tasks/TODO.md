@@ -27,7 +27,9 @@ shop products, tags, ratings, media library, public `/tortai`, admin products) i
 implemented and deployed (commit `9069715`); the next application milestone
 remains **M3 — Store Information Architecture**.
 
-**Current task:** none — `tasks/current/` is empty.
+**Current task:** H-015 — automatic staging deployment (implementation complete;
+activation pending GitHub `staging` environment/secret configuration). See
+`tasks/current/H-015-cd-auto-deploy.md`.
 
 **Recently completed:** H-000–H-012; A-001–A-013. Beyond Auth v1
 (A-001–A-010), this includes:

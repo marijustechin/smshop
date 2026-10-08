@@ -26,6 +26,44 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Detect runtime changes
+    runs-on: ubuntu-latest
+    outputs:
+      runtime: ${{ steps.detect.outputs.runtime }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Classify the change (runtime vs documentation-only)
+        id: detect
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # No usable baseline (new branch / first push / manual dispatch):
+          # be conservative and treat the change as runtime-affecting.
+          if [ -z "${BASE:-}" ] || printf '%s' "$BASE" | grep -qE '^0+$' || ! git cat-file -e "${BASE}^{commit}" 2>/dev/null; then
+            echo "runtime=true" >> "$GITHUB_OUTPUT"
+            echo "No usable baseline; treating as a runtime change."
+            exit 0
+          fi
+          runtime=false
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            case "$file" in
+              *.md | docs/*) ;; # documentation only
+              *)
+                runtime=true
+                break
+                ;;
+            esac
+          done < <(git diff --name-only "$BASE" "$HEAD")
+          echo "runtime=$runtime" >> "$GITHUB_OUTPUT"
+          echo "runtime=$runtime"
+
   workflow:
     name: Workflow checks
     runs-on: ubuntu-latest
@@ -259,3 +297,156 @@ jobs:
           path: release-manifest.json
           if-no-files-found: error
           retention-days: 90
+
+  # Automatic staging deployment. Runs only when every required verification,
+  # image-publish and release-manifest job succeeded for this exact commit, on
+  # trusted events only, and only for a runtime-affecting change. It stages the
+  # manifest produced by *this* run (stdin) and releases/statuses it through the
+  # restricted `deploy` entry point — never resolving "latest", never rebuilding.
+  deploy:
+    name: Deploy staging
+    needs: [changes, workflow, verify, build, release]
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://sokoladas.eu
+    concurrency:
+      group: sokoladas-staging-deploy
+      cancel-in-progress: false
+    steps:
+      - name: Documentation-only change — automatic deployment skipped
+        if: needs.changes.outputs.runtime != 'true'
+        run: |
+          echo "No runtime/build-input change; automatic staging deployment is skipped."
+          {
+            echo "### Staging deployment skipped"
+            echo "Documentation-only change (no runtime or build inputs)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Download the release manifest from this run
+        if: needs.changes.outputs.runtime == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: release-manifest
+          path: deploy
+
+      - name: Reject stale runs (older than the current main tip)
+        id: stale
+        if: needs.changes.outputs.runtime == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ github.sha }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            echo "stale=false" >> "$GITHUB_OUTPUT"
+            echo "Manual dispatch: stale-run check not applied."
+            exit 0
+          fi
+          tip="$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/commits/main" \
+            | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>process.stdout.write(JSON.parse(s).sha))')"
+          if [ "$tip" != "$SHA" ]; then
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Staging deployment skipped (stale run)"
+              echo "This run builds \`$SHA\`; main is now \`$tip\`, so the newer run supersedes it."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "stale=true"
+          else
+            echo "stale=false" >> "$GITHUB_OUTPUT"
+            echo "stale=false"
+          fi
+
+      - name: Install the deploy SSH key and pinned host key
+        id: ssh
+        if: needs.changes.outputs.runtime == 'true' && steps.stale.outputs.stale != 'true'
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DEPLOY_SSH_KEY:-}" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "DEPLOY_SSH_KEY is not configured for the staging environment; skipping deployment."
+            {
+              echo "### Staging deployment not configured"
+              echo "READY_FOR_DEPLOYMENT_CONFIGURATION: add the secret \`DEPLOY_SSH_KEY\` to the GitHub \`staging\` environment."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/deploy_key"
+          chmod 600 "$HOME/.ssh/deploy_key"
+          cat > "$HOME/.ssh/known_hosts" <<'KNOWN'
+          sokoladas.eu ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJXXqORBvzdLxWzEEFt+l6ei+it8soHtH8SAJ6f69m74
+          KNOWN
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Prepare the approved release manifest
+        id: manifest
+        if: needs.changes.outputs.runtime == 'true' && steps.stale.outputs.stale != 'true' && steps.ssh.outputs.configured == 'true'
+        env:
+          SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const build = JSON.parse(fs.readFileSync('deploy/release-manifest.json', 'utf8'));
+          const sha = process.env.SHA;
+          const release = {
+            ...build,
+            releaseId: `ci-${sha.slice(0, 12)}`,
+            notes: `Automatic staging deployment from CI run ${process.env.RUN_ID} for commit ${sha}.`,
+          };
+          fs.writeFileSync('deploy/manifest.json', JSON.stringify(release, null, 2) + '\n');
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `release_id=${release.releaseId}\n`);
+          NODE
+
+      - name: Stage, release and status through the restricted entry point
+        if: needs.changes.outputs.runtime == 'true' && steps.stale.outputs.stale != 'true' && steps.ssh.outputs.configured == 'true'
+        env:
+          RELEASE_ID: ${{ steps.manifest.outputs.release_id }}
+        run: |
+          set -euo pipefail
+          SSH="ssh -i $HOME/.ssh/deploy_key -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts deploy@sokoladas.eu"
+          echo "::group::stage $RELEASE_ID"
+          $SSH "sudo -n /usr/local/sbin/sokoladas-deploy stage $RELEASE_ID" < deploy/manifest.json | tee deploy/stage.log
+          echo "::endgroup::"
+          echo "::group::release $RELEASE_ID"
+          $SSH "sudo -n /usr/local/sbin/sokoladas-deploy release $RELEASE_ID" | tee deploy/release.log
+          echo "::endgroup::"
+          echo "::group::status"
+          $SSH "sudo -n /usr/local/sbin/sokoladas-deploy status" | tee deploy/status.log
+          echo "::endgroup::"
+
+      - name: Verify live health
+        if: needs.changes.outputs.runtime == 'true' && steps.stale.outputs.stale != 'true' && steps.ssh.outputs.configured == 'true'
+        run: |
+          set -euo pipefail
+          for path in /health/ready / /tortai; do
+            code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "https://sokoladas.eu$path")"
+            echo "$code https://sokoladas.eu$path"
+            if [ "$code" != "200" ]; then
+              echo "::error::health check failed for $path (HTTP $code)"
+              exit 1
+            fi
+          done
+
+      - name: Publish deployment summary
+        if: always() && needs.changes.outputs.runtime == 'true' && steps.stale.outputs.stale != 'true'
+        run: |
+          {
+            echo "### Staging deployment"
+            echo "- source SHA: \`${{ github.sha }}\`"
+            echo "- release id: \`${{ steps.manifest.outputs.release_id }}\`"
+            echo "- run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ -f deploy/release.log ]; then
+            grep -E '^(sokoladas-deploy|deploy):' deploy/release.log >> "$GITHUB_STEP_SUMMARY" || true
+          fi

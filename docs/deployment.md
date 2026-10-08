@@ -13,9 +13,14 @@ infrastructure interface is defined in the application deployment contract
 - **Tagging:** release version + git SHA for traceability; deployment pins by
   immutable digest — no floating `:latest` tags in the deploy path.
 - **No server builds:** no source checkout, no Node.js/pnpm on the Oracle host.
-- **No automatic deployment:** application CI builds and publishes images only;
-  it receives no production SSH credentials and does not deploy to the Oracle
-  host.
+- **Automatic staging deployment (H-015, 2026-10-08):** after all required checks
+  pass and images are published, CI deploys verified `main` releases to staging
+  automatically through the infrastructure-owned restricted entry point
+  (`/usr/local/sbin/sokoladas-deploy stage|release|status`) using a dedicated,
+  least-privilege key held in the `staging` GitHub Environment. It never deploys
+  pull requests, non-`main` refs, documentation-only changes, or releases whose
+  required checks failed/were cancelled/skipped, and it cannot choose arbitrary
+  manifests or image repositories. It receives no production SSH credentials.
 
 ## Accepted image/runtime facts
 
@@ -75,6 +80,40 @@ enforces the challenge, the web build **fails loudly** if the variable is unset
 (the `Require public Turnstile site key (web)` step). Local/development builds
 may leave the arg empty to produce a Turnstile-disabled UI. The wiring is guarded
 by `apps/web/src/test/build-config.test.ts`.
+
+## Automatic staging deployment (H-015)
+
+After `Workflow checks`, `Verify`, the image build and the release-manifest job
+all succeed for the exact commit, the `deploy` job applies that release to
+staging (`https://sokoladas.eu`) through the infrastructure-owned restricted
+entry point — never another mechanism.
+
+- **Trigger:** `push` to `main`, or an explicitly authorized `workflow_dispatch`.
+  Pull requests and other events never deploy. Documentation-only changes
+  (`*.md`, `docs/**`) are detected and skip deployment.
+- **Source identity:** the workflow builds the exact `github.sha`; the deploy job
+  stages the release manifest produced by _that_ run (with its published image
+  digests) via stdin — it never resolves "latest" or rebuilds.
+- **Secrets/environment:** a `staging` GitHub Environment holds the dedicated SSH
+  key `DEPLOY_SSH_KEY`; the server host key is pinned in the workflow (no
+  `StrictHostKeyChecking=no`, no blind `ssh-keyscan`). No production secrets are
+  used, and a future production environment keeps a separate approval boundary.
+- **Serialization / stale runs:** GitHub concurrency
+  (`sokoladas-staging-deploy`, `cancel-in-progress: false`) plus the server-side
+  deploy lock; an in-progress migration/deployment is never cancelled for a newer
+  run, and older delayed runs are rejected as stale (the job compares
+  `github.sha` with the current `main` tip).
+- **Execution:** `stage` → `release` → `status` via `sokoladas-deploy`; a workflow
+  summary records the source SHA, release id, digests and health, and the server
+  retains deployment evidence.
+- **Retries / recovery:** staging is idempotent for identical content and
+  re-applying the applied release preserves `previousReleaseId`. On failure the
+  exact failing phase is surfaced; images are **not** automatically rolled back
+  across potentially incompatible migrations — follow the infrastructure recovery
+  contract (`sm-oracle-infra/docs/deployment.md`).
+- **Manual path:** an authorized `workflow_dispatch` runs the same checked,
+  verified pipeline for the selected ref; arbitrary manifests or image
+  repositories are never accepted.
 
 ## Cross-repository deployment contract
 

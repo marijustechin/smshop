@@ -24,7 +24,11 @@ documentation.
 ## Security and access
 
 - Never commit secrets, keys, tokens, or `.env` files.
-- No production access, no production SSH, no production secrets.
+- No production access, no production SSH, no production secrets. Staging is
+  deployed automatically by CI through the infrastructure-owned restricted
+  `sokoladas-deploy` entry point, using a dedicated least-privilege key held only
+  in the `staging` GitHub Environment (never in Git). A future production
+  environment must keep its own, separate approval boundary.
 - The application never publishes its own host ports; only the infrastructure
   proxy publishes 80/443.
 
