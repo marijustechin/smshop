@@ -96,8 +96,11 @@ entry point — never another mechanism.
   digests) via stdin — it never resolves "latest" or rebuilds.
 - **Secrets/environment:** a `staging` GitHub Environment holds the dedicated SSH
   key `DEPLOY_SSH_KEY`; the server host key is pinned in the workflow (no
-  `StrictHostKeyChecking=no`, no blind `ssh-keyscan`). No production secrets are
-  used, and a future production environment keeps a separate approval boundary.
+  `StrictHostKeyChecking=no`, no blind `ssh-keyscan`). If a runtime change
+  requires deployment and the key is missing, the deploy job **fails** with a
+  clear error; only intentional documentation-only and stale-run skips remain
+  non-failing. No production secrets are used, and a future production
+  environment keeps a separate approval boundary.
 - **Serialization / stale runs:** GitHub concurrency
   (`sokoladas-staging-deploy`, `cancel-in-progress: false`) plus the server-side
   deploy lock; an in-progress migration/deployment is never cancelled for a newer

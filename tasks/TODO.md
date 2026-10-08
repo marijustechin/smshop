@@ -27,11 +27,9 @@ shop products, tags, ratings, media library, public `/tortai`, admin products) i
 implemented and deployed (commit `9069715`); the next application milestone
 remains **M3 — Store Information Architecture**.
 
-**Current task:** H-015 — automatic staging deployment (implementation complete;
-activation pending GitHub `staging` environment/secret configuration). See
-`tasks/current/H-015-cd-auto-deploy.md`.
+**Current task:** none — `tasks/current/` is empty.
 
-**Recently completed:** H-000–H-012; A-001–A-013. Beyond Auth v1
+**Recently completed:** H-000–H-015; A-001–A-013. Beyond Auth v1
 (A-001–A-010), this includes:
 
 - **ADM-001** — roles and admin dashboard foundation: `Role` enum
@@ -56,6 +54,10 @@ activation pending GitHub `staging` environment/secret configuration). See
   merged into `.github/workflows/ci.yml` and gated on the `workflow`/`verify`
   jobs (`needs`), publishing only on trusted events with `packages:write` scoped
   to the publication job; `images.yml` removed. Checker baseline policy fixed.
+- **H-015** — automatic staging deployment: verified `main` releases deploy to
+  staging through the restricted `sokoladas-deploy` entry point after the gate,
+  using a dedicated key in the `staging` environment (PRs, docs-only changes and
+  stale runs excluded). Verified live.
 - **H-010** — local development environment hardening (local ports 3101/3100,
   `pnpm dev` env preflight, Prisma local env resolution, local docs/tests).
 - **ARCH-000** (cross-repository) — documentation and technical-debt
