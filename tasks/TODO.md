@@ -27,8 +27,7 @@ shop products, tags, ratings, media library, public `/tortai`, admin products) i
 implemented and deployed (commit `9069715`); the next application milestone
 remains **M3 — Store Information Architecture**.
 
-**Current task:** SITE-001 — public footer and contact page. See
-`tasks/current/SITE-001-public-footer-and-contact-page.md`.
+**Current task:** none — `tasks/current/` is empty.
 
 **Recently completed:** H-000–H-015; A-001–A-013. Beyond Auth v1
 (A-001–A-010), this includes:
@@ -59,6 +58,10 @@ remains **M3 — Store Information Architecture**.
   staging through the restricted `sokoladas-deploy` entry point after the gate,
   using a dedicated key in the `staging` environment (PRs, docs-only changes and
   stale runs excluded). Verified live.
+- **SITE-001** — public footer and `/kontaktai` contact page: a shared contact
+  source (`shared/config/contact.ts`), a footer on every public page (sticky to
+  the viewport bottom), contact groups, stores with published hours and map
+  links, and a `Kontaktai` drawer entry. Deployed live.
 - **H-010** — local development environment hardening (local ports 3101/3100,
   `pnpm dev` env preflight, Prisma local env resolution, local docs/tests).
 - **ARCH-000** (cross-repository) — documentation and technical-debt
