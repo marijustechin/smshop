@@ -173,18 +173,32 @@ current one.
 
 ## Commit convention
 
-Commit messages are task-oriented for traceability:
+Commit messages are task-oriented for traceability. A task ID is **required** in
+the subject of every new human-authored commit, in one of two explicit formats:
 
 ```text
-<TASK-ID>: <imperative summary>
+<TASK-ID>: <imperative summary>                    # prefix style
+<type>(<scope>): <imperative summary> (<TASK-ID>)  # Conventional style
 ```
+
+`<TASK-ID>` is an uppercase, hyphenated identifier (`A-013`, `D-007`,
+`BACKUP-001`, `CATALOG-002`, `ROOT-001`, `HARNESS-CI-001`). `<type>` is a
+Conventional Commit type token (`feat`, `fix`, `docs`, `chore`, …); `<scope>` is
+optional.
 
 Examples:
 
 ```text
 H-001: establish project verification gate
 A-001: add authentication domain model
+feat(catalogue): add tags (CATALOG-002)
+docs(harness): enforce completion checks (ROOT-001)
 ```
+
+Exact exemptions: merge commits (two or more parents); revert commits whose
+subject starts with `Revert "`; and commits whose author **or** committer identity
+is a bot (`*[bot]` name, or an email containing `[bot]@` or `github-actions@`). A
+subject that merely _claims_ to be automated is **not** exempt.
 
 The traceability chain is:
 
@@ -194,3 +208,37 @@ TODO → task → changes → verification → commit
 
 Completing a task and committing it are separate actions. **Do not commit or push
 unless explicitly requested.**
+
+## Workflow checks (mechanical enforcement)
+
+`scripts/ci/check-workflow.mjs` enforces three structural checks with no new
+dependencies (Node builtins only):
+
+1. **commits** — the commit-subject rule above, over the commits introduced by
+   the checked range only (never the whole history).
+2. **tasks** — new or modified `tasks/done/*.md` carry the required sections,
+   including acceptance/verification and a **State Reconciliation** section. A
+   section marked "not applicable" with a reason is acceptable.
+3. **links** — local Markdown links and images resolve, including same-file and
+   cross-file heading anchors.
+
+Commands:
+
+```sh
+pnpm check:workflow   # commits + task records + links (default: latest commit)
+pnpm test:workflow    # fixture tests for the checker
+```
+
+CI runs it over the push/PR range (`--base <before|pr-base> --head <sha>`) with a
+full-history checkout, and runs the fixture tests. A missing baseline (shallow
+clone, new branch, zero SHA) makes the checker validate the tip commit and say so
+— it never silently passes an empty range.
+
+Parser scope and limitations: external URLs are skipped (no network); fenced code
+and inline code are ignored; anchors use the GitHub heading slug algorithm
+(lowercase, punctuation removed, spaces → one hyphen each, duplicates `-1`, `-2`);
+HTML anchors are out of scope. Cross-repository links (paths that escape the
+repository) are validated only when the sibling repository is present; otherwise
+they are reported as unchecked. Paths outside the workspace are refused.
+Enforcement starts on changed documents; pre-existing findings are reported
+separately (`node scripts/ci/check-workflow.mjs links --all`).

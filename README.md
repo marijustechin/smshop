@@ -88,6 +88,8 @@ Endpoints (development):
 | `pnpm test`                           | run unit/integration tests (Vitest, API via Supertest)                |
 | `pnpm verify`                         | full local verification gate (format, lint, typecheck, test, build)   |
 | `pnpm verify:db`                      | `verify` plus database-backed tests (starts the test DB)              |
+| `pnpm check:workflow`                 | workflow checks (commit subjects, task-record sections, local links)  |
+| `pnpm test:workflow`                  | fixture tests for the workflow checker                                |
 | `pnpm test:db`                        | run database-backed integration tests                                 |
 | `pnpm db:up` / `pnpm db:down`         | start/stop local PostgreSQL 18                                        |
 | `pnpm prisma:generate`                | generate Prisma client                                                |
