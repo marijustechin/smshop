@@ -90,8 +90,14 @@ describe('Staging deployment gate', () => {
     expect(deploy).toContain('/health/ready');
   });
 
-  it('skips gracefully with a READY marker while the deploy secret is unconfigured', () => {
-    expect(deploy).toContain('configured');
-    expect(deploy).toContain('READY_FOR_DEPLOYMENT_CONFIGURATION');
+  it('fails the deployment when it is required but the deploy secret is unconfigured', () => {
+    expect(deploy).toContain('DEPLOY_SSH_KEY is not configured');
+    expect(deploy).toContain('::error::');
+    expect(deploy).not.toContain('READY_FOR_DEPLOYMENT_CONFIGURATION');
+  });
+
+  it('preserves the intentional documentation-only and stale-run skips', () => {
+    expect(deploy).toContain('Documentation-only change');
+    expect(deploy).toContain('stale');
   });
 });

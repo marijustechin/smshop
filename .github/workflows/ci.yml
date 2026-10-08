@@ -362,7 +362,7 @@ jobs:
             echo "stale=false"
           fi
 
-      - name: Install the deploy SSH key and pinned host key
+      - name: Require the deploy SSH key and install it
         id: ssh
         if: needs.changes.outputs.runtime == 'true' && steps.stale.outputs.stale != 'true'
         env:
@@ -370,15 +370,9 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${DEPLOY_SSH_KEY:-}" ]; then
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "DEPLOY_SSH_KEY is not configured for the staging environment; skipping deployment."
-            {
-              echo "### Staging deployment not configured"
-              echo "READY_FOR_DEPLOYMENT_CONFIGURATION: add the secret \`DEPLOY_SSH_KEY\` to the GitHub \`staging\` environment."
-            } >> "$GITHUB_STEP_SUMMARY"
-            exit 0
+            echo "::error::Deployment is required for this run, but the staging environment secret DEPLOY_SSH_KEY is not configured."
+            exit 1
           fi
-          echo "configured=true" >> "$GITHUB_OUTPUT"
           install -d -m 700 "$HOME/.ssh"
           printf '%s\n' "$DEPLOY_SSH_KEY" > "$HOME/.ssh/deploy_key"
           chmod 600 "$HOME/.ssh/deploy_key"
@@ -389,7 +383,7 @@ jobs:
 
       - name: Prepare the approved release manifest
         id: manifest
-        if: needs.changes.outputs.runtime == 'true' && steps.stale.outputs.stale != 'true' && steps.ssh.outputs.configured == 'true'
+        if: needs.changes.outputs.runtime == 'true' && steps.stale.outputs.stale != 'true'
         env:
           SHA: ${{ github.sha }}
           RUN_ID: ${{ github.run_id }}
@@ -409,7 +403,7 @@ jobs:
           NODE
 
       - name: Stage, release and status through the restricted entry point
-        if: needs.changes.outputs.runtime == 'true' && steps.stale.outputs.stale != 'true' && steps.ssh.outputs.configured == 'true'
+        if: needs.changes.outputs.runtime == 'true' && steps.stale.outputs.stale != 'true'
         env:
           RELEASE_ID: ${{ steps.manifest.outputs.release_id }}
         run: |
@@ -426,7 +420,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Verify live health
-        if: needs.changes.outputs.runtime == 'true' && steps.stale.outputs.stale != 'true' && steps.ssh.outputs.configured == 'true'
+        if: needs.changes.outputs.runtime == 'true' && steps.stale.outputs.stale != 'true'
         run: |
           set -euo pipefail
           for path in /health/ready / /tortai; do
