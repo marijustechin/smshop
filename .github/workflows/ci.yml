@@ -1,11 +1,27 @@
 name: CI
 
+# Single application workflow. Verification jobs run first; the image jobs are
+# connected to them with `needs`, so images are published to GHCR only after
+# every required check has passed for the exact checked source commit.
+#
+# Publication happens only on trusted events (push to main, a v* tag, or an
+# explicitly authorized manual dispatch). Pull requests never publish and never
+# receive the packages:write credential.
+#
+# The build/push steps are preserved verbatim from the former images.yml:
+# repositories, SHA tags, revision labels, immutable digests, linux/arm64 and the
+# Turnstile build argument.
+
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
+# Least privilege at the workflow level; only the publication job is granted
+# packages:write.
 permissions:
   contents: read
 
@@ -69,3 +85,177 @@ jobs:
 
       - name: Verify
         run: pnpm verify:ci
+
+  # Publication gate: runs only when `workflow` and `verify` both succeeded for
+  # this checkout (a failed, cancelled or skipped required job skips this job),
+  # and only on a trusted event. `github.sha` is the exact commit that was checked.
+  build:
+    name: Build ${{ matrix.name }}
+    needs: [workflow, verify]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: web
+            dockerfile: docker/web.Dockerfile
+            suffix: web
+          - name: api
+            dockerfile: docker/api.Dockerfile
+            suffix: api
+    steps:
+      - name: Checkout the checked commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}-${{ matrix.suffix }}
+          tags: |
+            type=sha,format=long
+            type=ref,event=tag
+
+      - name: Require public Turnstile site key (web)
+        if: matrix.name == 'web'
+        env:
+          TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+        run: |
+          if [ -z "$TURNSTILE_SITE_KEY" ]; then
+            echo "::error::Repository variable NEXT_PUBLIC_TURNSTILE_SITE_KEY is unset. Refusing to publish a web image with Turnstile disabled."
+            exit 1
+          fi
+
+      - name: Build and push ${{ matrix.name }}
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Public site key for the web image only (inlined by Next.js). The API
+          # image is unaffected. Sourced from a repository variable, never a secret.
+          build-args: |
+            ${{ matrix.name == 'web' && format('NEXT_PUBLIC_TURNSTILE_SITE_KEY={0}', vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY) || '' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Deterministic per-image manifest part, built from the real pushed digest.
+      - name: Write image manifest part
+        env:
+          SUFFIX: ${{ matrix.suffix }}
+          IMAGE_REF: ghcr.io/${{ github.repository }}-${{ matrix.suffix }}@${{ steps.build.outputs.digest }}
+          IMAGE_TAG: sha-${{ github.sha }}
+        run: |
+          mkdir -p .manifest
+          node <<'NODE'
+          const fs = require('node:fs');
+          const part = {
+            ref: process.env.IMAGE_REF,
+            platform: 'linux/arm64',
+            tag: process.env.IMAGE_TAG,
+          };
+          fs.writeFileSync(
+            `.manifest/${process.env.SUFFIX}.json`,
+            JSON.stringify(part, null, 2) + '\n',
+          );
+          NODE
+
+      - name: Record immutable digest
+        run: |
+          echo "### ${{ matrix.name }} image" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "ghcr.io/${{ github.repository }}-${{ matrix.suffix }}@${{ steps.build.outputs.digest }}" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload image manifest part
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-part-${{ matrix.suffix }}
+          path: .manifest/${{ matrix.suffix }}.json
+          if-no-files-found: error
+          retention-days: 90
+
+  release:
+    name: Release manifest
+    needs: [build]
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download image manifest parts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-part-*
+          merge-multiple: true
+          path: parts
+
+      # Assemble one build manifest from the two real per-image digests.
+      - name: Assemble release manifest
+        env:
+          SOURCE_REPOSITORY: github.com/${{ github.repository }}
+          SOURCE_COMMIT: ${{ github.sha }}
+          SOURCE_REF: ${{ github.ref_name }}
+          IMAGES_RUN_ID: ${{ github.run_id }}
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const read = (name) => JSON.parse(fs.readFileSync(`parts/${name}.json`, 'utf8'));
+          const manifest = {
+            schemaVersion: 1,
+            createdAt: new Date().toISOString(),
+            source: {
+              repository: process.env.SOURCE_REPOSITORY,
+              commit: process.env.SOURCE_COMMIT,
+              ref: process.env.SOURCE_REF,
+            },
+            ci: { imagesRunId: process.env.IMAGES_RUN_ID },
+            images: { web: read('web'), api: read('api') },
+          };
+          fs.writeFileSync('release-manifest.json', JSON.stringify(manifest, null, 2) + '\n');
+          NODE
+
+      - name: Publish release manifest summary
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const m = JSON.parse(fs.readFileSync('release-manifest.json', 'utf8'));
+          const lines = [
+            '### Release manifest (build artifact, not a deployment)',
+            '',
+            `- source: \`${m.source.repository}@${m.source.commit}\` (${m.source.ref})`,
+            `- images run: \`${m.ci.imagesRunId}\``,
+            `- web: \`${m.images.web.ref}\``,
+            `- api: \`${m.images.api.ref}\``,
+          ];
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
+          NODE
+
+      - name: Upload release manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-manifest
+          path: release-manifest.json
+          if-no-files-found: error
+          retention-days: 90

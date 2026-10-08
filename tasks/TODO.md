@@ -29,7 +29,7 @@ remains **M3 — Store Information Architecture**.
 
 **Current task:** none — `tasks/current/` is empty.
 
-**Recently completed:** H-000–H-011; A-001–A-013. Beyond Auth v1
+**Recently completed:** H-000–H-012; A-001–A-013. Beyond Auth v1
 (A-001–A-010), this includes:
 
 - **ADM-001** — roles and admin dashboard foundation: `Role` enum
@@ -50,6 +50,10 @@ remains **M3 — Store Information Architecture**.
   enforces commit-subject task IDs, required sections in changed `tasks/done/*.md`
   records, and local links/anchors, with fixture tests and a CI job (no new
   dependencies).
+- **H-012** — CI release gate: image build/publish and the release manifest are
+  merged into `.github/workflows/ci.yml` and gated on the `workflow`/`verify`
+  jobs (`needs`), publishing only on trusted events with `packages:write` scoped
+  to the publication job; `images.yml` removed. Checker baseline policy fixed.
 - **H-010** — local development environment hardening (local ports 3101/3100,
   `pnpm dev` env preflight, Prisma local env resolution, local docs/tests).
 - **ARCH-000** (cross-repository) — documentation and technical-debt

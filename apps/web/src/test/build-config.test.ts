@@ -27,7 +27,8 @@ function findRepoRoot(start: string): string {
 
 const repoRoot = findRepoRoot(process.cwd());
 const dockerfile = readFileSync(path.join(repoRoot, 'docker', 'web.Dockerfile'), 'utf8');
-const workflow = readFileSync(path.join(repoRoot, '.github', 'workflows', 'images.yml'), 'utf8');
+const workflow = readFileSync(path.join(repoRoot, '.github', 'workflows', 'ci.yml'), 'utf8');
+const legacyImagesWorkflow = path.join(repoRoot, '.github', 'workflows', 'images.yml');
 
 describe('Turnstile build configuration', () => {
   it('declares and exposes the public site key build arg in the web image', () => {
@@ -50,5 +51,21 @@ describe('Turnstile build configuration', () => {
     expect(workflow).toContain('Require public Turnstile site key (web)');
     expect(workflow).toContain("matrix.name == 'web'");
     expect(workflow).toContain('Refusing to publish a web image with Turnstile disabled');
+  });
+});
+
+describe('Release publication gate', () => {
+  it('removed the independent images workflow so it cannot bypass the gate', () => {
+    expect(existsSync(legacyImagesWorkflow)).toBe(false);
+  });
+
+  it('connects image publication to the verification jobs', () => {
+    expect(workflow).toMatch(/build:[\s\S]*?needs:\s*\[workflow, verify\]/);
+    expect(workflow).toMatch(/if:\s*github\.event_name == 'push'/);
+  });
+
+  it('grants packages:write only to the publication job', () => {
+    expect(workflow.match(/packages: write/g) ?? []).toHaveLength(1);
+    expect(workflow).toMatch(/^permissions:\n {2}contents: read\n/m);
   });
 });

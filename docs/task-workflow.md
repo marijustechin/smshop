@@ -230,9 +230,12 @@ pnpm test:workflow    # fixture tests for the checker
 ```
 
 CI runs it over the push/PR range (`--base <before|pr-base> --head <sha>`) with a
-full-history checkout, and runs the fixture tests. A missing baseline (shallow
-clone, new branch, zero SHA) makes the checker validate the tip commit and say so
-— it never silently passes an empty range.
+full-history checkout, and runs the fixture tests. Baseline policy: an explicitly
+supplied, non-zero baseline that cannot be resolved makes the check **fail**
+(never a silent fallback to the tip); a zero baseline (new branch / first push)
+validates the tip commit only, without scanning the whole history; and with no
+`--base` (local use) the checks cover the tip commit plus the working tree. An
+empty range is reported explicitly, never passed silently.
 
 Parser scope and limitations: external URLs are skipped (no network); fenced code
 and inline code are ignored; anchors use the GitHub heading slug algorithm

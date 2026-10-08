@@ -34,14 +34,23 @@ infrastructure interface is defined in the application deployment contract
 
 ## Release manifest artifact
 
-The `Images` workflow (`.github/workflows/images.yml`) publishes a non-secret,
-machine-readable `release-manifest` artifact alongside the human-readable
-digests in the run summary. The manifest describes the artifact that was
-**built**: source repository, full commit SHA, ref, images run id, immutable
-`@sha256:` web/API references, platform, `sha-<commit>` tag and creation
-timestamp. It deliberately contains **no** deployment state, feature flags,
-configuration values or secrets, and it is assembled deterministically from the
-real per-image build digests rather than retyped.
+The application's single `CI` workflow (`.github/workflows/ci.yml`) publishes a
+non-secret, machine-readable `release-manifest` artifact from its `release` job,
+alongside the human-readable digests in the run summary. The manifest describes
+the artifact that was **built**: source repository, full commit SHA, ref, images
+run id, immutable `@sha256:` web/API references, platform, `sha-<commit>` tag and
+creation timestamp. It deliberately contains **no** deployment state, feature
+flags, configuration values or secrets, and it is assembled deterministically from
+the real per-image build digests rather than retyped.
+
+Images are built and pushed to GHCR **only after every required check has passed
+for the exact checked commit**. The `build` job declares `needs: [workflow,
+verify]` and runs only on trusted events (push to `main`, a `v*` tag, or an
+explicitly authorized manual dispatch); a failed, cancelled or skipped required
+job therefore skips publication. Pull requests never publish and never receive the
+`packages:write` credential, which is granted only to the publication job. The
+former independent `images.yml` workflow was removed so it cannot bypass the gate.
+The checked commit is `github.sha`, and the image jobs check it out explicitly.
 
 Publishing a manifest is not a deployment. Downstream, `sm-oracle-infra` records
 an approved staging release manifest and generates its host-only `images.env`
