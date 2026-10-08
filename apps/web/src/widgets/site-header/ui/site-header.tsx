@@ -115,6 +115,7 @@ export function SiteHeader() {
       return [
         { href: '/', label: 'Pagrindinis' },
         { href: '/tortai', label: 'Tortai' },
+        { href: '/kontaktai', label: 'Kontaktai' },
         { href: '/prisijungti', label: 'Prisijungti' },
         { href: '/registracija', label: 'Registruotis' },
       ];
@@ -122,6 +123,7 @@ export function SiteHeader() {
     const links: DrawerLink[] = [
       { href: '/', label: 'Pagrindinis' },
       { href: '/tortai', label: 'Tortai' },
+      { href: '/kontaktai', label: 'Kontaktai' },
     ];
     if (user.role === 'admin') {
       links.push({ href: '/administravimas', label: 'Administravimas' });

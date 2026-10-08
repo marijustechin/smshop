@@ -57,15 +57,16 @@ engineering context only.
 Task IDs use a prefix per project area, and filenames are
 `<TASK-ID>-<short-kebab-case-name>.md`.
 
-| Prefix   | Area                                   |
-| -------- | -------------------------------------- |
-| `H-*`    | Harness / development infra            |
-| `A-*`    | Authentication                         |
-| `ADM-*`  | Administration / access control        |
-| `CAT-*`  | Catalogue                              |
-| `CART-*` | Shopping cart                          |
-| `CHK-*`  | Checkout                               |
-| `OPS-*`  | Production infrastructure / operations |
+| Prefix   | Area                                           |
+| -------- | ---------------------------------------------- |
+| `H-*`    | Harness / development infra                    |
+| `A-*`    | Authentication                                 |
+| `ADM-*`  | Administration / access control                |
+| `CAT-*`  | Catalogue                                      |
+| `CART-*` | Shopping cart                                  |
+| `CHK-*`  | Checkout                                       |
+| `SITE-*` | Public site content / information architecture |
+| `OPS-*`  | Production infrastructure / operations         |
 
 `OPS-*` tasks describe production infrastructure and operations work. That work
 is owned and implemented in `sm-oracle-infra`; this repository only tracks its

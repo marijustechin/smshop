@@ -152,7 +152,7 @@ describe('SiteHeader drawer navigation', () => {
     const labels = within(drawer)
       .getAllByRole('link')
       .map((link) => link.textContent);
-    expect(labels).toEqual(['Pagrindinis', 'Tortai', 'Prisijungti', 'Registruotis']);
+    expect(labels).toEqual(['Pagrindinis', 'Tortai', 'Kontaktai', 'Prisijungti', 'Registruotis']);
     expect(within(drawer).getByRole('link', { name: 'Tortai' })).toHaveAttribute('href', '/tortai');
     expect(within(drawer).queryByRole('button', { name: 'Atsijungti' })).toBeNull();
     expect(within(drawer).queryByRole('link', { name: 'Mano paskyra' })).toBeNull();
@@ -168,7 +168,7 @@ describe('SiteHeader drawer navigation', () => {
     const labels = within(drawer)
       .getAllByRole('link')
       .map((link) => link.textContent);
-    expect(labels).toEqual(['Pagrindinis', 'Tortai', 'Mano paskyra']);
+    expect(labels).toEqual(['Pagrindinis', 'Tortai', 'Kontaktai', 'Mano paskyra']);
     expect(within(drawer).queryByRole('link', { name: 'Prisijungti' })).toBeNull();
     expect(within(drawer).queryByRole('link', { name: 'Registruotis' })).toBeNull();
     expect(within(drawer).queryByRole('link', { name: 'Administravimas' })).toBeNull();
@@ -194,7 +194,13 @@ describe('SiteHeader drawer navigation', () => {
     const labels = within(drawer)
       .getAllByRole('link')
       .map((link) => link.textContent);
-    expect(labels).toEqual(['Pagrindinis', 'Tortai', 'Administravimas', 'Mano paskyra']);
+    expect(labels).toEqual([
+      'Pagrindinis',
+      'Tortai',
+      'Kontaktai',
+      'Administravimas',
+      'Mano paskyra',
+    ]);
     expect(within(drawer).getByRole('link', { name: 'Administravimas' })).toHaveAttribute(
       'href',
       '/administravimas',

@@ -27,7 +27,8 @@ shop products, tags, ratings, media library, public `/tortai`, admin products) i
 implemented and deployed (commit `9069715`); the next application milestone
 remains **M3 — Store Information Architecture**.
 
-**Current task:** none — `tasks/current/` is empty.
+**Current task:** SITE-001 — public footer and contact page. See
+`tasks/current/SITE-001-public-footer-and-contact-page.md`.
 
 **Recently completed:** H-000–H-015; A-001–A-013. Beyond Auth v1
 (A-001–A-010), this includes:
