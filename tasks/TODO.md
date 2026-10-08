@@ -18,12 +18,14 @@ This roadmap may evolve as product decisions are made.
 
 # Current State
 
-**Current milestone:** M2 — Authentication v1 (COMPLETE; manually verified
-end-to-end in local development). The architecture/documentation stabilization
-(ARCH-000) and the frontend FSD-lite structural refactor (ARCH-001) are complete.
-The first M13 access-control slice (**ADM-001** — roles and admin dashboard
-foundation) is implemented, verified, manually smoke-tested, and committed; the
-next application milestone remains **M3 — Store Information Architecture**.
+**Current milestone:** M2 — Authentication v1 (COMPLETE; verified end-to-end and
+deployed). The architecture/documentation stabilization (ARCH-000) and the
+frontend FSD-lite structural refactor (ARCH-001) are complete. The first M13
+access-control slice (**ADM-001** — roles and admin dashboard foundation) is
+implemented, verified and deployed. A first catalogue/media slice (catalogue and
+shop products, tags, ratings, media library, public `/tortai`, admin products) is
+implemented and deployed (commit `9069715`); the next application milestone
+remains **M3 — Store Information Architecture**.
 
 **Current task:** none — `tasks/current/` is empty.
 
@@ -70,9 +72,16 @@ decided separately. No further authentication feature work is planned.
 **Parallel workstream:** production infrastructure / Oracle (`sm-oracle-infra`),
 tracked as `OPS-*` below.
 
-**Commit state:** authentication work through A-012 is committed on `main` (see
-Git history). Deploying the updated application images to Oracle staging is a
-separate, explicitly authorized step.
+**Commit state:** authentication through A-013 and the first catalogue/media
+slice (`9069715`) are committed on `main`. The current deployed release is
+`d007-v1` (source `bff755f`). Deploying application images to Oracle staging uses
+the unattended `stage`/`release` pipeline in `sm-oracle-infra`
+(`/usr/local/sbin/sokoladas-deploy`).
+
+**Documentation follow-up:** the catalogue/shop, media-library and admin-products
+work (commit `9069715`) was implemented without dedicated `tasks/done/` records
+(there are no `CAT-*`, `MEDIA-*`, `PROD-*` or `ADM-002` task files). A short
+task-record backfill is proposed rather than rewriting history.
 
 **Infrastructure vs application:** Auth development does not depend on
 production Oracle deployment. Production infrastructure runs as a parallel

@@ -225,9 +225,11 @@ behaviour, Turnstile and Google behaviour, and error messages are unchanged.
   `sm-oracle-infra`.
 - C.5 — writable runtime paths: the foundation requires **no** writable runtime
   paths (stateless by default); reopen only if a requirement introduces them.
-- C.6 — persistent storage beyond PostgreSQL: product-dependent, open.
-- C.7 — egress: SMTP egress is **prepared** (committed, not deployed); other
-  future egress requirements remain product-dependent and open.
+- C.6 — persistent storage beyond PostgreSQL: **resolved** — product media
+  persists in the `sokoladas-staging_media_data` volume mounted at
+  `MEDIA_STORAGE_DIR` (`/var/lib/sokoladas-media`).
+- C.7 — egress: SMTP egress is **deployed** (outbound-only `egress` network on
+  the API); other future egress requirements remain product-dependent and open.
 
 Contract C.2 (migration command) is effectively resolved by the foundation:
 `prisma migrate deploy`, exit 0 on success. The exact wrapper command inside the

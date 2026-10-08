@@ -18,11 +18,14 @@ and must not be silently changed.
 
 ## Status
 
-**Authentication v1 complete and manually verified end-to-end in local
-development** (credentials + Google, automatic Google↔credentials convergence,
-password recovery including Google-only users, abuse hardening, transactional
-email). No storefront/catalogue/product features yet. See
-[`tasks/TODO.md`](tasks/TODO.md) for the roadmap and current state.
+**Authentication v1 is complete** (credentials + Google, automatic
+Google↔credentials convergence, password recovery including Google-only users,
+abuse hardening, transactional email) and **the first catalogue slice is
+implemented and deployed**: catalogue/shop products, tags, ratings, a media
+library with persistent product images, the public `/tortai` area, and an admin
+products section. The application is deployed at `https://sokoladas.eu` (current
+release `d007-v1`, source `bff755f`). See [`tasks/TODO.md`](tasks/TODO.md) for the
+roadmap and current state.
 
 ## Repository structure
 

@@ -140,11 +140,12 @@ and container orchestration/lifecycle.
 
 Resolved/current (application/infrastructure alignment): production image
 digests (C.1 — published and pinned by immutable digest), writable paths (C.5 —
-ephemeral `/tmp` only), the environment/secret interface (C.3/C.4), migration
-command (C.2), and database connection layout (see "Exact runtime interface"
-above). SMTP egress (C.7) is **prepared** (committed, not deployed); any other
-future egress remains open. Persistent storage beyond PostgreSQL (C.6) remains
-product-dependent and open. The authoritative field status is maintained in
+ephemeral `/tmp` plus the intentional `MEDIA_STORAGE_DIR` product-media volume),
+the environment/secret interface (C.3/C.4), migration command (C.2), database
+connection layout, persistent product media (C.6 — `media_data` volume,
+`MEDIA_STORAGE_DIR`, `media-init`) and SMTP egress (C.7 — deployed with the API's
+outbound-only `egress` network). Other future egress remains open. The
+authoritative field status is maintained in
 `sm-oracle-infra/docs/application-deployment-contract.md`.
 
 ## Infra-owned (not application contract)
@@ -173,6 +174,9 @@ the application-owned fields:
    infrastructure-owned.
 5. C.5 — writable runtime paths: **resolved** — ephemeral `/tmp`; otherwise
    stateless.
-6. C.6 — persistent storage beyond PostgreSQL: product-dependent, open.
-7. C.7 — egress requirements: SMTP egress **prepared** (committed, not deployed);
-   other future egress remains product-dependent and open.
+6. C.6 — persistent storage beyond PostgreSQL: **resolved** — the product-media
+   library persists in the `sokoladas-staging_media_data` volume mounted at
+   `MEDIA_STORAGE_DIR` (`/var/lib/sokoladas-media`), initialized by `media-init`.
+7. C.7 — egress requirements: SMTP egress **deployed** via the API's
+   outbound-only `egress` network; other future egress remains product-dependent
+   and open.
