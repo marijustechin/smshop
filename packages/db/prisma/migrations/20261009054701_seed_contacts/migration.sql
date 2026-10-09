@@ -1,0 +1,80 @@
+-- Seed the SITE-001 contact/store data (versioned, repeat-safe).
+-- Runs once per database via the migration history; every insert uses
+-- ON CONFLICT DO NOTHING so re-application never overwrites employee edits.
+
+INSERT INTO "cities" ("id","name","nameNormalized","displayOrder","createdAt","updatedAt") VALUES
+  ('e9416e8c-baf1-5c28-bdf9-98acf46ca5fa', 'Vilnius', 'vilnius', 0, now(), now()),
+  ('bd65c76c-ed2e-5936-9ede-08754bbf89a2', 'Kaunas', 'kaunas', 1, now(), now()) ON CONFLICT DO NOTHING;
+
+INSERT INTO "stores" ("id","name","cityId","address","phone","email","status","notice","displayOrder","createdAt","updatedAt") VALUES
+  ('0c06c597-b709-56e4-a42d-05da0684133c', 'Jeruzalės g. 16, Vilnius', 'e9416e8c-baf1-5c28-bdf9-98acf46ca5fa', 'Jeruzalės g. 16, LT-08414 Vilnius', NULL, NULL, 'OPERATING', NULL, 0, now(), now()),
+  ('00e3d707-9cb8-5826-8cbf-1d91a1eee55b', 'Fabijoniškių g. 2A, PC „IKI“', 'e9416e8c-baf1-5c28-bdf9-98acf46ca5fa', 'Fabijoniškių g. 2A, PC „IKI“, Vilnius', NULL, NULL, 'OPERATING', NULL, 1, now(), now()),
+  ('3f4d8509-b010-5714-845a-ca08f38b2843', 'Kedrų g. 4, PC „RIMI“', 'e9416e8c-baf1-5c28-bdf9-98acf46ca5fa', 'Kedrų g. 4, PC „RIMI“, Vilnius', NULL, NULL, 'OPERATING', NULL, 2, now(), now()),
+  ('b02170ef-1988-5bbc-869e-02f27df56ea4', 'Upės g. 9, PC „CUP“', 'e9416e8c-baf1-5c28-bdf9-98acf46ca5fa', 'Upės g. 9, PC „CUP“, Vilnius', NULL, NULL, 'OPERATING', NULL, 3, now(), now()),
+  ('e772ec48-a7e6-561a-892c-7abcc7a44d1f', 'Žirmūnų g. 64, PC „RIMI“', 'e9416e8c-baf1-5c28-bdf9-98acf46ca5fa', 'Žirmūnų g. 64, PC „RIMI“, Vilnius', NULL, NULL, 'OPERATING', NULL, 4, now(), now()),
+  ('196564d7-a51e-51cb-b0b2-5f1f7348443b', 'Viršuliškių g. 40, PC „MADA“', 'e9416e8c-baf1-5c28-bdf9-98acf46ca5fa', 'Viršuliškių g. 40, PC „MADA“, Vilnius', NULL, NULL, 'TEMPORARILY_CLOSED', 'Laikinai uždaryta – vyksta rekonstrukcija', 5, now(), now()),
+  ('5778978b-a481-510f-9830-014a12e339a7', 'Vydūno g. 4, PC „RIMI“', 'e9416e8c-baf1-5c28-bdf9-98acf46ca5fa', 'Vydūno g. 4, PC „RIMI“, Vilnius', NULL, NULL, 'HIDDEN', 'Uždaryta nuo 2026-05-20', 6, now(), now()),
+  ('65d39a19-9d14-58b2-8a11-46528f9f405c', 'Savanorių pr. 255, PC „HYPER MAXIMA“', 'bd65c76c-ed2e-5936-9ede-08754bbf89a2', 'Savanorių pr. 255, PC „HYPER MAXIMA“, Kaunas', NULL, NULL, 'OPERATING', NULL, 0, now(), now()) ON CONFLICT DO NOTHING;
+
+INSERT INTO "store_hours" ("id","storeId","weekday","closed","opens","closes") VALUES
+  ('e1a6080e-b804-5017-9934-3768b664b086', '0c06c597-b709-56e4-a42d-05da0684133c', 1, false, '09:00', '19:00'),
+  ('739791d8-cfec-5323-994f-8f2d341de25f', '0c06c597-b709-56e4-a42d-05da0684133c', 2, false, '09:00', '19:00'),
+  ('ea012633-326c-5c33-915a-ebe3ae23b399', '0c06c597-b709-56e4-a42d-05da0684133c', 3, false, '09:00', '19:00'),
+  ('c70aed9b-6de5-5e40-9338-f9270c93d823', '0c06c597-b709-56e4-a42d-05da0684133c', 4, false, '09:00', '19:00'),
+  ('7ac801e2-c9d5-5272-a14e-7053fd19c644', '0c06c597-b709-56e4-a42d-05da0684133c', 5, false, '09:00', '19:00'),
+  ('6e2f62e6-35a5-5369-9092-29952a985bd8', '0c06c597-b709-56e4-a42d-05da0684133c', 6, false, '10:00', '18:00'),
+  ('4a794345-d591-598d-abb3-2dda625cddd2', '0c06c597-b709-56e4-a42d-05da0684133c', 7, false, '10:00', '18:00'),
+  ('a2614d84-21d7-5fc1-8ff8-fb366b160078', '00e3d707-9cb8-5826-8cbf-1d91a1eee55b', 1, false, '10:00', '20:00'),
+  ('7cd97eae-6a0d-5cea-afb3-eda5539e84d9', '00e3d707-9cb8-5826-8cbf-1d91a1eee55b', 2, false, '10:00', '20:00'),
+  ('364752bf-3d16-5f7b-b228-48969df95586', '00e3d707-9cb8-5826-8cbf-1d91a1eee55b', 3, false, '10:00', '20:00'),
+  ('08ba1ce9-45fc-5d71-8ada-aaf77a0ef631', '00e3d707-9cb8-5826-8cbf-1d91a1eee55b', 4, false, '10:00', '20:00'),
+  ('ecb43106-f0ac-578d-aeda-eb5eb3c4af90', '00e3d707-9cb8-5826-8cbf-1d91a1eee55b', 5, false, '10:00', '20:00'),
+  ('2a05ddf2-bd79-5efe-a99d-6e94d4955fdf', '00e3d707-9cb8-5826-8cbf-1d91a1eee55b', 6, false, '10:00', '20:00'),
+  ('bac1ff55-3374-5d74-9750-e44eb35a6354', '00e3d707-9cb8-5826-8cbf-1d91a1eee55b', 7, false, '10:00', '20:00'),
+  ('f2c9c768-0405-575b-bfd1-5eaf4debf63d', '3f4d8509-b010-5714-845a-ca08f38b2843', 1, false, '10:00', '20:00'),
+  ('0f06dc9e-e8d4-5bc5-a2e1-243816e3833d', '3f4d8509-b010-5714-845a-ca08f38b2843', 2, false, '10:00', '20:00'),
+  ('f5c4edd9-028f-5a0d-b293-00ba34d3b7c9', '3f4d8509-b010-5714-845a-ca08f38b2843', 3, false, '10:00', '20:00'),
+  ('81d782da-c928-517e-b634-b808a2a07cc4', '3f4d8509-b010-5714-845a-ca08f38b2843', 4, false, '10:00', '20:00'),
+  ('339f6cb3-3c18-57a0-bc75-44b407968610', '3f4d8509-b010-5714-845a-ca08f38b2843', 5, false, '10:00', '20:00'),
+  ('2a5412dd-256d-531c-b929-88ebed1a3c89', '3f4d8509-b010-5714-845a-ca08f38b2843', 6, false, '10:00', '20:00'),
+  ('6c3ef4d7-43e7-5aea-818d-a75ad2953932', '3f4d8509-b010-5714-845a-ca08f38b2843', 7, false, '10:00', '20:00'),
+  ('28603690-d85f-5439-8792-4db33c3edaf2', 'b02170ef-1988-5bbc-869e-02f27df56ea4', 1, false, '10:00', '21:00'),
+  ('d0367a6e-152d-5479-a7d0-369fe1cd6ab7', 'b02170ef-1988-5bbc-869e-02f27df56ea4', 2, false, '10:00', '21:00'),
+  ('ac4e7743-4c4b-5fcd-8025-e91273f2dc8a', 'b02170ef-1988-5bbc-869e-02f27df56ea4', 3, false, '10:00', '21:00'),
+  ('57a94938-ef76-556a-997e-e65e63016a36', 'b02170ef-1988-5bbc-869e-02f27df56ea4', 4, false, '10:00', '21:00'),
+  ('5ec0e9ca-8201-5329-a5d9-6bda29507bde', 'b02170ef-1988-5bbc-869e-02f27df56ea4', 5, false, '10:00', '21:00'),
+  ('0025b7c0-cb85-5905-b203-ebd79024be64', 'b02170ef-1988-5bbc-869e-02f27df56ea4', 6, false, '10:00', '21:00'),
+  ('5ccb8c47-0b1b-5cb3-8b54-a0c8de5bb045', 'b02170ef-1988-5bbc-869e-02f27df56ea4', 7, false, '10:00', '21:00'),
+  ('f780469e-2d10-5a3b-b43f-303b902350ef', 'e772ec48-a7e6-561a-892c-7abcc7a44d1f', 1, false, '10:00', '21:00'),
+  ('3e6c42c2-45b0-5c54-9114-8c10835116d6', 'e772ec48-a7e6-561a-892c-7abcc7a44d1f', 2, false, '10:00', '21:00'),
+  ('eb5b1358-2cd7-54c7-9b6c-0892f9d223ea', 'e772ec48-a7e6-561a-892c-7abcc7a44d1f', 3, false, '10:00', '21:00'),
+  ('7160bde3-9a6d-5db5-80c0-be341ddaff09', 'e772ec48-a7e6-561a-892c-7abcc7a44d1f', 4, false, '10:00', '21:00'),
+  ('1e3988b2-2316-5c3f-bdd0-32e462bd57c7', 'e772ec48-a7e6-561a-892c-7abcc7a44d1f', 5, false, '10:00', '21:00'),
+  ('91922e55-dcd7-54c1-9c63-7aa720dac295', 'e772ec48-a7e6-561a-892c-7abcc7a44d1f', 6, false, '10:00', '21:00'),
+  ('cc20e59b-2727-59c3-bc05-26c404bc678f', 'e772ec48-a7e6-561a-892c-7abcc7a44d1f', 7, false, '10:00', '20:00'),
+  ('a5c6f2c8-38d4-5790-b635-df3a002836a7', '196564d7-a51e-51cb-b0b2-5f1f7348443b', 1, true, NULL, NULL),
+  ('40de6920-8570-5ccc-bcee-a362b915e027', '196564d7-a51e-51cb-b0b2-5f1f7348443b', 2, true, NULL, NULL),
+  ('40121a5d-b3eb-529a-abbb-aeed7dbf870b', '196564d7-a51e-51cb-b0b2-5f1f7348443b', 3, true, NULL, NULL),
+  ('c0669338-5236-5978-b24f-96bea6b5325e', '196564d7-a51e-51cb-b0b2-5f1f7348443b', 4, true, NULL, NULL),
+  ('2c50e9ee-f437-5531-9121-e59ec84bb289', '196564d7-a51e-51cb-b0b2-5f1f7348443b', 5, true, NULL, NULL),
+  ('d360b813-4409-5f9b-a990-4cb616dd16fd', '196564d7-a51e-51cb-b0b2-5f1f7348443b', 6, true, NULL, NULL),
+  ('0c3a25eb-be5b-5384-be60-f82fe579329d', '196564d7-a51e-51cb-b0b2-5f1f7348443b', 7, true, NULL, NULL),
+  ('8962a3d2-3a93-59e3-b5ce-7bb6443f1eb3', '5778978b-a481-510f-9830-014a12e339a7', 1, true, NULL, NULL),
+  ('65342254-04c4-51ad-adc8-83dfe80a7490', '5778978b-a481-510f-9830-014a12e339a7', 2, true, NULL, NULL),
+  ('ae479f31-ed81-538e-8bde-3c1f381afefb', '5778978b-a481-510f-9830-014a12e339a7', 3, true, NULL, NULL),
+  ('a87d197c-6a93-541c-9cc4-0e09a02bbc28', '5778978b-a481-510f-9830-014a12e339a7', 4, true, NULL, NULL),
+  ('beb95fb1-daf7-5faa-83e4-f905867040d3', '5778978b-a481-510f-9830-014a12e339a7', 5, true, NULL, NULL),
+  ('a1ee5ee4-c349-5031-9a22-415c989e39a0', '5778978b-a481-510f-9830-014a12e339a7', 6, true, NULL, NULL),
+  ('29702d62-6bb4-5942-a3fd-fbdb3e7bc234', '5778978b-a481-510f-9830-014a12e339a7', 7, true, NULL, NULL),
+  ('d339113d-a414-57d1-a878-b36d30f77a4d', '65d39a19-9d14-58b2-8a11-46528f9f405c', 1, false, '10:00', '21:00'),
+  ('7552c50b-575f-5f12-9366-5c1a927aca0c', '65d39a19-9d14-58b2-8a11-46528f9f405c', 2, false, '10:00', '21:00'),
+  ('b27892e5-0083-53ac-b2d9-cd9a9d37597e', '65d39a19-9d14-58b2-8a11-46528f9f405c', 3, false, '10:00', '21:00'),
+  ('a93dc5d2-d9c5-5cad-a7e1-c501c12d5499', '65d39a19-9d14-58b2-8a11-46528f9f405c', 4, false, '10:00', '21:00'),
+  ('ede31820-e9d4-571c-aec8-11354c943af2', '65d39a19-9d14-58b2-8a11-46528f9f405c', 5, false, '10:00', '21:00'),
+  ('53c94c0b-5a6c-5a1e-9bfa-d46c84ee630d', '65d39a19-9d14-58b2-8a11-46528f9f405c', 6, false, '10:00', '21:00'),
+  ('40dd3e3b-5807-561a-815e-2c410a675631', '65d39a19-9d14-58b2-8a11-46528f9f405c', 7, false, '10:00', '21:00') ON CONFLICT DO NOTHING;
+
+INSERT INTO "contact_groups" ("id","key","title","phone","email","hours","address","displayOrder","createdAt","updatedAt") VALUES
+  ('29c3c74b-2227-5c06-acf7-d616040f2415', 'administracija', 'Administracija', '+370 612 85646', 'info@sokoladomeistrai.lt', '8:00–18:00', 'Jeruzalės g. 16, LT-08414 Vilnius', 0, now(), now()),
+  ('9b8ea3d3-ef16-5fa5-9f73-bebfaded18b1', 'uzsakymai', 'Užsakymų skyrius', '+370 691 81928', 'uzsakymai@sokoladomeistrai.lt', '8:00–18:00', NULL, 1, now(), now()),
+  ('25cbcb9e-c7b8-53fb-bbc3-dfb4b979b1f3', 'e-parduotuve', 'E-parduotuvė', '+370 612 81837', 'gamyba@sokoladomeistrai.lt', '8:00–18:00', NULL, 2, now(), now()) ON CONFLICT DO NOTHING;

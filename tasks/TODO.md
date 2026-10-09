@@ -27,7 +27,10 @@ shop products, tags, ratings, media library, public `/tortai`, admin products) i
 implemented and deployed (commit `9069715`); the next application milestone
 remains **M3 — Store Information Architecture**.
 
-**Current task:** none — `tasks/current/` is empty.
+**Current task:** SITE-003 — administrator-managed public contacts, cities and
+stores (schema, migration, admin API/UI, public read, and footer/`/kontaktai`
+wiring). Implementation complete; staging deployment and live verification in
+progress.
 
 **Recently completed:** H-000–H-015; A-001–A-013. Beyond Auth v1
 (A-001–A-010), this includes:
@@ -768,6 +771,12 @@ Goal: allow store operators to manage core commerce data without database access
 - [x] Protect administration routes (ADM-001 — `/api/admin/*` admin-only; `/administravimas` UI gated)
 - [x] First-admin bootstrap (ADM-001 — `AUTH_INITIAL_ADMIN_EMAIL`, one-off, idempotent)
 - [ ] Security audit
+
+## Store & contact information
+
+- [x] Administrator-managed cities, physical stores (weekly hours, statuses) and
+      fixed business contact groups (SITE-003) — public footer and `/kontaktai`
+      read the persisted source without a redeploy.
 
 Do not overbuild RBAC unless the business actually requires it.
 

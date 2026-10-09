@@ -231,3 +231,89 @@ model ShopProduct {
   @@index([stockQuantity])
   @@map("shop_products")
 }
+
+/// Physical-store operating state (SITE-003). `HIDDEN` stores are never returned
+/// by the public contacts endpoint; a `TEMPORARILY_CLOSED` store is shown with an
+/// explicit closure notice instead of its normal hours.
+enum StoreStatus {
+  OPERATING
+  TEMPORARILY_CLOSED
+  HIDDEN
+}
+
+/// A city that groups physical stores. `nameNormalized` (trimmed, lower-cased) is
+/// unique so duplicate city names cannot be created; a city with stores cannot be
+/// deleted (reverse relation is `onDelete: Restrict`).
+model City {
+  id             String   @id @default(uuid(7))
+  name           String
+  nameNormalized String   @unique
+  displayOrder   Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  stores Store[]
+
+  @@index([displayOrder])
+  @@map("cities")
+}
+
+/// A physical store with an optional notice and a weekly schedule. Email/notice
+/// are optional; the address is required. Domain is independent of catalogue and
+/// e-shop categories.
+model Store {
+  id           String      @id @default(uuid(7))
+  name         String
+  cityId       String
+  address      String
+  phone        String?
+  email        String?
+  status       StoreStatus @default(OPERATING)
+  notice       String?
+  displayOrder Int         @default(0)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  city  City         @relation(fields: [cityId], references: [id], onDelete: Restrict)
+  hours StoreHours[]
+
+  @@index([cityId])
+  @@index([status])
+  @@map("stores")
+}
+
+/// One weekday row per store. `weekday` is ISO-8601 (1 = Monday … 7 = Sunday).
+/// This version supports a single opening interval per day; a `closed` day has no
+/// times. See docs (SITE-003) for that limitation.
+model StoreHours {
+  id      String  @id @default(uuid(7))
+  storeId String
+  weekday Int
+  closed  Boolean @default(false)
+  opens   String?
+  closes  String?
+
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+
+  @@unique([storeId, weekday])
+  @@map("store_hours")
+}
+
+/// Fixed business contact group (administration, orders, online shop). `key` is a
+/// stable identifier; the group's email is the future contact-form topic
+/// recipient. Working hours stay free text because the source does not specify
+/// weekdays.
+model ContactGroup {
+  id           String   @id @default(uuid(7))
+  key          String   @unique
+  title        String
+  phone        String
+  email        String
+  hours        String
+  address      String?
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("contact_groups")
+}

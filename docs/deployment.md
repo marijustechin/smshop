@@ -156,6 +156,10 @@ Application provides / expects (all under `/api` unless noted):
 - **Migrations:** `prisma migrate deploy` using the API image (the API runtime
   image is also the migration image; its default working directory is the
   `@smshop/db` package so the Prisma config/schema resolve); exit 0 on success.
+  Migrations are forward-only. SITE-003 added the contacts schema plus a
+  repeat-safe data migration (`seed_contacts`, `ON CONFLICT DO NOTHING`) that
+  imports the initial business contacts/stores; it runs once per database and
+  never overwrites later administrator edits.
 - **Shutdown:** graceful SIGTERM with meaningful exit codes; no process
   supervisor.
 - **Persistence:** stateless containers; no writable application paths by

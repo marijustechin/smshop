@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   { href: '/administravimas', label: 'Suvestinė' },
   { href: '/administravimas/naudotojai', label: 'Naudotojai' },
   { href: '/administravimas/produktai', label: 'Prekės' },
+  { href: '/administravimas/kontaktai', label: 'Kontaktai' },
 ] as const;
 
 function isActive(pathname: string | null, href: string): boolean {

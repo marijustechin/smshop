@@ -178,6 +178,13 @@ the process environment, so no `.env` file is required.
   from the environment after the first successful use. See
   `docs/development.md` for the local procedure and `docs/authentication.md` for
   the authorization model. Not a secret, so no `_FILE` variant exists.
+- **Business contacts and stores (no environment variable):** the public
+  business contact groups and physical stores are administrator-managed database
+  records (SITE-003), not environment configuration. They are imported once by
+  the versioned `seed_contacts` migration and edited at
+  `/administravimas/kontaktai`; the public footer and `/kontaktai` read them from
+  `GET /api/public/contacts`. Company legal details remain in
+  `apps/web/src/shared/config/contact.ts`.
 - **Turnstile (optional, backend secret):** `TURNSTILE_SECRET_KEY` (supports
   `TURNSTILE_SECRET_KEY_FILE`). When absent, Turnstile is disabled and the public
   auth endpoints accept requests without a challenge (CI needs no secret). When

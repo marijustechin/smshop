@@ -1,8 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Container } from '@/shared/ui/container';
-import { cn } from '@/shared/lib/cn';
-import { COMPANY, CONTACT, mailtoHref, telHref } from '@/shared/config/contact';
+import { COMPANY } from '@/shared/config/contact';
+import { FooterContact } from '@/features/contacts';
 
 // Dark (chocolate) surface: links are cream, underline on hover, and the focus
 // indicator uses the cream on-primary token so it stays visible on the dark
@@ -16,8 +16,9 @@ const linkClass =
  * authentication pages; the administration area is outside that layout and keeps
  * its own shell.
  *
- * All values come from `@/shared/config/contact` so the footer and the contact
- * page cannot drift.
+ * Company legal details come from `@/shared/config/contact`; the administration
+ * contact values come from the persisted contact groups (`FooterContact`) so the
+ * footer and the contact page cannot drift.
  */
 export function SiteFooter() {
   const year = new Date().getFullYear();
@@ -69,16 +70,7 @@ export function SiteFooter() {
 
           <div className="text-sm">
             <h2 className="mb-2 font-semibold text-on-primary">Kontaktai</h2>
-            <p className="space-y-1">
-              <a href={telHref(CONTACT.generalPhone)} className={cn(linkClass, 'inline-block')}>
-                {CONTACT.generalPhone}
-              </a>
-            </p>
-            <p className="mt-1">
-              <a href={mailtoHref(CONTACT.generalEmail)} className={cn(linkClass, 'break-all')}>
-                {CONTACT.generalEmail}
-              </a>
-            </p>
+            <FooterContact />
           </div>
 
           <div className="text-sm text-on-primary/80">

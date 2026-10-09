@@ -11,6 +11,10 @@ import { CatalogProductsService } from './products/catalog-products.service.js';
 import { CatalogTagsService } from './products/catalog-tags.service.js';
 import { CategoriesService } from './products/categories.service.js';
 import { ShopProductsService } from './products/shop-products.service.js';
+import { AdminContactsController } from './contacts/admin-contacts.controller.js';
+import { CitiesService } from './contacts/cities.service.js';
+import { ContactGroupsService } from './contacts/contact-groups.service.js';
+import { StoresService } from './contacts/stores.service.js';
 
 /**
  * Administration domain: role-guarded user management, dashboard summary, and
@@ -25,6 +29,7 @@ import { ShopProductsService } from './products/shop-products.service.js';
     AdminDashboardController,
     AdminCatalogController,
     AdminShopController,
+    AdminContactsController,
   ],
   providers: [
     AdminUsersService,
@@ -34,6 +39,9 @@ import { ShopProductsService } from './products/shop-products.service.js';
     CatalogProductsService,
     CatalogTagsService,
     ShopProductsService,
+    CitiesService,
+    StoresService,
+    ContactGroupsService,
   ],
 })
 export class AdminModule {}

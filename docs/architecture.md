@@ -142,6 +142,10 @@ apps/api/src/
 
 Do not place feature modules directly under `src/`.
 
+Public contact reads live in `modules/contacts-public/`; administrator management
+of cities, physical stores and the fixed business contact groups lives in
+`modules/admin/contacts/` (admin-only, reusing the shared `RolesGuard`).
+
 ## Frontend source layout (FSD-lite)
 
 `apps/web` follows a **pragmatic five-layer FSD-lite** structure (ARCH-001).
@@ -208,6 +212,28 @@ behaviour, Turnstile and Google behaviour, and error messages are unchanged.
   `AuthSession`, `EmailVerificationToken`, `PasswordResetToken`). Auth persistence
   belongs to this repository; auth **behaviour** (endpoints, tokens, hashing,
   email, OAuth) is separate, later work. See `docs/authentication.md`.
+
+## Public contacts, cities and stores (SITE-003)
+
+- Business contact data is **administrator-managed persistence**, independent of
+  catalogue/e-shop categories. Models: `City`, `Store`, `StoreHours`,
+  `ContactGroup`, and the `StoreStatus` enum
+  (`OPERATING`/`TEMPORARILY_CLOSED`/`HIDDEN`).
+- A city has a trim/case-normalised unique name (`nameNormalized`) and a display
+  order; a city with stores cannot be deleted. A store requires an address and a
+  city, may carry optional phone/email and a short notice, and has one weekly
+  schedule (one opening interval per day — documented limitation). `HIDDEN`
+  stores are never public.
+- The fixed groups (Administracija / Užsakymų skyrius / E. parduotuvė) accept
+  editable phone, email, free-text hours and an optional address; their email is
+  the future contact-form topic recipient.
+- Public read: `GET /api/public/contacts` returns only display fields, excludes
+  hidden stores, omits empty cities and orders by configured display order.
+  Admin management: `/api/admin/contacts/*` (admin-only).
+- The web `features/contacts` slice exposes the public content, the footer
+  contact block and the admin manager; the footer and `/kontaktai` fetch the
+  persisted source at runtime so administrator edits appear without a redeploy.
+  Company legal details remain in `apps/web/src/shared/config/contact.ts`.
 
 ## Open fields (application-owned)
 

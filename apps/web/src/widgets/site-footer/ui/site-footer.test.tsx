@@ -1,7 +1,32 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
+import { usePublicContacts } from '@/features/contacts/api/contacts-api';
+import { COMPANY, mailtoHref, telHref } from '@/shared/config/contact';
 import { SiteFooter } from './site-footer';
-import { COMPANY, CONTACT, mailtoHref, telHref } from '@/shared/config/contact';
+
+vi.mock('@/features/contacts/api/contacts-api', () => ({
+  usePublicContacts: vi.fn(),
+}));
+
+const mockedContacts = vi.mocked(usePublicContacts);
+
+const ADMINISTRATION = {
+  key: 'administracija',
+  title: 'Administracija',
+  phone: '+370 612 85646',
+  email: 'info@sokoladomeistrai.lt',
+  hours: '8:00–18:00',
+  address: 'Jeruzalės g. 16, LT-08414 Vilnius',
+};
+
+beforeEach(() => {
+  mockedContacts.mockReset();
+  mockedContacts.mockReturnValue({
+    status: 'ready',
+    data: { groups: [ADMINISTRATION], cities: [] },
+    retry: vi.fn(),
+  });
+});
 
 describe('SiteFooter', () => {
   it('renders the brand logo, a description and the shared navigation', () => {
@@ -24,17 +49,25 @@ describe('SiteFooter', () => {
     );
   });
 
-  it('uses the shared contact source for clickable phone and email', () => {
+  it('uses the persisted administration contact for clickable phone and email', () => {
     render(<SiteFooter />);
 
-    expect(screen.getByRole('link', { name: CONTACT.generalPhone })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: ADMINISTRATION.phone })).toHaveAttribute(
       'href',
-      telHref(CONTACT.generalPhone),
+      telHref(ADMINISTRATION.phone),
     );
-    expect(screen.getByRole('link', { name: CONTACT.generalEmail })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: ADMINISTRATION.email })).toHaveAttribute(
       'href',
-      mailtoHref(CONTACT.generalEmail),
+      mailtoHref(ADMINISTRATION.email),
     );
+  });
+
+  it('never fabricates contact values while loading or on failure', () => {
+    mockedContacts.mockReturnValue({ status: 'loading', data: null, retry: vi.fn() });
+    render(<SiteFooter />);
+
+    expect(screen.queryByRole('link', { name: ADMINISTRATION.phone })).toBeNull();
+    expect(screen.queryByRole('link', { name: ADMINISTRATION.email })).toBeNull();
   });
 
   it('renders the legal name, company code and current copyright year', () => {
