@@ -7,7 +7,10 @@ describe('SiteFooter', () => {
   it('renders the brand logo, a description and the shared navigation', () => {
     render(<SiteFooter />);
 
-    expect(screen.getByRole('img', { name: 'Šokolado meistrai' })).toBeInTheDocument();
+    const logo = screen.getByRole('img', { name: 'Šokolado meistrai' });
+    expect(logo).toBeInTheDocument();
+    // The dark footer uses the cream logo variant.
+    expect(logo.getAttribute('src') ?? '').toContain('sokolado-meistrai-logo-creme');
 
     const nav = screen.getByRole('navigation', { name: 'Poraštės navigacija' });
     expect(within(nav).getByRole('link', { name: 'Tortai' })).toHaveAttribute('href', '/tortai');
