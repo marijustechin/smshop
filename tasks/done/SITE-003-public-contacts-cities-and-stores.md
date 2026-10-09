@@ -2,7 +2,9 @@
 
 ## Status
 
-CURRENT — implementation complete; staging deployment and live verification in progress.
+DONE — implemented, tested and deployed to staging on 2026-10-09. The
+authenticated admin-form visual inspection remains with the owner (see
+Verification Result → Not performed).
 
 ## Objective
 
@@ -79,10 +81,20 @@ email is the future topic recipient).
       protection; validation; hidden exclusion; contact-group propagation;
       repeat-safe import all tested.
 - [x] `pnpm verify` and `pnpm verify:db` (DB-backed) pass.
-- [x] Staging CI/CD deploys the change, migrations run, existing data is
-      preserved, and a verification edit is reflected publicly without a
-      redeploy (then restored).
-- [ ] State reconciliation performed: the owning task record, `tasks/TODO.md` and
+- [x] Staging CI/CD deployed the change and both migrations ran; existing
+      catalogue/media/users were preserved.
+- [x] The public read endpoint serves live database state without a redeploy: a
+      temporary, directly-applied edit was observed through
+      `GET /api/public/contacts` and then restored. This was an **API-level**
+      observation; the rendered footer/`/kontaktai` DOM was not observed between
+      the edit and the restore, so no rendered-refresh claim is made.
+- [ ] Authenticated admin-form visual inspection (desktop and mobile) — **not
+      performed by the agent**: no staging administrator credentials were
+      available and no authentication bypass was created. The owner will inspect
+      `/administravimas/kontaktai` with their existing administrator account.
+      Automated web tests and DB tests exercise behaviour but are **not** visual
+      verification.
+- [x] State reconciliation performed: the owning task record, `tasks/TODO.md` and
       the applicable current-state documentation are reconciled; documents left
       unchanged are stated with a reason (see `docs/task-workflow.md`).
 
@@ -94,9 +106,10 @@ email is the future topic recipient).
 - Focused suites: `apps/api/test/database/contacts.db-spec.ts`,
   `apps/web/src/features/contacts/**`, `apps/web/src/widgets/site-footer/**`,
   `apps/web/src/app/(public)/kontaktai/page.test.tsx`.
-- Live: `GET /api/public/contacts`; `/kontaktai` and the footer; existing
-  catalogue/media/users preserved; a temporary administrator/DB edit reflected
-  publicly without redeploy, then restored.
+- Live: `GET /api/public/contacts`; rendered `/kontaktai` and footer screenshots;
+  existing catalogue/media/users preserved; a temporary edit observed through the
+  public endpoint without a redeploy (then restored). Authenticated admin-form
+  visual inspection is an owner action (see "Not performed").
 
 ## Implementation Result
 
@@ -114,15 +127,68 @@ email is the future topic recipient).
 
 ## Verification Result
 
-- `pnpm verify` exit 0: web 242 tests (was 232), api 116 tests; build produced
-  the new `/administravimas/kontaktai` route and a static `/kontaktai` shell.
+**Repository implementation (local gates)**
+
+- `pnpm verify` exit 0: web 242 tests (was 232), api 116 tests; the build
+  produced the `/administravimas/kontaktai` route and a static `/kontaktai`
+  shell.
 - `pnpm test:db` exit 0: 14 DB spec files, 203 tests, including the new
-  `contacts.db-spec.ts` (12 tests).
+  `contacts.db-spec.ts` (12 tests: public boundary, admin authorization, city
+  duplication/deletion protection, store validation/status/hours, contact-group
+  propagation, repeat-safe import).
+- `pnpm check:workflow` and `pnpm test:workflow` (15 fixture tests) pass.
 - `prisma migrate deploy` applied both new migrations cleanly to a fresh test
   database.
 
-Live verification and CI/CD results are recorded below once the staging
-deployment completes.
+**Deployment (staging) — implementation vs installed state**
+
+- CI run `37891255674` (commit `e94150c`) completed **success**.
+- Installed state `/opt/sokoladas-staging/state/applied.json`: applied release
+  `ci-e94150c92e67`, previous `ci-31caaa357c2a`, `appliedAt`
+  2026-10-09T06:11:51Z, source commit `e94150c`.
+- Deployment evidence `20261009T061012Z-ci-e94150c92e67`: `migration.log` shows
+  `prisma migrate deploy` applying `20261009054700_add_contacts_cities_stores`
+  and `20261009054701_seed_contacts` ("All migrations have been successfully
+  applied"); the health step reports OK.
+- Live `GET /health/ready` 200; `/`, `/tortai`, `/kontaktai`,
+  `/administravimas/kontaktai` and `/prisijungti` all 200.
+
+**Data preservation (staging)**
+
+- `GET /api/public/contacts` returns the 3 seeded groups and both ordered cities
+  (Vilnius, Kaunas); 7 visible stores (8 seeded − 1 hidden `Vydūno`), with the
+  `MADA` store as `TEMPORARILY_CLOSED` and its notice
+  "Laikinai uždaryta – vyksta rekonstrukcija".
+- Existing data intact: users 4, catalogue products 5, categories 1, tags 9,
+  shop products 0; the media volume holds 5 files.
+
+**Public rendered visual check**
+
+- Headless Chromium screenshots of `/kontaktai` (desktop 1440 and mobile 390) and
+  the home footer confirm the contact groups, city-grouped stores, compact weekly
+  hours (`I–V 9:00–19:00; VI–VII 10:00–18:00`), the `Laikinai uždaryta` closure
+  badge + notice, the company section, and the chocolate footer showing the
+  persisted administration phone/email. No horizontal overflow at mobile width.
+
+**No-redeploy observation (API-level, not rendered UI)**
+
+- A temporary edit was applied **directly to `contact_groups`** on staging (not
+  through the admin API/UI) and observed immediately through
+  `GET /api/public/contacts`, then restored to the original value. This proves
+  the public **endpoint** serves live database state without a redeploy. The
+  rendered footer/`/kontaktai` page was **not** observed between the edit and the
+  restore, so no claim is made that the rendered page refreshed live; the
+  rendered pages were separately screenshotted after deployment and show the
+  persisted values.
+
+**Not performed**
+
+- Authenticated admin-form visual inspection (desktop and mobile). The agent had
+  no staging administrator credentials and did not create a preview route,
+  account or authentication bypass. The owner will inspect
+  `/administravimas/kontaktai` with their existing administrator account.
+  Automated web tests and the DB-backed spec exercise admin behaviour but are
+  **not** visual UI verification.
 
 ## Decisions
 
@@ -136,6 +202,10 @@ deployment completes.
   no second recipient field added now.
 - Company legal details stay in `shared/config/contact.ts`; only business
   contact/store data is persisted.
+- Verification method: the no-redeploy property was observed at the public **API**
+  boundary only, by a temporary directly-applied edit. The authenticated admin
+  UI/API write path is covered by the DB-backed spec; the admin UI was not
+  visually inspected by the agent (no staging credentials, no bypass).
 
 ## Follow-ups
 
@@ -146,9 +216,23 @@ deployment completes.
 
 ## State Reconciliation
 
-Filled when completed.
+Updated: this task record (moved to `tasks/done/`), `tasks/TODO.md` (current task
+cleared; SITE-003 recorded; M13 "Store & contact information" added; current
+released commit updated), `docs/architecture.md` (public contacts domain and the
+new API modules), `docs/configuration.md` (business contacts are database-managed,
+not environment configuration), and `docs/deployment.md` (forward-only migration
+plus the repeat-safe `seed_contacts` import).
+
+The infrastructure-owned deployment contract is unaffected: SITE-003 adds no new
+environment variable, secret, port, mount or interface field — only tables,
+endpoints and UI inside the existing contract (migrations already run via
+`prisma migrate deploy`). `README.md`, `docs/authentication.md` and
+`docs/development.md` are unaffected because nothing changed in onboarding,
+authentication or the local development stack. Staging installed state remains
+authoritative in `sm-oracle-infra`.
 
 ## Completion
 
-Completed date:
-Commit:
+Completed date: 2026-10-09
+Commit: `e94150c` (implementation); documentation recorded in the follow-up
+`SITE-003` docs commit. Deployed as `ci-e94150c92e67`.

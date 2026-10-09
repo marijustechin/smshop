@@ -27,10 +27,7 @@ shop products, tags, ratings, media library, public `/tortai`, admin products) i
 implemented and deployed (commit `9069715`); the next application milestone
 remains **M3 — Store Information Architecture**.
 
-**Current task:** SITE-003 — administrator-managed public contacts, cities and
-stores (schema, migration, admin API/UI, public read, and footer/`/kontaktai`
-wiring). Implementation complete; staging deployment and live verification in
-progress.
+**Current task:** none — `tasks/current/` is empty.
 
 **Recently completed:** H-000–H-015; A-001–A-013. Beyond Auth v1
 (A-001–A-010), this includes:
@@ -68,6 +65,13 @@ progress.
 - **SITE-002** — footer chocolate surface: the shared footer now uses the
   chocolate `primary` background with cream `on-primary` text, the cream logo
   variant, hover underlines and a cream focus outline. Deployed live.
+- **SITE-003** — administrator-managed public contacts, cities and stores:
+  `City`/`Store`/`StoreHours`/`ContactGroup` persistence, an admin API and UI
+  (`/administravimas/kontaktai`) with a weekly hours editor and statuses, a
+  public read endpoint, and a versioned repeat-safe import of the SITE-001 data;
+  the footer and `/kontaktai` read the persisted source without a redeploy.
+  Deployed live. Authenticated admin-form visual inspection remains an owner
+  check.
 - **H-010** — local development environment hardening (local ports 3101/3100,
   `pnpm dev` env preflight, Prisma local env resolution, local docs/tests).
 - **ARCH-000** (cross-repository) — documentation and technical-debt
@@ -96,8 +100,8 @@ tracked as `OPS-*` below.
 
 **Commit state:** authentication through A-013 and the first catalogue/media
 slice (`9069715`) are committed on `main`. The current deployed release is
-`d007-v1` (source `bff755f`). Deploying application images to Oracle staging uses
-the unattended `stage`/`release` pipeline in `sm-oracle-infra`
+`ci-e94150c92e67` (source `e94150c`). Deploying application images to Oracle
+staging uses the unattended `stage`/`release` pipeline in `sm-oracle-infra`
 (`/usr/local/sbin/sokoladas-deploy`).
 
 **Documentation follow-up:** the catalogue/shop, media-library and admin-products
