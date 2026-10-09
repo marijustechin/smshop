@@ -27,8 +27,7 @@ shop products, tags, ratings, media library, public `/tortai`, admin products) i
 implemented and deployed (commit `9069715`); the next application milestone
 remains **M3 — Store Information Architecture**.
 
-**Current task:** SITE-002 — footer chocolate surface. See
-`tasks/current/SITE-002-footer-chocolate-surface.md`.
+**Current task:** none — `tasks/current/` is empty.
 
 **Recently completed:** H-000–H-015; A-001–A-013. Beyond Auth v1
 (A-001–A-010), this includes:
@@ -63,6 +62,9 @@ remains **M3 — Store Information Architecture**.
   source (`shared/config/contact.ts`), a footer on every public page (sticky to
   the viewport bottom), contact groups, stores with published hours and map
   links, and a `Kontaktai` drawer entry. Deployed live.
+- **SITE-002** — footer chocolate surface: the shared footer now uses the
+  chocolate `primary` background with cream `on-primary` text, the cream logo
+  variant, hover underlines and a cream focus outline. Deployed live.
 - **H-010** — local development environment hardening (local ports 3101/3100,
   `pnpm dev` env preflight, Prisma local env resolution, local docs/tests).
 - **ARCH-000** (cross-repository) — documentation and technical-debt
