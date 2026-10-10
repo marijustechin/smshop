@@ -27,10 +27,7 @@ shop products, tags, ratings, media library, public `/tortai`, admin products) i
 implemented and deployed (commit `9069715`); the next application milestone
 remains **M3 — Store Information Architecture**.
 
-**Current task:** SITE-004 — public contact form on `/kontaktai`, routing fixed
-topics to the SITE-003 contact groups through the existing mail transport.
-Implementation complete and locally verified; staging deployment and live
-verification in progress.
+**Current task:** none — `tasks/current/` is empty.
 
 **Recently completed:** H-000–H-015; A-001–A-013. Beyond Auth v1
 (A-001–A-010), this includes:
@@ -75,6 +72,14 @@ verification in progress.
   the footer and `/kontaktai` read the persisted source without a redeploy.
   Deployed live. Authenticated admin-form visual inspection remains an owner
   check.
+- **SITE-004** — public contact form on `/kontaktai`: a strict
+  `POST /api/public/contact` endpoint that routes fixed topics to the SITE-003
+  contact groups (resolved from the database at submission time), sends a
+  plain-text email through the existing transport (`From` = `MAIL_FROM`,
+  `Reply-To` = visitor) with the shared Turnstile guard and a `contact-form`
+  rate limit; the form renders before the store list with validation,
+  submitting/success/failure states and Turnstile reset. Deployed live. The real
+  inbox delivery check remains an owner action (staging Turnstile).
 - **H-010** — local development environment hardening (local ports 3101/3100,
   `pnpm dev` env preflight, Prisma local env resolution, local docs/tests).
 - **ARCH-000** (cross-repository) — documentation and technical-debt
@@ -103,7 +108,7 @@ tracked as `OPS-*` below.
 
 **Commit state:** authentication through A-013 and the first catalogue/media
 slice (`9069715`) are committed on `main`. The current deployed release is
-`ci-e94150c92e67` (source `e94150c`). Deploying application images to Oracle
+`ci-ee19b7375e4d` (source `ee19b73`). Deploying application images to Oracle
 staging uses the unattended `stage`/`release` pipeline in `sm-oracle-infra`
 (`/usr/local/sbin/sokoladas-deploy`).
 

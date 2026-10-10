@@ -83,10 +83,14 @@ Turnstile/rate-limit security boundaries.
       recipient, Turnstile missing/invalid/expired, rate limiting, From/To/
       Reply-To, transport failure, and form states.
 - [x] `pnpm verify` and `pnpm verify:db` (DB-backed) pass.
-- [ ] Staging CI/CD deployed; the deployed endpoint and form verified; the real
-      delivery check handled per the task's owner authorization (or reported as an
-      owner action).
-- [ ] State reconciliation performed.
+- [x] Staging CI/CD deployed the change; the deployed form and endpoint were
+      verified live (the form renders and Turnstile enforcement blocks any
+      submission without a valid challenge — nothing is sent).
+- [ ] Real delivery check to the owner-authorized address — **owner action**:
+      staging Turnstile is enabled, no valid challenge could be obtained without
+      a browser, and no token was manufactured/bypassed and no recipient
+      configuration was changed.
+- [x] State reconciliation performed.
 
 ## Required Verification
 
@@ -115,7 +119,7 @@ Turnstile/rate-limit security boundaries.
 
 ## Verification Result
 
-### Repository implementation (local gates)
+**Repository implementation (local gates)**
 
 - `pnpm verify` exit 0 (format, lint, typecheck, web + api unit tests, build);
   the `/kontaktai` route builds with the form.
@@ -124,8 +128,47 @@ Turnstile/rate-limit security boundaries.
   missing recipient, Turnstile outcomes, rate limit, transport failure).
 - Focused web suite (`contact-form.test.tsx`, `kontaktai/page.test.tsx`) passes.
 
-Deployment and live verification results are recorded below once the staging
-deployment completes.
+**Deployment (staging) — implementation vs installed state**
+
+- CI run `38079942215` (commit `ee19b73`) completed **success**.
+- Installed state `/opt/sokoladas-staging/state/applied.json`: release
+  `ci-ee19b7375e4d`, previous `ci-e94150c92e67`, source commit `ee19b73`,
+  `appliedAt` 2026-10-10T19:38:51Z.
+- Evidence `20261010T193712Z-ci-ee19b7375e4d`: `migration.log` reports
+  "No pending migrations to apply" (no schema change), health OK.
+
+**Live verification**
+
+- `GET /kontaktai` 200 and the rendered HTML contains the form
+  (Parašykite mums / Tema / Žinutė / Siųsti žinutę).
+- Staging Turnstile is enabled (`TURNSTILE_SECRET_KEY_FILE` present).
+  `POST /api/public/contact`:
+  - invalid body, no token → `403 TURNSTILE_REQUIRED` (the guard runs before
+    validation; nothing is sent);
+  - valid body, no token → `403 TURNSTILE_REQUIRED`;
+  - valid body, bogus token → `403 TURNSTILE_FAILED`.
+    These confirm the endpoint is deployed, the guard is enforced, and no message
+    can be sent without a valid challenge.
+- Desktop (1440) and mobile (390) screenshots of `/kontaktai` confirm the form
+  layout, optional-field labels, the centered Turnstile widget, the disabled
+  submit while the challenge is pending, and no horizontal overflow.
+
+**Not performed live**
+
+- **Real inbox delivery.** With staging Turnstile enabled, a valid challenge
+  token cannot be produced without a real browser, and no token was
+  manufactured/bypassed. No recipient configuration was changed. The one
+  authorized real delivery to `m.smiginas@gmail.com` (via a temporary recipient
+  override, restored afterwards) is therefore an **owner action** (see below).
+- **Live rate-limit `429`** was not exercised to avoid consuming the shared
+  limiter bucket on the live site; it is covered by the DB-backed test.
+
+**Transport acceptance vs inbox receipt**
+
+- The endpoint returns success only after the mail transport accepts the message
+  (asserted by the DB-backed test). No live send occurred, so transport
+  acceptance and inbox receipt were **not** observed live; the real inbox check
+  is the owner action below.
 
 ## Decisions
 
@@ -148,6 +191,11 @@ deployment completes.
 
 ## Follow-ups
 
+- **Owner action — real delivery check:** with staging Turnstile enabled,
+  perform one clearly labelled submission through the deployed `/kontaktai` form
+  (valid browser challenge) after temporarily pointing the target group's email
+  to the authorized address `m.smiginas@gmail.com`, confirm inbox receipt, then
+  restore the original recipient. Do not manufacture tokens or bypass Turnstile.
 - Attachments and a visitor confirmation email (explicitly out of scope).
 - Configure `trustProxy` for the known proxy hops so rate limits apply per real
   client IP (pre-existing infrastructure follow-up, also affects auth limits).
@@ -156,9 +204,24 @@ deployment completes.
 
 ## State Reconciliation
 
-Filled when completed.
+Updated: this task record (moved to `tasks/done/`), `tasks/TODO.md` (current task
+cleared; SITE-004 recorded), `docs/architecture.md` (public contact form and its
+endpoint/routing), `docs/configuration.md` (the form reuses the existing SMTP
+configuration; no new environment variable), and `docs/authentication.md`
+(contact endpoint uses the Turnstile guard; `contact-form` rate-limit policy).
+`tasks/done/SITE-003-*.md` records the owner-reported SITE-003 admin inspection.
+
+The infrastructure-owned deployment contract is unaffected: SITE-004 adds no new
+environment variable, secret, port, mount or migration — only an endpoint and UI
+inside the existing contract. `docs/deployment.md` is unchanged (no migration,
+env or interface change). `README.md` and `docs/development.md` are unaffected
+(no onboarding or local-stack change). Catalogue, stores, footer styling,
+authentication and deployment permissions are unchanged. Staging installed state
+remains authoritative in `sm-oracle-infra`.
 
 ## Completion
 
-Completed date:
-Commit:
+Completed date: 2026-10-10
+Commit: `ee19b73` (implementation); documentation recorded in the follow-up
+`SITE-004` docs commit. Deployed as `ci-ee19b7375e4d`. Real inbox delivery is an
+owner action (see Follow-ups).
