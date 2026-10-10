@@ -235,6 +235,23 @@ behaviour, Turnstile and Google behaviour, and error messages are unchanged.
   persisted source at runtime so administrator edits appear without a redeploy.
   Company legal details remain in `apps/web/src/shared/config/contact.ts`.
 
+## Public contact form (SITE-004)
+
+- `POST /api/public/contact` (unauthenticated) accepts a strict body
+  `{ topic, email, message, name?, phone? }` plus an optional `turnstileToken`
+  and sends a plain-text email through the application `MailService`.
+- The topic maps to a fixed contact-group key (`general`→`administracija`,
+  `order`→`uzsakymai`, `shop`→`e-parduotuve`). The recipient is resolved from the
+  database at submission time and is never supplied by the client; a missing or
+  invalid recipient fails clearly and nothing is sent (no fallback department).
+- `From` is the configured `MAIL_FROM` sender, `Reply-To` is the visitor's
+  validated email and the subject is a fixed Lithuanian prefix plus the topic.
+  Visitor text is body content only, never mail headers. Message bodies, visitor
+  addresses and Turnstile tokens are neither persisted nor logged.
+- Reuses the existing `TurnstileGuard` and the endpoint-specific `RateLimitGuard`
+  (`contact-form` policy); no staging bypass. The web `features/contacts` slice
+  renders the form before the store list.
+
 ## Open fields (application-owned)
 
 - C.1 — production image references (digests): **resolved** — immutable

@@ -50,6 +50,7 @@ export class SmtpMailTransport implements MailTransport {
         subject: message.subject,
         text: message.text,
         ...(message.html ? { html: message.html } : {}),
+        ...(message.replyTo ? { replyTo: message.replyTo } : {}),
       });
     } catch (error) {
       // Never surface the underlying error (which may include SMTP/auth detail)

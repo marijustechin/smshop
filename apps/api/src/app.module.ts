@@ -6,6 +6,7 @@ import { HealthController } from './modules/health/health.controller.js';
 import { AuthModule } from './modules/auth/auth.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
 import { CatalogPublicModule } from './modules/catalog-public/catalog-public.module.js';
+import { ContactFormModule } from './modules/contact-form/contact-form.module.js';
 import { ContactsPublicModule } from './modules/contacts-public/contacts-public.module.js';
 import { MailModule } from './modules/mail/mail.module.js';
 import { MediaModule } from './modules/media/media.module.js';
@@ -22,6 +23,7 @@ import { validateEnv } from './config/env.validation.js';
     MediaModule,
     CatalogPublicModule,
     ContactsPublicModule,
+    ContactFormModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_PIPE, useClass: ZodValidationPipe }],

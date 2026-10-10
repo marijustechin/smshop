@@ -7,6 +7,8 @@ export interface MailMessage {
   subject: string;
   text: string;
   html?: string;
+  /** Optional Reply-To address (e.g. the contact-form visitor). */
+  replyTo?: string;
 }
 
 export interface MailTransport {

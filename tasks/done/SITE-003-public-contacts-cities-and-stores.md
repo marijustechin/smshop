@@ -88,10 +88,12 @@ email is the future topic recipient).
       `GET /api/public/contacts` and then restored. This was an **API-level**
       observation; the rendered footer/`/kontaktai` DOM was not observed between
       the edit and the restore, so no rendered-refresh claim is made.
-- [ ] Authenticated admin-form visual inspection (desktop and mobile) — **not
-      performed by the agent**: no staging administrator credentials were
-      available and no authentication bypass was created. The owner will inspect
-      `/administravimas/kontaktai` with their existing administrator account.
+- [x] Authenticated admin-form visual inspection — **agent did not perform it**
+      (no staging administrator credentials; no authentication bypass created).
+      **Owner-reported acceptance:** the owner confirmed the SITE-003 admin area
+      was OK ("Viskas ok") and supplied screenshots on 2026-10-09. This is
+      owner-reported acceptance, not agent-performed verification; no specific
+      scenarios or device coverage are claimed beyond that confirmation.
       Automated web tests and DB tests exercise behaviour but are **not** visual
       verification.
 - [x] State reconciliation performed: the owning task record, `tasks/TODO.md` and
@@ -181,14 +183,15 @@ email is the future topic recipient).
   rendered pages were separately screenshotted after deployment and show the
   persisted values.
 
-**Not performed**
+**Owner-reported admin inspection (not agent-performed)**
 
-- Authenticated admin-form visual inspection (desktop and mobile). The agent had
-  no staging administrator credentials and did not create a preview route,
-  account or authentication bypass. The owner will inspect
-  `/administravimas/kontaktai` with their existing administrator account.
-  Automated web tests and the DB-backed spec exercise admin behaviour but are
-  **not** visual UI verification.
+- The authenticated admin-form visual inspection of `/administravimas/kontaktai`
+  was **not** performed by the agent (no staging administrator credentials; no
+  preview route, account or authentication bypass was created). The owner
+  reported acceptance ("Viskas ok") with screenshots on 2026-10-09. This is
+  owner-reported acceptance only; no specific scenarios or device coverage are
+  claimed beyond that confirmation. Automated web tests and the DB-backed spec
+  exercise admin behaviour but are **not** visual UI verification.
 
 ## Decisions
 

@@ -600,7 +600,8 @@ test contacts Cloudflare.
 - **Protected endpoints:** `POST /api/auth/register`, `POST /api/auth/login`,
   `POST /api/auth/forgot-password`, `POST /api/auth/resend-verification`. All
   other auth routes (verify-email, reset-password, refresh, logout, me, Google
-  OAuth) are **not** gated.
+  OAuth) are **not** gated. The public contact form (`POST /api/public/contact`,
+  SITE-004) also uses this guard.
 - **Boundary:** `TurnstileVerifier` (token `TURNSTILE_VERIFIER`) with a
   `CloudflareTurnstileVerifier` implementation calling Siteverify server-side.
   Auth services never call Cloudflare directly. The frontend widget result is
@@ -639,7 +640,7 @@ test contacts Cloudflare.
   store — documented follow-up).
 - **Policies (initial):** login `5/min`; register `5/10min`; forgot-password
   `3/10min`; resend-verification `3/10min`; verify-email and reset-password
-  `20/10min`. Refresh/logout/me are not rate-limited.
+  `20/10min`; contact form `5/10min`. Refresh/logout/me are not rate-limited.
 - **Response:** `429` with `code: "RATE_LIMITED"` and a `Retry-After` header; no
   counters or internal state are exposed.
 - **Ordering:** rate limiting runs before the Turnstile guard.

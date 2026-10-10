@@ -52,6 +52,26 @@ describe('SmtpMailTransport', () => {
     });
   });
 
+  it('passes Reply-To when provided and omits it otherwise', async () => {
+    const sendMail = vi.fn().mockResolvedValue({});
+    const transport = new SmtpMailTransport(smtp, fakeTransporter(sendMail));
+
+    await transport.send({
+      to: 'recipient@example.com',
+      subject: 'S',
+      text: 'T',
+      replyTo: 'visitor@example.com',
+    });
+
+    expect(sendMail).toHaveBeenCalledExactlyOnceWith({
+      from: smtp.from,
+      to: 'recipient@example.com',
+      subject: 'S',
+      text: 'T',
+      replyTo: 'visitor@example.com',
+    });
+  });
+
   it('wraps transport failures in a sanitized error without secrets', async () => {
     const sendMail = vi
       .fn()

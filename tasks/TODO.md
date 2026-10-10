@@ -27,7 +27,10 @@ shop products, tags, ratings, media library, public `/tortai`, admin products) i
 implemented and deployed (commit `9069715`); the next application milestone
 remains **M3 — Store Information Architecture**.
 
-**Current task:** none — `tasks/current/` is empty.
+**Current task:** SITE-004 — public contact form on `/kontaktai`, routing fixed
+topics to the SITE-003 contact groups through the existing mail transport.
+Implementation complete and locally verified; staging deployment and live
+verification in progress.
 
 **Recently completed:** H-000–H-015; A-001–A-013. Beyond Auth v1
 (A-001–A-010), this includes:

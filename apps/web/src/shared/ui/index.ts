@@ -8,4 +8,5 @@ export * from './input';
 export * from './label';
 export * from './page-shell';
 export * from './password-field';
+export * from './textarea';
 export * from './turnstile';

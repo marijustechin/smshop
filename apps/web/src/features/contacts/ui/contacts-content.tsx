@@ -9,6 +9,7 @@ import { COMPANY, mailtoHref, telHref } from '@/shared/config/contact';
 import { usePublicContacts } from '../api/contacts-api';
 import { formatWeeklyHours, mapSearchUrl } from '../model/hours';
 import type { PublicStore } from '../model/types';
+import { ContactForm } from './contact-form';
 
 const linkClass =
   'rounded-sm text-primary underline-offset-2 transition-colors hover:text-primary-strong hover:underline focus-visible:outline-focus';
@@ -59,38 +60,15 @@ function StoreItem({ store }: { store: PublicStore }) {
 }
 
 /**
- * Public contact page (SITE-001; data SITE-003). Reads administrator-managed
- * contact groups and stores from the API at runtime; never displays fabricated
+ * Public contact page (SITE-001; data SITE-003; form SITE-004). Reads
+ * administrator-managed contact groups and stores from the API at runtime and
+ * exposes the contact form before the store list. It never displays fabricated
  * information while loading or on failure.
  */
 export function ContactsContent() {
   const { status, data, retry } = usePublicContacts();
-
-  if (status === 'loading') {
-    return (
-      <Section>
-        <Container>
-          <p className="text-sm text-text-muted">Kraunama…</p>
-        </Container>
-      </Section>
-    );
-  }
-
-  if (status === 'error' || !data) {
-    return (
-      <Section>
-        <Container className="space-y-4">
-          <Alert variant="error">Nepavyko įkelti kontaktų. Bandykite dar kartą.</Alert>
-          <Button variant="outline" size="sm" onClick={retry}>
-            Bandyti dar kartą
-          </Button>
-        </Container>
-      </Section>
-    );
-  }
-
-  const administration = data.groups.find((group) => group.key === 'administracija');
-  const empty = data.groups.length === 0 && data.cities.length === 0;
+  const administration = data?.groups.find((group) => group.key === 'administracija');
+  const empty = data ? data.groups.length === 0 && data.cities.length === 0 : false;
 
   return (
     <Section>
@@ -98,60 +76,78 @@ export function ContactsContent() {
         <header className="max-w-2xl space-y-3">
           <h1 className="text-3xl font-semibold text-primary">Kontaktai</h1>
           <p className="text-text-muted">
-            Turite klausimą apie užsakymą, tortą ar dovanas? Susisiekite žemiau nurodytais
-            kontaktais — atsakysime nurodytomis darbo valandomis.
+            Turite klausimą apie užsakymą, tortą ar dovanas? Parašykite mums arba susisiekite žemiau
+            nurodytais kontaktais — atsakysime nurodytomis darbo valandomis.
           </p>
         </header>
 
-        {empty ? (
-          <Alert variant="info">Kontaktai netrukus bus paskelbti.</Alert>
-        ) : (
-          <>
-            {data.groups.length > 0 ? (
-              <section aria-label="Kontaktų grupės">
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {data.groups.map((group) => (
-                    <div key={group.key} className="rounded-lg border border-border bg-surface p-5">
-                      <h2 className="font-semibold text-primary">{group.title}</h2>
-                      <p className="mt-1 text-sm text-text-muted">{group.hours}</p>
-                      <p className="mt-3">
-                        <a href={telHref(group.phone)} className={linkClass}>
-                          {group.phone}
-                        </a>
-                      </p>
-                      <p className="mt-1">
-                        <a href={mailtoHref(group.email)} className={cn(linkClass, 'break-all')}>
-                          {group.email}
-                        </a>
-                      </p>
-                      {group.address ? (
-                        <p className="mt-3 text-sm text-text-muted">{group.address}</p>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-              </section>
-            ) : null}
+        <ContactForm />
 
-            {data.cities.length > 0 ? (
-              <section id="pardotuves" aria-label="Firminės parduotuvės" className="space-y-6">
-                <h2 className="text-2xl font-semibold text-primary">Firminės parduotuvės</h2>
-                <div className="space-y-6">
-                  {data.cities.map((city) => (
-                    <div key={city.name}>
-                      <h3 className="mb-3 text-lg font-medium text-primary">{city.name}</h3>
-                      <ul className="grid gap-3 sm:grid-cols-2">
-                        {city.stores.map((store) => (
-                          <StoreItem key={`${city.name}:${store.name}`} store={store} />
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            ) : null}
-          </>
-        )}
+        {status === 'loading' ? <p className="text-sm text-text-muted">Kraunama…</p> : null}
+
+        {status === 'error' ? (
+          <div className="space-y-4">
+            <Alert variant="error">Nepavyko įkelti kontaktų. Bandykite dar kartą.</Alert>
+            <Button variant="outline" size="sm" onClick={retry}>
+              Bandyti dar kartą
+            </Button>
+          </div>
+        ) : null}
+
+        {status === 'ready' && data ? (
+          empty ? (
+            <Alert variant="info">Kontaktai netrukus bus paskelbti.</Alert>
+          ) : (
+            <>
+              {data.groups.length > 0 ? (
+                <section aria-label="Kontaktų grupės">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {data.groups.map((group) => (
+                      <div
+                        key={group.key}
+                        className="rounded-lg border border-border bg-surface p-5"
+                      >
+                        <h2 className="font-semibold text-primary">{group.title}</h2>
+                        <p className="mt-1 text-sm text-text-muted">{group.hours}</p>
+                        <p className="mt-3">
+                          <a href={telHref(group.phone)} className={linkClass}>
+                            {group.phone}
+                          </a>
+                        </p>
+                        <p className="mt-1">
+                          <a href={mailtoHref(group.email)} className={cn(linkClass, 'break-all')}>
+                            {group.email}
+                          </a>
+                        </p>
+                        {group.address ? (
+                          <p className="mt-3 text-sm text-text-muted">{group.address}</p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+
+              {data.cities.length > 0 ? (
+                <section id="pardotuves" aria-label="Firminės parduotuvės" className="space-y-6">
+                  <h2 className="text-2xl font-semibold text-primary">Firminės parduotuvės</h2>
+                  <div className="space-y-6">
+                    {data.cities.map((city) => (
+                      <div key={city.name}>
+                        <h3 className="mb-3 text-lg font-medium text-primary">{city.name}</h3>
+                        <ul className="grid gap-3 sm:grid-cols-2">
+                          {city.stores.map((store) => (
+                            <StoreItem key={`${city.name}:${store.name}`} store={store} />
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+            </>
+          )
+        ) : null}
 
         <section
           aria-label="Įmonės informacija"

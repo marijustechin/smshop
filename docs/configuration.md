@@ -184,7 +184,10 @@ the process environment, so no `.env` file is required.
   the versioned `seed_contacts` migration and edited at
   `/administravimas/kontaktai`; the public footer and `/kontaktai` read them from
   `GET /api/public/contacts`. Company legal details remain in
-  `apps/web/src/shared/config/contact.ts`.
+  `apps/web/src/shared/config/contact.ts`. The public contact form (SITE-004)
+  reuses the existing SMTP configuration: `MAIL_FROM` is the `From` sender and
+  the visitor's validated email is the `Reply-To`. It introduces no new
+  environment variable or secret.
 - **Turnstile (optional, backend secret):** `TURNSTILE_SECRET_KEY` (supports
   `TURNSTILE_SECRET_KEY_FILE`). When absent, Turnstile is disabled and the public
   auth endpoints accept requests without a challenge (CI needs no secret). When

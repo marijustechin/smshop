@@ -102,6 +102,8 @@ describe('KontaktaiPage', () => {
     const { container } = render(<KontaktaiPage />);
 
     expect(container.querySelector('#pardotuves')).not.toBeNull();
+    expect(screen.getByRole('heading', { name: 'Parašykite mums' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Siųsti žinutę' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Vilnius' })).toBeInTheDocument();
     expect(screen.getByText('Jeruzalės g. 16, Vilnius')).toBeInTheDocument();
     // Operating store renders compact weekly hours.
